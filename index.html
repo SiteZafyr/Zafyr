@@ -861,7 +861,7 @@
       <div class="logo">
         <div class="logo-icon">🏢</div>
         <h1>Site de Gestão </h1>
-        <p>Gestão de estoque, clientes e vendas<br>para várias empresas</p>
+        <p>Gestão de estoque, clientes e vendas<br>para várias gestão </p>
       </div>
 
       <!-- Abas Login / Criar / Dono -->
@@ -1002,6 +1002,7 @@
               <button type="button" class="btn btn-primary btn-sm" onclick="salvarPagamentoEmpresaDono()">Salvar pagamento</button>
               <button type="button" class="btn btn-success btn-sm" onclick="liberarEmpresaDono()">Liberar</button>
               <button type="button" class="btn btn-danger btn-sm" onclick="bloquearEmpresaDono()">Bloquear</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="apagarEmpresaDono()" title="Remove a empresa da plataforma">🗑️ Apagar empresa</button>
               <button type="button" class="btn btn-secondary btn-sm" onclick="renderPainelDono()">🔄 Atualizar</button>
             </div>
           </div>
@@ -2011,8 +2012,8 @@
     const PLATAFORMA_LS_KEY = 'casaDosOvos_plataforma_v1';
 
     // Telefone exibido no fim da demonstração (troque pelo número real)
-    const TELEFONE_CONTATO_DEMO = '81000000000';
-    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 0000-0000';
+    const TELEFONE_CONTATO_DEMO = '8199999999';
+    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 9999-9999';
 
     let db = null;
     let firebaseOk = false;
@@ -2532,6 +2533,64 @@
       });
     }
 
+    async function apagarEmpresaDono(codigoOpcional) {
+      if (!donoLogado) return;
+      const codigo = normalizarCodigoEmpresa(
+        codigoOpcional || document.getElementById('dono-empresa-codigo').value
+      );
+      if (!codigo) {
+        toast('Informe ou selecione o código da empresa', 'error');
+        return;
+      }
+      if (codigo === 'demo') {
+        toast('Não é possível apagar a empresa de demonstração', 'error');
+        return;
+      }
+      const ok = confirm(
+        'Apagar a empresa "' + codigo + '"?\n\n' +
+        'Isso remove o acesso na plataforma e os dados dela no sistema (estoque, clientes, vendas).\n' +
+        'Esta ação não pode ser desfeita.'
+      );
+      if (!ok) return;
+      const ok2 = confirm('Confirma definitivamente a exclusão de "' + codigo + '"?');
+      if (!ok2) return;
+
+      const plat = await lerPlataforma();
+      // Remove registro de acesso
+      if (plat.acessos[codigo]) delete plat.acessos[codigo];
+      // Libera ou remove chaves ligadas a essa empresa
+      Object.keys(plat.chaves || {}).forEach(k => {
+        const ch = plat.chaves[k];
+        if (ch && ch.empresaCodigo === codigo) {
+          // Remove a chave usada por essa empresa
+          delete plat.chaves[k];
+        }
+      });
+      await salvarPlataforma(plat);
+
+      // Apaga dados locais
+      try {
+        localStorage.removeItem(storageKey(codigo));
+        localStorage.removeItem(storageKey(codigo) + '_meta');
+      } catch (e) {}
+
+      // Apaga no Firebase
+      if (firebaseOk && db) {
+        try {
+          await db.ref(pathEmpresa(codigo)).remove();
+        } catch (e) {
+          console.warn('Falha ao apagar empresa no Firebase', e);
+        }
+      }
+
+      document.getElementById('dono-empresa-codigo').value = '';
+      document.getElementById('dono-pago-status').value = 'nao';
+      document.getElementById('dono-pago-data').value = '';
+      document.getElementById('dono-pago-obs').value = '';
+      toast('Empresa "' + codigo + '" apagada', 'success');
+      renderPainelDono();
+    }
+
     function formatarDataCurta(d) {
       if (!d) return '—';
       if (d.includes('-')) {
@@ -2607,7 +2666,10 @@
                 ${pg}
                 ${a.obsPagamento ? '<br><span style="color:var(--text-muted);">Obs: ' + a.obsPagamento + '</span>' : ''}
               </div>
-              <button type="button" class="btn btn-sm btn-secondary" onclick="preencherFormEmpresaDono('${codEsc}')">Editar</button>
+              <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="preencherFormEmpresaDono('${codEsc}')">Editar</button>
+                <button type="button" class="btn btn-sm btn-danger" onclick="apagarEmpresaDono('${codEsc}')" title="Apagar empresa">🗑️</button>
+              </div>
             </div>
           </div>`;
         }).join('');
