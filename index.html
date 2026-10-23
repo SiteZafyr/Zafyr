@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Site de Gestão  — Estoque e Clientes</title>
+  <title>Site de Gestão — Estoque e Clientes</title>
   <!-- Firebase (sincronização entre computadores) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
@@ -849,7 +849,7 @@
         Se quiser o sistema completo para a sua empresa (com conta, sincronização e suporte), entre em contato:
       </p>
       <div class="demo-cta-phone" id="demo-telefone-contato">📞 (81) 9999-9999</div>
-      <p style="font-size:0.82rem;margin-bottom:1.1rem;">WhatsApp ou ligação — fale sobre o <strong>Site de Gestão </strong>.</p>
+      <p style="font-size:0.82rem;margin-bottom:1.1rem;">WhatsApp ou ligação — fale sobre o <strong>Site de Gestão</strong>.</p>
       <button type="button" class="btn btn-primary" style="width:100%;margin-bottom:0.5rem;" onclick="ligarDemoContato()">Chamar agora</button>
       <button type="button" class="btn btn-secondary" style="width:100%;" onclick="fecharTelaAdquirir()">Voltar</button>
     </div>
@@ -860,8 +860,8 @@
     <div class="login-box">
       <div class="logo">
         <div class="logo-icon">🏢</div>
-        <h1>Site de Gestão </h1>
-        <p>Gestão de estoque, clientes e vendas<br>para várias gestão </p>
+        <h1>Site de Gestão</h1>
+        <p>Gestão de estoque, clientes e vendas<br>para várias empresas</p>
       </div>
 
       <!-- Abas Login / Criar / Dono -->
@@ -1025,7 +1025,7 @@
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <h1 id="sidebar-marca">🏢 Site de Gestão </h1>
+      <h1 id="sidebar-marca">🏢 Site de Gestão</h1>
       <p id="sidebar-empresa-nome">Controle de Estoque e Clientes</p>
     </div>
     <div class="user-info">
@@ -1068,6 +1068,32 @@
         <div class="panel">
           <div class="panel-header"><h3>📌 Resumo Rápido</h3></div>
           <div id="dash-resumo"></div>
+        </div>
+        <div id="dash-top-vendas-wrap" class="hidden">
+          <div class="panel">
+            <div class="panel-header"><h3>🏆 Top 5 — Maiores vendas</h3></div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.7rem;">As 5 vendas de maior valor (todos os vendedores).</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>Data</th><th>Cliente</th><th>Vendedor</th><th>Forma</th><th>Valor</th></tr>
+                </thead>
+                <tbody id="dash-top-vendas"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-header"><h3>👤 Top 5 — Vendedores</h3></div>
+            <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.7rem;">Ranking por valor total e quantidade de vendas (todos).</p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>#</th><th>Vendedor</th><th>Qtd. vendas</th><th>Valor total</th><th>Ticket médio</th></tr>
+                </thead>
+                <tbody id="dash-top-vendedores"></tbody>
+              </table>
+            </div>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-header"><h3>📦 Estoque por Produto</h3></div>
@@ -1507,7 +1533,7 @@
         </div>
       </section>
 
-      <!-- USUÁRIOS E CARGOS (admin only) -->
+      <!-- USUÁRIOS, CATEGORIAS E MÓDULOS (admin) -->
       <section id="page-usuarios" class="page hidden">
         <div class="panel">
           <div class="panel-header">
@@ -1517,28 +1543,42 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Nome</th><th>Usuário</th><th>Cargo</th><th>Ações</th></tr>
+                <tr><th>Nome</th><th>Usuário</th><th>Categoria</th><th>Ações</th></tr>
               </thead>
               <tbody id="lista-usuarios"></tbody>
             </table>
           </div>
         </div>
+
         <div class="panel">
           <div class="panel-header">
-            <h3>Cargos e permissões</h3>
-            <button class="btn btn-primary" onclick="abrirModalCargo()">+ Novo cargo</button>
+            <h3>Categorias (o que cada tipo de usuário pode fazer)</h3>
+            <button class="btn btn-primary" onclick="abrirModalCargo()">+ Nova categoria</button>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
-            Defina o que cada cargo pode ver no menu. Ao cadastrar um usuário, escolha o cargo. Você também pode criar cargos novos (ex.: Caixa, Gerente).
+            Crie categorias novas (ex.: Caixa, Gerente, Conferente) e marque as telas que cada uma pode usar.
+            Exemplo: uma categoria sem a opção <strong>Notificações</strong> não verá esse menu.
           </p>
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Cargo</th><th>Telas liberadas</th><th>Ações</th></tr>
+                <tr><th>Categoria</th><th>Telas liberadas</th><th>Ações</th></tr>
               </thead>
               <tbody id="lista-cargos"></tbody>
             </table>
           </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Módulos desta loja</h3>
+            <button class="btn btn-primary" onclick="salvarModulosLoja()">Salvar módulos</button>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
+            Desmarque o que <strong>não deve existir nesta loja</strong>. Vale para todos os usuários desta empresa
+            (ex.: desmarcar Notificações remove essa tela do sistema da sua loja).
+          </p>
+          <div id="lista-modulos-loja" style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem 0.85rem;"></div>
         </div>
       </section>
 
@@ -1706,9 +1746,9 @@
             <input type="password" id="usuario-senha" autocomplete="new-password" />
           </div>
           <div class="form-group" style="grid-column:1/-1;">
-            <label>Cargo *</label>
+            <label>Categoria *</label>
             <select id="usuario-papel"></select>
-            <small style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">As telas liberadas vêm do cargo (abaixo em Usuários → Cargos).</small>
+            <small style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">As telas liberadas vêm da categoria (Usuários → Categorias).</small>
           </div>
         </div>
         <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.6rem;" id="usuario-senha-hint">
@@ -1726,24 +1766,24 @@
   <div class="modal-overlay" id="modal-cargo">
     <div class="modal" style="max-width:560px;">
       <div class="modal-header">
-        <h3 id="modal-cargo-titulo">Novo cargo</h3>
+        <h3 id="modal-cargo-titulo">Nova categoria</h3>
         <button class="modal-close" onclick="fecharModalCargo()">×</button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="cargo-id" />
         <div class="form-group" style="margin-bottom:0.9rem;">
-          <label>Nome do cargo *</label>
+          <label>Nome da categoria *</label>
           <input type="text" id="cargo-nome" placeholder="Ex: Caixa, Gerente, Conferente..." />
         </div>
-        <p style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Telas que este cargo pode acessar</p>
+        <p style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Telas que esta categoria pode acessar</p>
         <div id="cargo-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.8rem;max-height:280px;overflow-y:auto;padding:0.35rem 0;"></div>
         <p id="cargo-admin-aviso" class="hidden" style="font-size:0.8rem;color:var(--warning);margin-top:0.6rem;">
-          O cargo Administrador sempre tem acesso total e não pode ser reduzido.
+          A categoria Administrador sempre tem acesso às telas ativas da loja (e ao gerenciamento de usuários).
         </p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="fecharModalCargo()">Cancelar</button>
-        <button class="btn btn-primary" onclick="salvarCargo()">Salvar cargo</button>
+        <button class="btn btn-primary" onclick="salvarCargo()">Salvar categoria</button>
       </div>
     </div>
   </div>
@@ -1797,6 +1837,25 @@
         { id: 'vendedor', nome: 'Vendedor', sistema: true, permissoes: ['venda', 'fiado'] },
         { id: 'entregador', nome: 'Entregador', sistema: true, permissoes: ['entregas'] }
       ];
+    }
+
+    /** Módulos ativos nesta loja (se vazio = todos) */
+    function modulosAtivosLoja() {
+      const ids = PERMISSOES_APP.map(p => p.id);
+      let lista = estado && Array.isArray(estado.modulosAtivos) ? estado.modulosAtivos.filter(Boolean) : [];
+      if (!lista.length) lista = ids.slice();
+      // Sempre mantém usuários para o admin conseguir gerenciar
+      if (!lista.includes('usuarios')) lista.push('usuarios');
+      return lista;
+    }
+
+    function moduloAtivoNaLoja(pagina) {
+      return modulosAtivosLoja().includes(pagina);
+    }
+
+    function permissoesDisponiveisNaLoja() {
+      const ativos = new Set(modulosAtivosLoja());
+      return PERMISSOES_APP.filter(p => ativos.has(p.id));
     }
 
     let filtroVendasLog = 'todos';
@@ -1896,10 +1955,14 @@
     /** Verifica se o usuário logado pode abrir uma tela */
     function temPermissao(pagina) {
       if (!usuarioAtual) return false;
+      // Módulo desligado nesta loja → ninguém acessa (exceto usuarios para admin)
+      if (!moduloAtivoNaLoja(pagina)) {
+        if (pagina === 'usuarios' && usuarioAtual.papel === 'admin') return true;
+        return false;
+      }
       if (usuarioAtual.papel === 'admin') return true;
       const cargo = getCargo(usuarioAtual.papel);
       if (!cargo) {
-        // fallback legado
         if (usuarioAtual.papel === 'vendedor') return ['venda', 'fiado'].includes(pagina);
         if (usuarioAtual.papel === 'entregador') return pagina === 'entregas';
         return false;
@@ -1909,9 +1972,11 @@
 
     function permissoesDoUsuarioAtual() {
       if (!usuarioAtual) return [];
-      if (usuarioAtual.papel === 'admin') return PERMISSOES_APP.map(p => p.id);
+      const ativos = modulosAtivosLoja();
+      if (usuarioAtual.papel === 'admin') return ativos.slice();
       const cargo = getCargo(usuarioAtual.papel);
-      return cargo && Array.isArray(cargo.permissoes) ? cargo.permissoes.slice() : [];
+      const perms = cargo && Array.isArray(cargo.permissoes) ? cargo.permissoes : [];
+      return perms.filter(p => ativos.includes(p));
     }
 
     function primeiraPaginaPermitida() {
@@ -1941,7 +2006,7 @@
     /** Nome da empresa para UI e impressão */
     function nomeEmpresaExibicao() {
       if (empresaAtual && empresaAtual.nome) return String(empresaAtual.nome).trim();
-      return 'Site de Gestão ';
+      return 'Site de Gestão';
     }
 
     /** Aplica o nome da empresa em menu, título da aba e marca visual */
@@ -2012,8 +2077,8 @@
     const PLATAFORMA_LS_KEY = 'casaDosOvos_plataforma_v1';
 
     // Telefone exibido no fim da demonstração (troque pelo número real)
-    const TELEFONE_CONTATO_DEMO = '810000000';
-    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 0000-0000';
+    const TELEFONE_CONTATO_DEMO = '8199999999';
+    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 9999-9999';
 
     let db = null;
     let firebaseOk = false;
@@ -2120,7 +2185,7 @@
         custo: (p.custo != null && !isNaN(p.custo)) ? Number(p.custo) : 0,
         preco: Number(p.preco) || 0
       }));
-      // Garante cargos padrão (admin / vendedor / entregador) sem apagar cargos customizados
+      // Garante cargos/categorias padrão sem apagar customizados
       const padrao = cargosPadrao();
       if (!e.cargos.length) {
         e.cargos = padrao;
@@ -2135,6 +2200,13 @@
           }
           return { ...c, nome: c.nome || c.id, sistema: !!c.sistema, permissoes: perms };
         });
+      }
+      // Módulos da loja: se não existir, todos ativos
+      if (!Array.isArray(e.modulosAtivos) || !e.modulosAtivos.length) {
+        e.modulosAtivos = PERMISSOES_APP.map(p => p.id);
+      } else {
+        e.modulosAtivos = e.modulosAtivos.filter(id => PERMISSOES_APP.some(p => p.id === id));
+        if (!e.modulosAtivos.includes('usuarios')) e.modulosAtivos.push('usuarios');
       }
       return e;
     }
@@ -3317,7 +3389,12 @@
       const box = document.getElementById('cargo-permissoes');
       if (!box) return;
       const sel = new Set(selecionadas || []);
-      box.innerHTML = PERMISSOES_APP.map(p => `
+      const lista = permissoesDisponiveisNaLoja();
+      if (!lista.length) {
+        box.innerHTML = '<p style="font-size:0.82rem;color:var(--text-muted);">Nenhum módulo ativo nesta loja.</p>';
+        return;
+      }
+      box.innerHTML = lista.map(p => `
         <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:${somenteLeitura ? 'default' : 'pointer'};">
           <input type="checkbox" class="cargo-perm-check" value="${p.id}" ${sel.has(p.id) ? 'checked' : ''} ${somenteLeitura ? 'disabled' : ''} />
           ${p.label}
@@ -3328,7 +3405,7 @@
     function abrirModalCargo(id = null) {
       if (!isAdmin() && !temPermissao('usuarios')) return;
       document.getElementById('cargo-id').value = id || '';
-      document.getElementById('modal-cargo-titulo').textContent = id ? 'Editar cargo' : 'Novo cargo';
+      document.getElementById('modal-cargo-titulo').textContent = id ? 'Editar categoria' : 'Nova categoria';
       const aviso = document.getElementById('cargo-admin-aviso');
       if (id) {
         const c = getCargo(id);
@@ -3336,7 +3413,7 @@
         document.getElementById('cargo-nome').value = c.nome || '';
         const isAdm = c.id === 'admin';
         document.getElementById('cargo-nome').disabled = isAdm;
-        montarCheckboxesPermissoes(isAdm ? PERMISSOES_APP.map(p => p.id) : (c.permissoes || []), isAdm);
+        montarCheckboxesPermissoes(isAdm ? modulosAtivosLoja() : (c.permissoes || []), isAdm);
         if (aviso) aviso.classList.toggle('hidden', !isAdm);
       } else {
         document.getElementById('cargo-nome').value = '';
@@ -3358,34 +3435,32 @@
       const checks = Array.from(document.querySelectorAll('.cargo-perm-check:checked')).map(el => el.value);
 
       if (id === 'admin') {
-        // admin sempre total
         const c = getCargo('admin');
         if (c) {
           c.permissoes = PERMISSOES_APP.map(p => p.id);
           c.nome = 'Administrador';
           c.sistema = true;
         }
-        registrarLog('Editar cargo', 'Administrador (acesso total)', 'usuario');
+        registrarLog('Editar categoria', 'Administrador', 'usuario');
         salvar();
         fecharModalCargo();
         renderCargos();
-        toast('Cargo administrador mantém acesso total', 'success');
+        toast('Categoria Administrador mantida', 'success');
         return;
       }
 
-      if (!nome) { toast('Informe o nome do cargo', 'error'); return; }
+      if (!nome) { toast('Informe o nome da categoria', 'error'); return; }
       if (checks.length === 0) { toast('Marque pelo menos uma tela', 'error'); return; }
 
       if (id) {
         const c = getCargo(id);
         if (!c) return;
-        // não permitir renomear id de sistema para algo que quebre usuários
         c.nome = nome;
         c.permissoes = checks;
       } else {
-        const novoId = normalizarCodigoEmpresa(nome) || ('cargo-' + uid());
+        const novoId = normalizarCodigoEmpresa(nome) || ('cat-' + uid());
         if ((estado.cargos || []).some(c => c.id === novoId)) {
-          toast('Já existe um cargo com esse nome/código. Escolha outro nome.', 'error');
+          toast('Já existe uma categoria com esse nome. Escolha outro.', 'error');
           return;
         }
         if (!Array.isArray(estado.cargos)) estado.cargos = cargosPadrao();
@@ -3396,11 +3471,11 @@
           permissoes: checks
         });
       }
-      registrarLog(id ? 'Editar cargo' : 'Criar cargo', nome + ' · ' + checks.length + ' telas', 'usuario');
+      registrarLog(id ? 'Editar categoria' : 'Criar categoria', nome + ' · ' + checks.length + ' telas', 'usuario');
       salvar();
       fecharModalCargo();
       renderCargos();
-      toast('Cargo salvo!', 'success');
+      toast('Categoria salva!', 'success');
     }
 
     function excluirCargo(id) {
@@ -3408,20 +3483,20 @@
       const c = getCargo(id);
       if (!c) return;
       if (c.id === 'admin' || c.sistema) {
-        toast('Cargos padrão do sistema não podem ser excluídos. Você pode editar as permissões (exceto Admin).', 'error');
+        toast('Categorias padrão (Administrador, Vendedor, Entregador) não podem ser excluídas. Você pode editar as permissões (exceto Admin).', 'error');
         return;
       }
       const emUso = (estado.usuarios || []).filter(u => u.papel === id);
       if (emUso.length) {
-        toast('Há ' + emUso.length + ' usuário(s) com este cargo. Altere o cargo deles antes de excluir.', 'error');
+        toast('Há ' + emUso.length + ' usuário(s) com esta categoria. Altere a categoria deles antes de excluir.', 'error');
         return;
       }
-      if (!confirm('Excluir o cargo "' + c.nome + '"?')) return;
+      if (!confirm('Excluir a categoria "' + c.nome + '"?')) return;
       estado.cargos = estado.cargos.filter(x => x.id !== id);
-      registrarLog('Excluir cargo', c.nome, 'usuario');
+      registrarLog('Excluir categoria', c.nome, 'usuario');
       salvar();
       renderCargos();
-      toast('Cargo excluído');
+      toast('Categoria excluída');
     }
 
     function renderCargos() {
@@ -3434,20 +3509,26 @@
         return String(a.nome).localeCompare(String(b.nome), 'pt-BR');
       });
       if (!lista.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="empty">Nenhum cargo cadastrado.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="empty">Nenhuma categoria cadastrada.</td></tr>';
         return;
       }
+      const ativos = new Set(modulosAtivosLoja());
       tbody.innerHTML = lista.map(c => {
-        const labels = (c.permissoes || []).map(pid => {
-          const p = PERMISSOES_APP.find(x => x.id === pid);
-          return p ? p.label : pid;
-        });
-        const telas = c.id === 'admin'
-          ? '<em>Acesso total</em>'
-          : (labels.length ? labels.join(', ') : '—');
+        let labels;
+        if (c.id === 'admin') {
+          labels = ['Todas as telas ativas da loja'];
+        } else {
+          labels = (c.permissoes || [])
+            .filter(pid => ativos.has(pid))
+            .map(pid => {
+              const p = PERMISSOES_APP.find(x => x.id === pid);
+              return p ? p.label : pid;
+            });
+        }
+        const telas = labels.length ? labels.join(', ') : '—';
         return `
           <tr>
-            <td><strong>${c.nome}</strong>${c.sistema ? ' <small style="color:var(--text-muted)">(padrão)</small>' : ''}</td>
+            <td><strong>${c.nome}</strong>${c.sistema ? ' <small style="color:var(--text-muted)">(padrão)</small>' : ' <small style="color:var(--primary);">(personalizada)</small>'}</td>
             <td style="font-size:0.82rem;max-width:340px;">${telas}</td>
             <td class="actions-cell">
               <button class="btn btn-sm btn-secondary" onclick="abrirModalCargo('${c.id}')">✏️</button>
@@ -3456,6 +3537,41 @@
           </tr>
         `;
       }).join('');
+      renderModulosLoja();
+    }
+
+    function renderModulosLoja() {
+      const box = document.getElementById('lista-modulos-loja');
+      if (!box) return;
+      const ativos = new Set(modulosAtivosLoja());
+      box.innerHTML = PERMISSOES_APP.map(p => {
+        const locked = p.id === 'usuarios';
+        return `<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:${locked ? 'default' : 'pointer'};">
+          <input type="checkbox" class="modulo-loja-check" value="${p.id}" ${ativos.has(p.id) ? 'checked' : ''} ${locked ? 'disabled' : ''} />
+          ${p.label}${locked ? ' <small style="color:var(--text-muted)">(sempre ativo)</small>' : ''}
+        </label>`;
+      }).join('');
+    }
+
+    function salvarModulosLoja() {
+      if (!isAdmin() && !temPermissao('usuarios')) return;
+      let checks = Array.from(document.querySelectorAll('.modulo-loja-check:checked')).map(el => el.value);
+      if (!checks.includes('usuarios')) checks.push('usuarios');
+      if (checks.length < 2) {
+        toast('Mantenha pelo menos um módulo além de Usuários', 'error');
+        return;
+      }
+      estado.modulosAtivos = checks;
+      registrarLog('Editar módulos da loja', checks.length + ' módulos ativos', 'usuario');
+      salvar();
+      renderModulosLoja();
+      renderCargos();
+      // Atualiza menu na hora
+      document.querySelectorAll('.nav-btn[data-page]').forEach(el => {
+        const page = el.dataset.page;
+        el.style.display = temPermissao(page) ? '' : 'none';
+      });
+      toast('Módulos da loja atualizados!', 'success');
     }
 
     // ===================== PRODUTOS =====================
@@ -4859,6 +4975,71 @@
           </tr>`;
         }).join('');
       }
+
+      // Top 5 — apenas administradores
+      const topWrap = document.getElementById('dash-top-vendas-wrap');
+      if (topWrap) {
+        if (!isAdmin()) {
+          topWrap.classList.add('hidden');
+        } else {
+          topWrap.classList.remove('hidden');
+          const vendas = (estado.vendas || []).slice();
+
+          // Top 5 maiores vendas individuais
+          const topVendas = vendas
+            .slice()
+            .sort((a, b) => Number(b.total || 0) - Number(a.total || 0))
+            .slice(0, 5);
+          const tbTop = document.getElementById('dash-top-vendas');
+          if (tbTop) {
+            if (!topVendas.length) {
+              tbTop.innerHTML = '<tr><td colspan="6" class="empty">Nenhuma venda registrada ainda.</td></tr>';
+            } else {
+              const medalhas = ['🥇', '🥈', '🥉', '4.', '5.'];
+              tbTop.innerHTML = topVendas.map((v, i) => `
+                <tr>
+                  <td><strong>${medalhas[i] || (i + 1) + '.'}</strong></td>
+                  <td>${formatarData(v.data)}${v.hora && v.hora !== '—' ? ' · ' + v.hora : ''}</td>
+                  <td>${v.clienteNome || '—'}</td>
+                  <td>${v.vendedor || '—'}</td>
+                  <td><span class="status ${v.forma === 'fiado' ? 'aberto' : 'pago'}">${v.forma === 'fiado' ? 'Fiado' : 'À vista'}</span></td>
+                  <td><strong>${formatarMoeda(v.total)}</strong></td>
+                </tr>
+              `).join('');
+            }
+          }
+
+          // Top 5 vendedores (todas as vendas)
+          const porVendedor = {};
+          vendas.forEach(v => {
+            const nome = (v.vendedor || 'Sem nome').trim() || 'Sem nome';
+            if (!porVendedor[nome]) porVendedor[nome] = { nome, qtd: 0, total: 0 };
+            porVendedor[nome].qtd += 1;
+            porVendedor[nome].total += Number(v.total || 0);
+          });
+          const topVend = Object.values(porVendedor)
+            .sort((a, b) => b.total - a.total || b.qtd - a.qtd)
+            .slice(0, 5);
+          const tbVend = document.getElementById('dash-top-vendedores');
+          if (tbVend) {
+            if (!topVend.length) {
+              tbVend.innerHTML = '<tr><td colspan="5" class="empty">Nenhuma venda registrada ainda.</td></tr>';
+            } else {
+              const medalhas = ['🥇', '🥈', '🥉', '4.', '5.'];
+              tbVend.innerHTML = topVend.map((r, i) => {
+                const ticket = r.qtd > 0 ? r.total / r.qtd : 0;
+                return `<tr>
+                  <td><strong>${medalhas[i] || (i + 1) + '.'}</strong></td>
+                  <td><strong>${r.nome}</strong></td>
+                  <td>${r.qtd}</td>
+                  <td><strong>${formatarMoeda(r.total)}</strong></td>
+                  <td>${formatarMoeda(ticket)}</td>
+                </tr>`;
+              }).join('');
+            }
+          }
+        }
+      }
     }
 
     function atualizarBadges() {
@@ -4892,10 +5073,12 @@
       const d = estado.dividas.find(x => x.id === id);
       if (!d) return;
       const cli = getCliente(d.clienteId);
+      let vendaOrig = null;
+      if (d.vendaId) vendaOrig = (estado.vendas || []).find(x => x.id === d.vendaId);
       gerarImpressao({
         clienteNome: cli ? cli.nome : 'Cliente removido',
         clienteTelefone: cli ? cli.telefone : '',
-        clienteEndereco: cli ? cli.endereco : '',
+        clienteEndereco: cli ? formatarEnderecoCliente(cli) : '',
         itens: d.itens || [{ nome: 'Produto', qtd: 1, precoUnit: d.valor, total: d.valor }],
         total: d.totalVenda || d.valor,
         pago: d.valorPago || 0,
@@ -4903,14 +5086,16 @@
         forma: 'fiado',
         prazo: d.prazo,
         data: d.dataCompra,
-        hora: '—',
-        vendedor: '—'
+        hora: (vendaOrig && vendaOrig.hora) || '—',
+        vendedor: (vendaOrig && vendaOrig.vendedor) || (usuarioAtual ? usuarioAtual.nome : '—'),
+        entregador: (vendaOrig && vendaOrig.entregador) || (usuarioAtual ? usuarioAtual.nome : '—')
       });
     }
 
     function gerarImpressao(v) {
       const area = document.getElementById('print-area');
       const formaLabel = v.forma === 'fiado' ? 'FIADO' : 'À VISTA';
+      const nomeEntregador = v.entregador || v.vendedor || (usuarioAtual ? usuarioAtual.nome : '________________');
       const itensHtml = (v.itens || []).map(i => `
         <tr>
           <td style="padding:4px 3px;">${i.nome}</td>
@@ -4920,11 +5105,26 @@
         </tr>
       `).join('');
 
+      const blocoAssinaturaFiado = v.forma === 'fiado' ? `
+          <div style="margin-top:28px;">
+            <div style="border-top:1px solid #000;width:75%;margin:0 auto;text-align:center;padding-top:6px;font-size:12px;">
+              <strong>RECEBI OS PRODUTOS</strong><br>
+              Assinatura do cliente
+            </div>
+          </div>
+          <div style="margin-top:28px;">
+            <div style="border-top:1px solid #000;width:75%;margin:0 auto;text-align:center;padding-top:6px;font-size:12px;">
+              <strong>ENTREGADOR</strong><br>
+              ${nomeEntregador}
+            </div>
+          </div>
+      ` : '';
+
       area.innerHTML = `
         <div style="max-width:420px;margin:0 auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.4;">
           <div style="text-align:center;margin-bottom:12px;">
             <strong style="font-size:16px;">${nomeEmpresaExibicao()}</strong><br>
-            <span style="font-size:12px;">COMPROVANTE DE VENDA</span>
+            <span style="font-size:12px;">${v.forma === 'fiado' ? 'NOTA DE FIADO / COMPROVANTE' : 'COMPROVANTE DE VENDA'}</span>
           </div>
           <div style="margin-bottom:10px;">
             Data: ${formatarData(v.data)} &nbsp;&nbsp; Horário: ${v.hora || '—'}
@@ -4949,7 +5149,6 @@
               </thead>
               <tbody>${itensHtml}</tbody>
             </table>
-
           </div>
           <div style="margin-bottom:10px;">
             <strong>TOTAL DA VENDA:</strong> ${formatarMoeda(v.total)}<br>
@@ -4958,7 +5157,7 @@
             ${v.pago > 0 ? `<strong>VALOR JÁ PAGO:</strong> ${formatarMoeda(v.pago)}<br>` : ''}
             <strong>VALOR A PAGAR:</strong> ${formatarMoeda(v.valorDevido)}
           </div>
-
+          ${blocoAssinaturaFiado}
           <div style="text-align:center;margin-top:20px;font-size:11px;">
             Obrigado pela compra!
           </div>
