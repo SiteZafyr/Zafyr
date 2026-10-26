@@ -7,6 +7,7 @@
   <!-- Firebase (sincronização entre computadores) -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <style>
     :root {
       --primary: #1a5f2a;
@@ -932,7 +933,7 @@
           <input type="text" id="nova-empresa-nome" placeholder="Ex: Minha Empresa Centro" />
         </div>
         <div class="form-group">
-          <label>Código da empresa * <small>(único, sem espaços)</small></label>
+          <label>Código da empresa * <small>(único, sem espaços será o indentificador da loja só entra com ele)</small></label>
           <input type="text" id="nova-empresa-codigo" placeholder="Ex: ovos-centro" />
         </div>
         <div class="form-group">
@@ -1062,10 +1063,12 @@
       <button class="nav-btn admin-menu" data-page="vendas">📋 Histórico de Vendas</button>
       <button class="nav-btn admin-menu" data-page="notificacoes">🔔 Notificações <span class="badge hidden" id="badge-notif">0</span></button>
       <button class="nav-btn venda-menu" data-page="venda">🛒 Nova Venda</button>
+      <button class="nav-btn caixa-menu" data-page="caixa">🧾 Caixa <span class="badge hidden" id="badge-caixa">0</span></button>
       <button class="nav-btn entrega-menu" data-page="entregas">🚚 Entregas <span class="badge hidden" id="badge-entregas">0</span></button>
       <button class="nav-btn admin-menu admin-only" data-page="mensal">📈 Resumo Mensal</button>
       <button class="nav-btn admin-menu admin-only" data-page="logs">📜 Logs</button>
       <button class="nav-btn admin-menu admin-only" data-page="usuarios">👤 Usuários</button>
+      <button class="nav-btn admin-menu admin-only" data-page="personalizacao">🎨 Personalização</button>
     </nav>
     <div class="sidebar-footer">
       <button class="btn-logout" onclick="fazerLogout()">🚪 Sair</button>
@@ -1460,9 +1463,60 @@
           <div class="cart-total" id="carrinho-total">Total: R$ 0,00</div>
 
           <div style="margin-top:1.1rem;display:flex;flex-wrap:wrap;gap:0.5rem;">
-            <button class="btn btn-success" onclick="finalizarVenda()">🛒 Finalizar Venda</button>
-            <button class="btn btn-secondary" onclick="imprimirViaAtual()" id="btn-imprimir-via" disabled>🖨️ Imprimir Via</button>
+            <button class="btn btn-success" onclick="enviarVendaAoCaixa()">🧾 Enviar ao Caixa</button>
+            <button class="btn btn-primary admin-only-btn" id="btn-finalizar-direto" onclick="finalizarVenda(true)" style="display:none;">⚡ Finalizar direto (admin)</button>
+            <button class="btn btn-secondary" onclick="imprimirViaAtual()" id="btn-imprimir-via" disabled>🖨️ Reimprimir</button>
             <button class="btn btn-secondary" onclick="limparCarrinho()">Limpar</button>
+          </div>
+          <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.4;">
+            O vendedor envia a venda ao <strong>Caixa</strong> com comprovante e código de barras.
+            A venda só entra no sistema quando o caixa <strong>aprova o pagamento</strong>.
+          </p>
+        </div>
+      </section>
+
+
+      <!-- CAIXA -->
+      <section id="page-caixa" class="page hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>🧾 Caixa — Aprovar vendas</h3>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-warning" onclick="filtrarCaixa('pendente')">Pendentes</button>
+              <button class="btn btn-sm btn-success" onclick="filtrarCaixa('aprovada')">Aprovadas hoje</button>
+              <button class="btn btn-sm btn-secondary" onclick="filtrarCaixa('todos')">Todas pendentes+</button>
+            </div>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.9rem;">
+            Digite ou leia o <strong>código de barras</strong> do comprovante do vendedor e aprove o pagamento para contabilizar a venda.
+          </p>
+          <div class="form-grid" style="margin-bottom:1rem;">
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Código do comprovante (código de barras)</label>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                <input type="text" id="caixa-codigo" placeholder="Ex: VND-A1B2C3" style="flex:1;min-width:180px;font-size:1.05rem;letter-spacing:0.04em;text-transform:uppercase;" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarCodigoCaixa();}" />
+                <button class="btn btn-primary" onclick="buscarCodigoCaixa()">🔎 Buscar</button>
+              </div>
+            </div>
+          </div>
+          <div id="caixa-detalhe" class="hidden" style="background:#f8faf9;border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;"></div>
+          <div class="alerts" id="caixa-alertas"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Vendedor</th>
+                  <th>Total</th>
+                  <th>Pagamento</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="lista-caixa"></tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -1619,19 +1673,10 @@
             </table>
           </div>
         </div>
+      </section>
 
-        <div class="panel">
-          <div class="panel-header">
-            <h3>Módulos desta loja</h3>
-            <button class="btn btn-primary" onclick="salvarModulosLoja()">Salvar módulos</button>
-          </div>
-          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
-            Desmarque o que <strong>não deve existir nesta loja</strong>. Vale para todos os usuários desta empresa
-            (ex.: desmarcar Notificações remove essa tela do sistema da sua loja).
-          </p>
-          <div id="lista-modulos-loja" style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem 0.85rem;"></div>
-        </div>
-
+      <!-- PERSONALIZAÇÃO (somente administrador) -->
+      <section id="page-personalizacao" class="page hidden">
         <div class="panel">
           <div class="panel-header">
             <h3>Ordem do menu lateral</h3>
@@ -1641,12 +1686,23 @@
             </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
-            Use as setas para subir ou descer cada tela no menu. Exemplo: deixe <strong>Nova Venda</strong> em 2º lugar.
-            A ordem vale para todos os usuários desta empresa (cada um só vê as telas que tem permissão).
+            Use as setas ↑ ↓ para mudar a posição de cada tela (ex.: <strong>Nova Venda</strong> em 2º).
           </p>
           <div id="lista-ordem-menu" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
         </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Módulos desta loja</h3>
+            <button class="btn btn-primary" onclick="salvarModulosLoja()">Salvar módulos</button>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
+            Desmarque o que não deve existir nesta loja. Personalização fica sempre só para admin.
+          </p>
+          <div id="lista-modulos-loja" style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem 0.85rem;"></div>
+        </div>
       </section>
+
 
     </div>
   </div>
@@ -1904,6 +1960,7 @@
       movimentacoes: [],
       usuarios: [],
       vendas: [],
+      vendasPendentes: [],
       logs: [],
       historicoMensal: [],
       cargos: [],
@@ -1921,10 +1978,12 @@
       { id: 'vendas', label: '📋 Histórico de vendas' },
       { id: 'notificacoes', label: '🔔 Notificações' },
       { id: 'venda', label: '🛒 Nova venda' },
+      { id: 'caixa', label: '🧾 Caixa (aprovar vendas)' },
       { id: 'entregas', label: '🚚 Entregas' },
       { id: 'mensal', label: '📈 Resumo mensal' },
       { id: 'logs', label: '📜 Logs' },
-      { id: 'usuarios', label: '👤 Usuários e cargos' }
+      { id: 'usuarios', label: '👤 Usuários e cargos' },
+      { id: 'personalizacao', label: '🎨 Personalização' }
     ];
 
     /** Ordem padrão do menu: Nova Venda em 2º lugar */
@@ -1932,6 +1991,7 @@
       return [
         'dashboard',
         'venda',
+        'caixa',
         'produtos',
         'estoque',
         'clientes',
@@ -1941,31 +2001,61 @@
         'entregas',
         'mensal',
         'logs',
-        'usuarios'
-      ];
+        'usuarios',
+        'personalizacao'];
+    }
+
+    function deduplicarOrdemMenu(lista) {
+      const idsValidos = new Set(PERMISSOES_APP.map(p => p.id));
+      const visto = new Set();
+      const limpa = [];
+      (lista || []).forEach(id => {
+        id = String(id || '');
+        if (!idsValidos.has(id) || visto.has(id)) return;
+        visto.add(id);
+        limpa.push(id);
+      });
+      PERMISSOES_APP.forEach(p => {
+        if (!visto.has(p.id)) {
+          visto.add(p.id);
+          limpa.push(p.id);
+        }
+      });
+      return limpa;
     }
 
     function ordemMenuAtual() {
-      const idsValidos = new Set(PERMISSOES_APP.map(p => p.id));
-      let ordem = (estado && Array.isArray(estado.ordemMenu)) ? estado.ordemMenu.filter(id => idsValidos.has(id)) : [];
-      if (!ordem.length) ordem = ordemMenuPadrao().slice();
-      // Garante que todos os módulos existam na lista (novos módulos no fim)
-      PERMISSOES_APP.forEach(p => {
-        if (!ordem.includes(p.id)) ordem.push(p.id);
-      });
-      return ordem;
+      let base = [];
+      if (estado && Array.isArray(estado.ordemMenu) && estado.ordemMenu.length) {
+        base = estado.ordemMenu;
+      } else {
+        base = ordemMenuPadrao();
+      }
+      const limpa = deduplicarOrdemMenu(base);
+      // Corrige estado se havia duplicatas
+      if (estado && (!Array.isArray(estado.ordemMenu) || estado.ordemMenu.join('|') !== limpa.join('|'))) {
+        estado.ordemMenu = limpa.slice();
+      }
+      return limpa.slice();
     }
 
     function aplicarOrdemMenu() {
-      const nav = document.querySelector('.sidebar .nav');
-      if (!nav) return;
+      const nav = document.querySelector('#sidebar .nav') || document.querySelector('.sidebar .nav') || document.querySelector('nav.nav');
+      if (!nav) {
+        console.warn('Menu lateral não encontrado para reordenar');
+        return;
+      }
       const ordem = ordemMenuAtual();
+      // Garante estado sincronizado
+      if (!estado.ordemMenu || estado.ordemMenu.join(',') !== ordem.join(',')) {
+        estado.ordemMenu = ordem.slice();
+      }
       ordem.forEach(id => {
         const btn = nav.querySelector('.nav-btn[data-page="' + id + '"]');
         if (btn) nav.appendChild(btn);
       });
       // Visibilidade conforme permissão
-      document.querySelectorAll('.nav-btn[data-page]').forEach(el => {
+      nav.querySelectorAll('.nav-btn[data-page]').forEach(el => {
         const page = el.dataset.page;
         el.style.display = temPermissao(page) ? '' : 'none';
       });
@@ -1996,16 +2086,23 @@
       const tmp = ordem[idx];
       ordem[idx] = ordem[novo];
       ordem[novo] = tmp;
-      estado.ordemMenu = ordem;
+      estado.ordemMenu = ordem.slice();
       renderOrdemMenu();
+      // Aplica no menu lateral na hora (ainda precisa salvar para persistir)
+      aplicarOrdemMenu();
     }
 
     function salvarOrdemMenu() {
-      if (!isAdmin() && !temPermissao('usuarios')) return;
-      estado.ordemMenu = ordemMenuAtual();
+      if (!isAdmin() && !temPermissao('personalizacao') && !temPermissao('usuarios')) {
+        toast('Sem permissão', 'error');
+        return;
+      }
+      estado.ordemMenu = ordemMenuAtual().slice();
       registrarLog('Editar ordem do menu', estado.ordemMenu.join(' → '), 'usuario');
-      salvar();
+      // Grava imediatamente (local + nuvem)
+      salvar(true);
       aplicarOrdemMenu();
+      renderOrdemMenu();
       toast('Ordem do menu salva!', 'success');
     }
 
@@ -2014,15 +2111,106 @@
       estado.ordemMenu = ordemMenuPadrao().slice();
       renderOrdemMenu();
       aplicarOrdemMenu();
-      salvar();
+      salvar(true);
       toast('Ordem padrão aplicada', 'success');
     }
+
+    function personalizacaoPadrao() {
+      return { nomeExibicao: '', primary: '#1a5f2a', primaryDark: '#13401c', accent: '#f5c518' };
+    }
+
+    function obterPersonalizacao() {
+      const pad = personalizacaoPadrao();
+      const p = (estado && estado.personalizacao && typeof estado.personalizacao === 'object') ? estado.personalizacao : {};
+      return {
+        nomeExibicao: p.nomeExibicao != null ? String(p.nomeExibicao) : '',
+        primary: p.primary || pad.primary,
+        primaryDark: p.primaryDark || pad.primaryDark,
+        accent: p.accent || pad.accent
+      };
+    }
+
+    function aplicarTemaPersonalizacao() {
+      const p = obterPersonalizacao();
+      const root = document.documentElement;
+      root.style.setProperty('--primary', p.primary);
+      root.style.setProperty('--primary-dark', p.primaryDark);
+      root.style.setProperty('--primary-light', p.primary);
+      root.style.setProperty('--accent', p.accent);
+      if (typeof aplicarMarcaEmpresa === 'function') aplicarMarcaEmpresa();
+    }
+
+    function renderPersonalizacao() {
+      if (!isAdmin()) return;
+      // Limpa duplicatas antigas da ordem do menu
+      const antes = Array.isArray(estado.ordemMenu) ? estado.ordemMenu.length : 0;
+      estado.ordemMenu = ordemMenuAtual();
+      if (antes > estado.ordemMenu.length) {
+        salvar(true);
+      }
+      renderOrdemMenu();
+      renderModulosLoja();
+      aplicarOrdemMenu();
+      if (typeof aplicarTemaPersonalizacao === 'function') aplicarTemaPersonalizacao();
+    }
+
+    function syncCorTxt(tipo) {
+      const map = { 'primary': ['pers-cor-primary-txt','pers-cor-primary'], 'primary-dark': ['pers-cor-primary-dark-txt','pers-cor-primary-dark'], 'accent': ['pers-cor-accent-txt','pers-cor-accent'] };
+      const ids = map[tipo];
+      if (!ids) return;
+      const v = document.getElementById(ids[0]).value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) document.getElementById(ids[1]).value = v;
+      previewPersonalizacao();
+    }
+
+    function previewPersonalizacao() {
+      const primary = document.getElementById('pers-cor-primary').value;
+      const dark = document.getElementById('pers-cor-primary-dark').value;
+      const accent = document.getElementById('pers-cor-accent').value;
+      document.getElementById('pers-cor-primary-txt').value = primary;
+      document.getElementById('pers-cor-primary-dark-txt').value = dark;
+      document.getElementById('pers-cor-accent-txt').value = accent;
+      const root = document.documentElement;
+      root.style.setProperty('--primary', primary);
+      root.style.setProperty('--primary-dark', dark);
+      root.style.setProperty('--primary-light', primary);
+      root.style.setProperty('--accent', accent);
+      const bar = document.getElementById('pers-preview-bar');
+      if (bar) bar.style.background = 'linear-gradient(90deg,' + primary + ',' + dark + ')';
+    }
+
+    function salvarPersonalizacao() {
+      if (!isAdmin()) { toast('Apenas administradores', 'error'); return; }
+      estado.personalizacao = {
+        nomeExibicao: (document.getElementById('pers-nome-empresa').value || '').trim(),
+        primary: document.getElementById('pers-cor-primary').value,
+        primaryDark: document.getElementById('pers-cor-primary-dark').value,
+        accent: document.getElementById('pers-cor-accent').value
+      };
+      registrarLog('Editar personalização', 'Cores e nome do sistema', 'usuario');
+      salvar();
+      aplicarTemaPersonalizacao();
+      toast('Aparência salva!', 'success');
+    }
+
+    function restaurarPersonalizacaoPadrao() {
+      if (!isAdmin()) return;
+      if (!confirm('Restaurar cores padrão do sistema?')) return;
+      const pad = personalizacaoPadrao();
+      pad.nomeExibicao = (estado.personalizacao && estado.personalizacao.nomeExibicao) || '';
+      estado.personalizacao = pad;
+      renderPersonalizacao();
+      salvar();
+      toast('Cores padrão restauradas', 'success');
+    }
+
 
     function cargosPadrao() {
       const todas = PERMISSOES_APP.map(p => p.id);
       return [
         { id: 'admin', nome: 'Administrador', sistema: true, permissoes: todas.slice() },
         { id: 'vendedor', nome: 'Vendedor', sistema: true, permissoes: ['venda', 'fiado'] },
+        { id: 'caixa', nome: 'Caixa', sistema: true, permissoes: ['caixa', 'venda', 'fiado'] },
         { id: 'entregador', nome: 'Entregador', sistema: true, permissoes: ['entregas'] }
       ];
     }
@@ -2125,6 +2313,7 @@
     function isAdmin() { return usuarioAtual && usuarioAtual.papel === 'admin'; }
     function isVendedor() { return usuarioAtual && usuarioAtual.papel === 'vendedor'; }
     function isEntregador() { return usuarioAtual && usuarioAtual.papel === 'entregador'; }
+    function isCaixa() { return usuarioAtual && usuarioAtual.papel === 'caixa'; }
 
     function getCargo(id) {
       if (!id) return null;
@@ -2137,12 +2326,14 @@
       if (papel === 'admin') return 'Administrador';
       if (papel === 'entregador') return 'Entregador';
       if (papel === 'vendedor') return 'Vendedor';
+      if (papel === 'caixa') return 'Caixa';
       return papel || '—';
     }
 
     /** Verifica se o usuário logado pode abrir uma tela */
     function temPermissao(pagina) {
       if (!usuarioAtual) return false;
+      if (pagina === 'personalizacao') return usuarioAtual.papel === 'admin';
       // Módulo desligado nesta loja → ninguém acessa (exceto usuarios para admin)
       if (!moduloAtivoNaLoja(pagina)) {
         if (pagina === 'usuarios' && usuarioAtual.papel === 'admin') return true;
@@ -2152,6 +2343,7 @@
       const cargo = getCargo(usuarioAtual.papel);
       if (!cargo) {
         if (usuarioAtual.papel === 'vendedor') return ['venda', 'fiado'].includes(pagina);
+        if (usuarioAtual.papel === 'caixa') return ['caixa', 'venda', 'fiado'].includes(pagina);
         if (usuarioAtual.papel === 'entregador') return pagina === 'entregas';
         return false;
       }
@@ -2193,6 +2385,10 @@
 
     /** Nome da empresa para UI e impressão */
     function nomeEmpresaExibicao() {
+      try {
+        const pers = obterPersonalizacao();
+        if (pers.nomeExibicao && String(pers.nomeExibicao).trim()) return String(pers.nomeExibicao).trim();
+      } catch (e) {}
       if (empresaAtual && empresaAtual.nome) return String(empresaAtual.nome).trim();
       return 'Site de Gestão';
     }
@@ -2364,7 +2560,7 @@
         ultimoZeroMensal: 0, ultimaVenda: null
       };
       const e = { ...base, ...(data || {}) };
-      ['produtos','clientes','dividas','movimentacoes','usuarios','vendas','logs','historicoMensal','cargos'].forEach(k => {
+      ['produtos','clientes','dividas','movimentacoes','usuarios','vendas','vendasPendentes','logs','historicoMensal','cargos'].forEach(k => {
         if (!Array.isArray(e[k])) e[k] = e[k] ? Object.values(e[k]) : [];
       });
       if (typeof e.ultimoZeroMensal !== 'number') e.ultimoZeroMensal = Number(e.ultimoZeroMensal) || 0;
@@ -2396,16 +2592,26 @@
         e.modulosAtivos = e.modulosAtivos.filter(id => PERMISSOES_APP.some(p => p.id === id));
         if (!e.modulosAtivos.includes('usuarios')) e.modulosAtivos.push('usuarios');
       }
-      // Ordem do menu lateral
-      const idsOk = new Set(PERMISSOES_APP.map(p => p.id));
+      // Ordem do menu lateral (sem duplicatas)
       if (!Array.isArray(e.ordemMenu) || !e.ordemMenu.length) {
         e.ordemMenu = ordemMenuPadrao().slice();
       } else {
-        e.ordemMenu = e.ordemMenu.filter(id => idsOk.has(id));
-        PERMISSOES_APP.forEach(p => {
-          if (!e.ordemMenu.includes(p.id)) e.ordemMenu.push(p.id);
-        });
+        e.ordemMenu = deduplicarOrdemMenu(e.ordemMenu);
       }
+      if (!e.personalizacao || typeof e.personalizacao !== 'object') {
+        e.personalizacao = personalizacaoPadrao();
+      } else {
+        const pad = personalizacaoPadrao();
+        e.personalizacao = {
+          nomeExibicao: e.personalizacao.nomeExibicao != null ? String(e.personalizacao.nomeExibicao) : '',
+          primary: e.personalizacao.primary || pad.primary,
+          primaryDark: e.personalizacao.primaryDark || pad.primaryDark,
+          accent: e.personalizacao.accent || pad.accent
+        };
+      }
+      if (!Array.isArray(e.modulosAtivos)) e.modulosAtivos = PERMISSOES_APP.map(p => p.id);
+      if (!e.modulosAtivos.includes('personalizacao')) e.modulosAtivos.push('personalizacao');
+      if (!e.modulosAtivos.includes('usuarios')) e.modulosAtivos.push('usuarios');
       return e;
     }
 
@@ -2417,6 +2623,7 @@
     function atualizarUIAposSync() {
       if (!usuarioAtual) return;
       try {
+        aplicarOrdemMenu();
         if (isAdmin()) {
           const page = document.querySelector('.nav-btn.active');
           const p = page ? page.dataset.page : 'dashboard';
@@ -3350,7 +3557,7 @@
       document.getElementById('user-nome').textContent = usuarioAtual.nome;
       document.getElementById('user-papel').textContent = papelLabel(usuarioAtual.papel);
 
-      aplicarMarcaEmpresa();
+      aplicarTemaPersonalizacao();
 
       // Ordem do menu + permissões do cargo
       aplicarOrdemMenu();
@@ -3367,8 +3574,8 @@
       const titles = {
         dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Movimentação de Estoque',
         clientes: 'Clientes', fiado: 'Fiado / Contas a Receber', vendas: 'Histórico de Vendas',
-        notificacoes: 'Notificações', venda: 'Nova Venda', entregas: 'Entregas',
-        mensal: 'Resumo Mensal', logs: 'Logs de Atividades', usuarios: 'Usuários e cargos'
+        notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa', entregas: 'Entregas',
+        mensal: 'Resumo Mensal', logs: 'Logs de Atividades', usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
       };
       document.getElementById('page-title').textContent = titles[paginaIni] || paginaIni;
 
@@ -3382,14 +3589,17 @@
       else if (paginaIni === 'entregas') renderEntregas();
       else if (paginaIni === 'mensal') renderResumoMensal();
       else if (paginaIni === 'logs') renderLogs();
-      else if (paginaIni === 'usuarios') { renderUsuarios(); renderCargos(); renderOrdemMenu(); }
+      else if (paginaIni === 'usuarios') { renderUsuarios(); renderCargos(); }
+      else if (paginaIni === 'personalizacao') { renderPersonalizacao(); }
       else if (paginaIni === 'venda') {
         preencherSelectClientes();
         preencherSelectProdutos('cart-produto');
         atualizarPrecoCart();
         renderCarrinho();
         resetClienteVenda();
-      }
+        const btnDir = document.getElementById('btn-finalizar-direto');
+        if (btnDir) btnDir.style.display = isAdmin() ? '' : 'none';
+      } else if (paginaIni === 'caixa') { renderCaixa(); }
       atualizarBadges();
     }
 
@@ -3431,7 +3641,7 @@
           entregas: 'Entregas',
           mensal: 'Resumo Mensal',
           logs: 'Logs de Atividades',
-          usuarios: 'Usuários e cargos'
+          usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
         };
         document.getElementById('page-title').textContent = titles[page] || page;
 
@@ -3454,8 +3664,12 @@
           atualizarPrecoCart();
           renderCarrinho();
           resetClienteVenda();
+          const btnDir = document.getElementById('btn-finalizar-direto');
+          if (btnDir) btnDir.style.display = isAdmin() ? '' : 'none';
         }
-        if (page === 'usuarios') { renderUsuarios(); renderCargos(); renderOrdemMenu(); }
+        if (page === 'caixa') { renderCaixa(); document.getElementById('caixa-codigo') && document.getElementById('caixa-codigo').focus(); }
+        if (page === 'usuarios') { renderUsuarios(); renderCargos(); }
+        if (page === 'personalizacao') { renderPersonalizacao(); }
       });
     });
 
@@ -3740,11 +3954,16 @@
       const box = document.getElementById('lista-modulos-loja');
       if (!box) return;
       const ativos = new Set(modulosAtivosLoja());
-      box.innerHTML = PERMISSOES_APP.map(p => {
-        const locked = p.id === 'usuarios';
+      const modsVistos = new Set();
+      box.innerHTML = PERMISSOES_APP.filter(p => {
+        if (modsVistos.has(p.id)) return false;
+        modsVistos.add(p.id);
+        return true;
+      }).map(p => {
+        const locked = p.id === 'usuarios' || p.id === 'personalizacao';
         return `<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:${locked ? 'default' : 'pointer'};">
           <input type="checkbox" class="modulo-loja-check" value="${p.id}" ${ativos.has(p.id) ? 'checked' : ''} ${locked ? 'disabled' : ''} />
-          ${p.label}${locked ? ' <small style="color:var(--text-muted)">(sempre ativo)</small>' : ''}
+          ${p.label}${locked ? ' <small style="color:var(--text-muted)">(sempre ativo / admin)</small>' : ''}
         </label>`;
       }).join('');
     }
@@ -3753,6 +3972,7 @@
       if (!isAdmin() && !temPermissao('usuarios')) return;
       let checks = Array.from(document.querySelectorAll('.modulo-loja-check:checked')).map(el => el.value);
       if (!checks.includes('usuarios')) checks.push('usuarios');
+      if (!checks.includes('personalizacao')) checks.push('personalizacao');
       if (checks.length < 2) {
         toast('Mantenha pelo menos um módulo além de Usuários', 'error');
         return;
@@ -4356,7 +4576,13 @@
       ).join('') + `<div style="margin-top:0.4rem;text-align:right;font-weight:700;color:var(--primary-dark);">Total a receber: ${formatarMoeda(valorDevido)}</div>`;
     }
 
-    function finalizarVenda() {
+    function gerarCodigoVenda() {
+      const parte = () => Math.random().toString(36).slice(2, 5).toUpperCase();
+      return 'VND-' + parte() + parte();
+    }
+
+    /** Monta objeto da venda a partir do formulário (sem gravar estoque) */
+    function montarDadosVendaDoFormulario() {
       const clienteIdRaw = document.getElementById('venda-cliente').value;
       const forma = document.getElementById('venda-pagamento').value;
       const prazo = document.getElementById('venda-prazo').value;
@@ -4367,15 +4593,15 @@
       let clienteNome = '';
       let clienteTelefone = '';
       let clienteEndereco = '';
+      let clienteDocumento = '';
 
       if (isAvulso) {
         const av = dadosAvulsoComoCliente();
         clienteNome = av.nome;
         clienteTelefone = av.telefone;
         clienteEndereco = formatarEnderecoCliente(av);
-        if (!clienteNome) { toast('Informe o nome do cliente', 'error'); return; }
-
-        // Opcionalmente cadastra o cliente com todos os dados
+        clienteDocumento = av.documento || '';
+        if (!clienteNome) { toast('Informe o nome do cliente', 'error'); return null; }
         if (document.getElementById('avulso-cadastrar').checked) {
           const novo = {
             id: uid(),
@@ -4395,33 +4621,29 @@
           clienteId = null;
         }
       } else {
-        if (!clienteId) { toast('Selecione um cliente ou use "Cliente não cadastrado"', 'error'); return; }
+        if (!clienteId) { toast('Selecione um cliente ou use "Cliente não cadastrado"', 'error'); return null; }
         const cliente = getCliente(clienteId);
-        if (!cliente) { toast('Cliente não encontrado', 'error'); return; }
+        if (!cliente) { toast('Cliente não encontrado', 'error'); return null; }
         clienteNome = cliente.nome;
         clienteTelefone = cliente.telefone || '';
         clienteEndereco = formatarEnderecoCliente(cliente);
+        clienteDocumento = cliente.documento || '';
       }
 
-      if (carrinho.length === 0) { toast('Adicione pelo menos um item', 'error'); return; }
-      if (forma === 'fiado' && !prazo) { toast('Informe o 1º vencimento das parcelas', 'error'); return; }
+      if (carrinho.length === 0) { toast('Adicione pelo menos um item', 'error'); return null; }
+      if (forma === 'fiado' && !prazo) { toast('Informe o 1º vencimento das parcelas', 'error'); return null; }
       const numParcelasCheck = parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 0;
       if (forma === 'fiado' && (numParcelasCheck < 1 || numParcelasCheck > 12)) {
         toast('Informe em quantas vezes vai parcelar (1 a 12)', 'error');
-        return;
+        return null;
       }
-
-      // Fiado exige cliente cadastrado (para controle de dívida)
       if (forma === 'fiado' && !clienteId) {
         toast('Para venda fiado, cadastre o cliente (marque a opção) ou selecione um já cadastrado', 'error');
-        return;
+        return null;
       }
 
       const precisaEntrega = document.getElementById('venda-entrega').value === 'sim';
-      let entregaEndereco = '';
-      let entregaLocalizacao = '';
-      let entregaTelefone = '';
-      let entregaObs = '';
+      let entregaEndereco = '', entregaLocalizacao = '', entregaTelefone = '', entregaObs = '';
       if (precisaEntrega) {
         entregaEndereco = document.getElementById('entrega-endereco').value.trim();
         entregaLocalizacao = document.getElementById('entrega-localizacao').value.trim();
@@ -4429,7 +4651,7 @@
         entregaObs = document.getElementById('entrega-obs').value.trim();
         if (!entregaEndereco) {
           toast('Informe o endereço de entrega', 'error');
-          return;
+          return null;
         }
       }
 
@@ -4437,7 +4659,7 @@
         const p = getProduto(item.produtoId);
         if (!p || p.estoque < item.qtd) {
           toast(`Estoque insuficiente de "${item.nome}"`, 'error');
-          return;
+          return null;
         }
       }
 
@@ -4448,33 +4670,28 @@
         return s + cu * i.qtd;
       }, 0);
       const lucro = total - custoTotal;
+      const numParcelas = forma === 'fiado' ? (parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 1) : 1;
+      const intervaloParcela = forma === 'fiado' ? (parseInt((document.getElementById('venda-intervalo-parcela') || {}).value, 10) || 30) : null;
 
-      carrinho.forEach(item => {
-        const p = getProduto(item.produtoId);
-        p.estoque -= item.qtd;
-        estado.movimentacoes.unshift({
-          id: uid(), data: hoje(), produtoId: item.produtoId,
-          produtoNome: item.nome, tipo: 'saida', qtd: item.qtd,
-          obs: 'Venda', por: usuarioAtual ? usuarioAtual.nome : '—'
-        });
-      });
-
-      const venda = {
-        id: uid(),
+      return {
         clienteId,
         clienteNome,
         clienteTelefone,
         clienteEndereco,
+        clienteDocumento,
         itens: carrinho.map(i => ({
           ...i,
           custoUnit: (i.custoUnit != null) ? Number(i.custoUnit) : (Number(getProduto(i.produtoId)?.custo) || 0)
         })),
         total, custoTotal, lucro, pago, valorDevido, forma,
         prazo: forma === 'fiado' ? prazo : null,
+        parcelas: numParcelas,
+        intervaloParcela,
         data: hoje(),
         hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now(),
         vendedor: usuarioAtual ? usuarioAtual.nome : '—',
+        vendedorId: usuarioAtual ? usuarioAtual.id : null,
         precisaEntrega,
         entregaEndereco: precisaEntrega ? entregaEndereco : null,
         entregaLocalizacao: precisaEntrega ? entregaLocalizacao : null,
@@ -4484,25 +4701,61 @@
         entregueEm: null,
         entreguePor: null
       };
+    }
 
-      if (forma === 'fiado' && valorDevido > 0 && clienteId) {
-        const numParcelas = parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 1;
-        const intervalo = parseInt((document.getElementById('venda-intervalo-parcela') || {}).value, 10) || 30;
-        const parcelas = montarParcelasFiado(valorDevido, numParcelas, prazo, intervalo);
-        venda.parcelas = numParcelas;
-        venda.intervaloParcela = intervalo;
+    /** Grava venda definitiva no sistema (estoque, histórico, fiado) */
+    function contabilizarVendaAprovada(base, opts) {
+      opts = opts || {};
+      const codigo = opts.codigo || base.codigo || null;
+
+      for (const item of (base.itens || [])) {
+        const p = getProduto(item.produtoId);
+        if (!p || p.estoque < item.qtd) {
+          return { ok: false, erro: `Estoque insuficiente de "${item.nome || 'produto'}"` };
+        }
+      }
+
+      (base.itens || []).forEach(item => {
+        const p = getProduto(item.produtoId);
+        if (!p) return;
+        p.estoque -= item.qtd;
+        estado.movimentacoes.unshift({
+          id: uid(), data: hoje(), produtoId: item.produtoId,
+          produtoNome: item.nome, tipo: 'saida', qtd: item.qtd,
+          obs: 'Venda' + (codigo ? ' ' + codigo : ''),
+          por: opts.caixaNome || (usuarioAtual ? usuarioAtual.nome : '—')
+        });
+      });
+
+      const venda = {
+        ...base,
+        id: uid(),
+        codigo: codigo,
+        statusCaixa: 'aprovada',
+        aprovadoEm: hoje(),
+        aprovadoHora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        aprovadoPor: opts.caixaNome || (usuarioAtual ? usuarioAtual.nome : '—'),
+        timestamp: Date.now(),
+        data: base.data || hoje(),
+        hora: base.hora || new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      };
+
+      if (venda.forma === 'fiado' && venda.valorDevido > 0 && venda.clienteId) {
+        const numParcelas = venda.parcelas || 1;
+        const intervalo = venda.intervaloParcela || 30;
+        const parcelas = montarParcelasFiado(venda.valorDevido, numParcelas, venda.prazo, intervalo);
         parcelas.forEach(p => {
           estado.dividas.push({
             id: uid(),
-            clienteId,
+            clienteId: venda.clienteId,
             valor: p.valor,
-            dataCompra: hoje(),
+            dataCompra: venda.data,
             prazo: p.prazo,
             status: 'aberto',
             vendaId: venda.id,
             itens: venda.itens,
-            totalVenda: total,
-            valorPago: p.numero === 1 ? pago : 0,
+            totalVenda: venda.total,
+            valorPago: p.numero === 1 ? (venda.pago || 0) : 0,
             parcelaNumero: p.numero,
             parcelaTotal: p.total
           });
@@ -4510,49 +4763,349 @@
       }
 
       estado.ultimaVenda = venda;
-      // Log permanente de todas as vendas
       if (!Array.isArray(estado.vendas)) estado.vendas = [];
       estado.vendas.unshift({ ...venda });
-      // Limita a 1000 registros para não estourar o localStorage
       if (estado.vendas.length > 1000) estado.vendas = estado.vendas.slice(0, 1000);
 
-      vendaParaImprimir = venda;
+      const itensResumo = (venda.itens || []).map(i => i.nome + ' x' + i.qtd).join(', ');
+      registrarLog(
+        'Venda aprovada no caixa',
+        (codigo ? codigo + ' · ' : '') + (venda.clienteNome || '') + ' · ' + formatarMoeda(venda.total) +
+          ' · ' + (venda.forma === 'fiado' ? 'Fiado' : 'À vista') +
+          ' · Vend: ' + (venda.vendedor || '—') +
+          ' · Caixa: ' + (venda.aprovadoPor || '—') +
+          ' · ' + itensResumo,
+        'venda'
+      );
+
+      return { ok: true, venda };
+    }
+
+    /** Vendedor envia ao caixa — NÃO contabiliza ainda */
+    function enviarVendaAoCaixa() {
+      const dados = montarDadosVendaDoFormulario();
+      if (!dados) return;
+
+      if (!Array.isArray(estado.vendasPendentes)) estado.vendasPendentes = [];
+      let codigo = gerarCodigoVenda();
+      while (estado.vendasPendentes.some(v => v.codigo === codigo) || (estado.vendas || []).some(v => v.codigo === codigo)) {
+        codigo = gerarCodigoVenda();
+      }
+
+      const pendente = {
+        ...dados,
+        id: uid(),
+        codigo,
+        statusCaixa: 'pendente',
+        criadoEm: Date.now()
+      };
+
+      estado.vendasPendentes.unshift(pendente);
+      if (estado.vendasPendentes.length > 500) estado.vendasPendentes = estado.vendasPendentes.slice(0, 500);
+
+      registrarLog(
+        'Enviou venda ao caixa',
+        codigo + ' · ' + dados.clienteNome + ' · ' + formatarMoeda(dados.total) + ' · ' + (dados.forma === 'fiado' ? 'Fiado' : 'À vista'),
+        'venda'
+      );
       salvar();
+
+      vendaParaImprimir = pendente;
+      document.getElementById('btn-imprimir-via').disabled = false;
+      carrinho = [];
+      renderCarrinho();
+      document.getElementById('venda-pago').value = 0;
+      resetClienteVenda();
+      atualizarBadges();
+      preencherSelectProdutos('cart-produto');
+
+      toast('Comprovante ' + codigo + ' enviado ao caixa. Aguardando aprovação.', 'success');
+      imprimirComprovanteCaixa(pendente);
+    }
+
+    /** Admin finaliza direto (sem passar pelo caixa) */
+    function finalizarVenda(diretoAdmin) {
+      if (diretoAdmin && !isAdmin()) {
+        toast('Somente administrador finaliza direto', 'error');
+        return;
+      }
+      const dados = montarDadosVendaDoFormulario();
+      if (!dados) return;
+
+      const res = contabilizarVendaAprovada(dados, {
+        codigo: gerarCodigoVenda(),
+        caixaNome: usuarioAtual ? usuarioAtual.nome + ' (direto)' : 'Admin'
+      });
+      if (!res.ok) { toast(res.erro, 'error'); return; }
+
+      vendaParaImprimir = res.venda;
       document.getElementById('btn-imprimir-via').disabled = false;
       carrinho = [];
       renderCarrinho();
       document.getElementById('venda-pago').value = 0;
       resetClienteVenda();
       if (isAdmin()) {
-        renderDashboard();
-        renderFiado();
-        renderNotificacoes();
+        try { renderDashboard(); renderFiado(); renderNotificacoes(); } catch (e) {}
       }
       atualizarBadges();
       preencherSelectProdutos('cart-produto');
       preencherSelectProdutos('mov-produto');
-      const itensResumo = (venda.itens || []).map(i => i.nome + ' x' + i.qtd).join(', ');
-      registrarLog(
-        'Venda',
-        clienteNome + ' · ' + formatarMoeda(total) + ' · ' + (forma === 'fiado' ? ('Fiado ' + ((document.getElementById('venda-parcelas')||{}).value || '1') + 'x') : 'À vista') +
-          (precisaEntrega ? ' · ENTREGA' : '') + ' · ' + itensResumo,
-        'venda'
-      );
       salvar();
-      if (forma === 'fiado' && valorDevido > 0) {
-        const nParc = parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 1;
-        toast(
-          'Venda fiado finalizada em ' + nParc + 'x' +
-          (precisaEntrega ? ' · entrega enviada ao entregador' : '') + '!',
-          'success'
-        );
-      } else if (precisaEntrega) {
-        toast('Venda finalizada! Entrega enviada para o entregador.', 'success');
-      } else {
-        toast('Venda finalizada com sucesso!', 'success');
-      }
+      toast('Venda finalizada e contabilizada!', 'success');
+      gerarImpressao(res.venda);
     }
 
+    // ===================== CAIXA =====================
+    let filtroCaixa = 'pendente';
+
+    function filtrarCaixa(f) {
+      filtroCaixa = f;
+      renderCaixa();
+    }
+
+    function getPendentesCaixa() {
+      return (estado.vendasPendentes || []).filter(v => v.statusCaixa === 'pendente');
+    }
+
+    function buscarCodigoCaixa() {
+      const raw = (document.getElementById('caixa-codigo').value || '').trim().toUpperCase();
+      if (!raw) { toast('Informe o código', 'error'); return; }
+      const pend = (estado.vendasPendentes || []).find(v => String(v.codigo || '').toUpperCase() === raw);
+      if (!pend) {
+        toast('Código não encontrado ou já processado', 'error');
+        document.getElementById('caixa-detalhe').classList.add('hidden');
+        return;
+      }
+      if (pend.statusCaixa !== 'pendente') {
+        toast('Esta venda já foi processada', 'error');
+        return;
+      }
+      mostrarDetalheCaixa(pend);
+    }
+
+    function mostrarDetalheCaixa(v) {
+      const box = document.getElementById('caixa-detalhe');
+      if (!box) return;
+      const itens = (v.itens || []).map(i =>
+        `<div style="font-size:0.84rem;">${i.nome} — <strong>${i.qtd}</strong> × ${formatarMoeda(i.precoUnit)} = ${formatarMoeda(i.total)}</div>`
+      ).join('');
+      box.classList.remove('hidden');
+      box.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:0.5rem;margin-bottom:0.65rem;">
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Código</div>
+            <strong style="font-size:1.15rem;letter-spacing:0.05em;">${v.codigo}</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">Total</div>
+            <strong style="font-size:1.2rem;color:var(--primary-dark);">${formatarMoeda(v.total)}</strong>
+          </div>
+        </div>
+        <p style="margin-bottom:0.35rem;"><strong>Cliente:</strong> ${v.clienteNome || '—'}${v.clienteTelefone ? ' · ' + v.clienteTelefone : ''}</p>
+        <p style="margin-bottom:0.35rem;"><strong>Vendedor:</strong> ${v.vendedor || '—'}</p>
+        <p style="margin-bottom:0.35rem;"><strong>Pagamento:</strong> ${v.forma === 'fiado' ? 'Fiado' : 'À vista'}${v.pago > 0 ? ' · pago ' + formatarMoeda(v.pago) : ''}</p>
+        <div style="margin:0.5rem 0;">${itens}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.45rem;margin-top:0.75rem;">
+          <button class="btn btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅ Aprovar e contabilizar</button>
+          <button class="btn btn-secondary" onclick="imprimirComprovanteCaixaId('${v.id}')">🖨️ Comprovante</button>
+          <button class="btn btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️ Cancelar</button>
+        </div>
+      `;
+      const cod = document.getElementById('caixa-codigo');
+      if (cod) cod.value = v.codigo || '';
+    }
+
+    function aprovarVendaCaixa(id) {
+      if (!temPermissao('caixa') && !isAdmin()) {
+        toast('Sem permissão de caixa', 'error');
+        return;
+      }
+      const pend = (estado.vendasPendentes || []).find(x => x.id === id);
+      if (!pend || pend.statusCaixa !== 'pendente') {
+        toast('Venda pendente não encontrada', 'error');
+        return;
+      }
+      if (!confirm('Confirmar pagamento e contabilizar a venda ' + pend.codigo + '?\nTotal: ' + formatarMoeda(pend.total))) return;
+
+      const res = contabilizarVendaAprovada(pend, {
+        codigo: pend.codigo,
+        caixaNome: usuarioAtual ? usuarioAtual.nome : 'Caixa'
+      });
+      if (!res.ok) { toast(res.erro, 'error'); return; }
+
+      pend.statusCaixa = 'aprovada';
+      pend.aprovadoEm = hoje();
+      pend.aprovadoPor = usuarioAtual ? usuarioAtual.nome : 'Caixa';
+      // remove da fila ativa (mantém só pendentes na lista operacional)
+      estado.vendasPendentes = (estado.vendasPendentes || []).filter(x => x.id !== id);
+
+      salvar();
+      document.getElementById('caixa-detalhe').classList.add('hidden');
+      document.getElementById('caixa-codigo').value = '';
+      renderCaixa();
+      atualizarBadges();
+      if (isAdmin()) {
+        try { renderDashboard(); renderFiado(); renderNotificacoes(); } catch (e) {}
+      }
+      toast('Venda ' + pend.codigo + ' aprovada e contabilizada!', 'success');
+      vendaParaImprimir = res.venda;
+    }
+
+    function cancelarVendaPendente(id) {
+      if (!temPermissao('caixa') && !isAdmin()) return;
+      const pend = (estado.vendasPendentes || []).find(x => x.id === id);
+      if (!pend) return;
+      if (!confirm('Cancelar a venda pendente ' + (pend.codigo || '') + '?\nNada foi contabilizado ainda.')) return;
+      estado.vendasPendentes = (estado.vendasPendentes || []).filter(x => x.id !== id);
+      registrarLog('Cancelou venda pendente', (pend.codigo || '') + ' · ' + (pend.clienteNome || '') + ' · ' + formatarMoeda(pend.total), 'venda');
+      salvar();
+      document.getElementById('caixa-detalhe').classList.add('hidden');
+      renderCaixa();
+      atualizarBadges();
+      toast('Venda pendente cancelada');
+    }
+
+    function renderCaixa() {
+      if (!Array.isArray(estado.vendasPendentes)) estado.vendasPendentes = [];
+      let lista = estado.vendasPendentes.slice();
+      if (filtroCaixa === 'pendente') lista = lista.filter(v => v.statusCaixa === 'pendente');
+      // aprovadas hoje vêm do histórico de vendas
+      if (filtroCaixa === 'aprovada') {
+        const hojeStr = hoje();
+        lista = (estado.vendas || []).filter(v => v.aprovadoEm === hojeStr || (v.statusCaixa === 'aprovada' && v.data === hojeStr));
+      }
+
+      const pendentes = getPendentesCaixa().length;
+      const alertas = document.getElementById('caixa-alertas');
+      if (alertas) {
+        if (filtroCaixa === 'pendente' && pendentes > 0) {
+          alertas.innerHTML = `<div class="alert warning">⏳ <strong>${pendentes}</strong> venda(s) aguardando aprovação no caixa.</div>`;
+        } else if (filtroCaixa === 'pendente') {
+          alertas.innerHTML = `<div class="alert success">✅ Nenhuma venda pendente no momento.</div>`;
+        } else {
+          alertas.innerHTML = '';
+        }
+      }
+
+      const tbody = document.getElementById('lista-caixa');
+      if (!tbody) return;
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="icon">🧾</div>Nenhum registro.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = lista.map(v => {
+        const isPend = v.statusCaixa === 'pendente' || (!v.statusCaixa && filtroCaixa !== 'aprovada');
+        const st = isPend && filtroCaixa !== 'aprovada' ? 'pendente' : 'aprovada';
+        const stLabel = st === 'pendente' ? 'Pendente' : 'Aprovada';
+        const stClass = st === 'pendente' ? 'aberto' : 'pago';
+        return `
+          <tr>
+            <td><strong style="letter-spacing:0.03em;">${v.codigo || '—'}</strong></td>
+            <td style="white-space:nowrap;">${formatarData(v.data)}<br><small style="color:var(--text-muted)">${v.hora || ''}</small></td>
+            <td>${v.clienteNome || '—'}</td>
+            <td>${v.vendedor || '—'}</td>
+            <td><strong>${formatarMoeda(v.total)}</strong></td>
+            <td><span class="status ${v.forma === 'fiado' ? 'aberto' : 'pago'}">${v.forma === 'fiado' ? 'Fiado' : 'À vista'}</span></td>
+            <td><span class="status ${stClass}">${stLabel}</span></td>
+            <td class="actions-cell">
+              ${st === 'pendente' ? `
+                <button class="btn btn-sm btn-primary" onclick="mostrarDetalheCaixa((estado.vendasPendentes||[]).find(x=>x.id==='${v.id}'))">👁️</button>
+                <button class="btn btn-sm btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅</button>
+                <button class="btn btn-sm btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️</button>
+              ` : `
+                <button class="btn btn-sm btn-secondary" onclick="imprimirVendaLog('${v.id}')">🖨️</button>
+              `}
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    function imprimirComprovanteCaixaId(id) {
+      const v = (estado.vendasPendentes || []).find(x => x.id === id);
+      if (!v) { toast('Não encontrado', 'error'); return; }
+      imprimirComprovanteCaixa(v);
+    }
+
+    function imprimirComprovanteCaixa(v) {
+      const area = document.getElementById('print-area');
+      if (!area) return;
+      const empresa = nomeEmpresaExibicao();
+      const itensHtml = (v.itens || []).map(i => `
+        <tr>
+          <td style="padding:4px 3px;">${i.nome}</td>
+          <td style="text-align:center;padding:4px 3px;">${i.qtd}</td>
+          <td style="text-align:right;padding:4px 3px;">${formatarMoeda(i.precoUnit)}</td>
+          <td style="text-align:right;padding:4px 3px;">${formatarMoeda(i.total)}</td>
+        </tr>`).join('');
+
+      area.innerHTML = `
+        <div style="max-width:420px;margin:0 auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.4;color:#000;">
+          <div style="text-align:center;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:8px;">
+            <strong style="font-size:16px;">${empresa}</strong><br>
+            <span style="font-size:12px;">COMPROVANTE PARA O CAIXA</span><br>
+            <span style="font-size:11px;">(Aguardando aprovação de pagamento)</span>
+          </div>
+          <div style="text-align:center;margin:12px 0;">
+            <div style="font-size:11px;margin-bottom:4px;">CÓDIGO</div>
+            <div style="font-size:20px;font-weight:800;letter-spacing:0.12em;">${v.codigo || '—'}</div>
+            <svg id="barcode-print" style="max-width:100%;height:56px;margin-top:6px;"></svg>
+          </div>
+          <div style="margin-bottom:8px;">
+            Data: ${formatarData(v.data)} &nbsp; ${v.hora || ''}<br>
+            Vendedor: ${v.vendedor || '—'}
+          </div>
+          <div style="border:1px solid #000;padding:8px;margin-bottom:10px;">
+            <strong>CLIENTE</strong><br>
+            ${v.clienteNome || '—'}<br>
+            ${v.clienteTelefone || ''}<br>
+            ${v.clienteEndereco || ''}
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;">
+            <thead>
+              <tr>
+                <th style="border-bottom:1px solid #000;text-align:left;">Produto</th>
+                <th style="border-bottom:1px solid #000;text-align:center;">Qtd</th>
+                <th style="border-bottom:1px solid #000;text-align:right;">Unit.</th>
+                <th style="border-bottom:1px solid #000;text-align:right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>${itensHtml}</tbody>
+          </table>
+          <div style="border-top:1px dashed #000;padding-top:8px;margin-bottom:12px;">
+            <strong>TOTAL: ${formatarMoeda(v.total)}</strong><br>
+            Forma: ${v.forma === 'fiado' ? 'FIADO' : 'À VISTA'}
+            ${v.pago > 0 ? '<br>Valor informado como pago: ' + formatarMoeda(v.pago) : ''}
+          </div>
+          <div style="text-align:center;font-size:11px;margin-top:16px;">
+            Apresente este comprovante no caixa para finalizar o pagamento.
+          </div>
+        </div>
+      `;
+      area.style.display = 'block';
+      try {
+        if (typeof JsBarcode !== 'undefined' && v.codigo) {
+          JsBarcode('#barcode-print', v.codigo, {
+            format: 'CODE128',
+            width: 2,
+            height: 48,
+            displayValue: false,
+            margin: 0
+          });
+        }
+      } catch (e) { console.warn(e); }
+
+      const limpar = () => {
+        area.style.display = 'none';
+        area.innerHTML = '';
+        window.removeEventListener('afterprint', limpar);
+      };
+      window.addEventListener('afterprint', limpar);
+      setTimeout(() => { try { window.print(); } catch (e) {} }, 80);
+      setTimeout(limpar, 120000);
+    }
+
+    // ===================== RESUMO MENSAL (admin) =====================
     // ===================== RESUMO MENSAL (admin) =====================
     function getVendasMesAtual() {
       const agora = new Date();
@@ -5538,11 +6091,21 @@
         if (pendEntregas > 0) { badgeEntregas.textContent = pendEntregas; badgeEntregas.classList.remove('hidden'); }
         else badgeEntregas.classList.add('hidden');
       }
+      const badgeCaixa = document.getElementById('badge-caixa');
+      if (badgeCaixa) {
+        const pendCaixa = getPendentesCaixa().length;
+        if (pendCaixa > 0) { badgeCaixa.textContent = pendCaixa; badgeCaixa.classList.remove('hidden'); }
+        else badgeCaixa.classList.add('hidden');
+      }
     }
 
     // ===================== IMPRESSÃO =====================
     function imprimirViaAtual() {
-      if (!vendaParaImprimir) { toast('Finalize uma venda primeiro', 'error'); return; }
+      if (!vendaParaImprimir) { toast('Envie uma venda ao caixa primeiro', 'error'); return; }
+      if (vendaParaImprimir.statusCaixa === 'pendente') {
+        imprimirComprovanteCaixa(vendaParaImprimir);
+        return;
+      }
       gerarImpressao(vendaParaImprimir);
     }
 
