@@ -695,14 +695,35 @@
     }
 
     @media print {
-      body * { visibility: hidden; }
-      #print-area, #print-area * { visibility: visible; }
-      #print-area {
-        position: absolute; left: 0; top: 0; width: 100%;
-        padding: 20px; font-family: 'Courier New', monospace;
-        font-size: 12px; color: #000; background: #fff;
+      html, body {
+        background: #fff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
       }
-      #tela-login, .sidebar, .topbar { display: none !important; }
+      body * { visibility: hidden !important; }
+      #print-area, #print-area * { visibility: visible !important; }
+      #print-area {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 16px 20px !important;
+        font-family: 'Courier New', Courier, monospace !important;
+        font-size: 12px !important;
+        color: #000 !important;
+        background: #fff !important;
+        z-index: 99999 !important;
+      }
+      #tela-login, .sidebar, .topbar, .sidebar-overlay, .modal-overlay,
+      .toast-container, .sync-status, .demo-banner, #tela-demo-cta {
+        display: none !important;
+        visibility: hidden !important;
+      }
     }
     #print-area { display: none; }
 
@@ -1205,7 +1226,7 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr><th>Cliente</th><th>Itens</th><th>Valor</th><th>Data Compra</th><th>Vencimento</th><th>Status</th><th>Ações</th></tr>
+                <tr><th>Cliente</th><th>Itens</th><th>Parcelas</th><th>Total / Em aberto</th><th>Data Compra</th><th>Próx. venc.</th><th>Status</th><th>Ações</th></tr>
               </thead>
               <tbody id="lista-fiado"></tbody>
             </table>
@@ -1334,12 +1355,42 @@
               </select>
             </div>
             <div class="form-group" id="grupo-prazo" style="display:none;">
-              <label>Prazo de Pagamento *</label>
-              <input type="date" id="venda-prazo" />
+              <label>1º vencimento *</label>
+              <input type="date" id="venda-prazo" onchange="atualizarPreviewParcelas()" />
+            </div>
+            <div class="form-group" id="grupo-parcelas" style="display:none;">
+              <label>Parcelar em quantas vezes? *</label>
+              <select id="venda-parcelas" onchange="atualizarPreviewParcelas()">
+                <option value="1">1x (à vista no prazo)</option>
+                <option value="2">2x</option>
+                <option value="3" selected>3x</option>
+                <option value="4">4x</option>
+                <option value="5">5x</option>
+                <option value="6">6x</option>
+                <option value="7">7x</option>
+                <option value="8">8x</option>
+                <option value="9">9x</option>
+                <option value="10">10x</option>
+                <option value="11">11x</option>
+                <option value="12">12x</option>
+              </select>
+            </div>
+            <div class="form-group" id="grupo-intervalo-parcela" style="display:none;">
+              <label>Intervalo entre parcelas</label>
+              <select id="venda-intervalo-parcela" onchange="atualizarPreviewParcelas()">
+                <option value="7">A cada 7 dias</option>
+                <option value="15">A cada 15 dias</option>
+                <option value="30" selected>A cada 30 dias</option>
+                <option value="45">A cada 45 dias</option>
+              </select>
+            </div>
+            <div class="form-group" id="grupo-preview-parcelas" style="display:none;grid-column:1/-1;">
+              <label>Resumo das parcelas</label>
+              <div id="preview-parcelas" style="font-size:0.84rem;background:#f8faf9;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.8rem;color:var(--text);"></div>
             </div>
             <div class="form-group">
               <label>Valor já pago (R$)</label>
-              <input type="number" id="venda-pago" min="0" step="0.01" value="0" />
+              <input type="number" id="venda-pago" min="0" step="0.01" value="0" oninput="atualizarPreviewParcelas()" />
             </div>
             <div class="form-group">
               <label>Precisa entregar?</label>
@@ -1719,6 +1770,37 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="fecharModalDivida()">Cancelar</button>
         <button class="btn btn-primary" onclick="salvarDivida()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL GRUPO FIADO (parcelas de uma venda) -->
+  <div class="modal-overlay" id="modal-fiado-grupo">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-header">
+        <h3 id="modal-fiado-grupo-titulo">Parcelas do fiado</h3>
+        <button class="modal-close" onclick="fecharModalFiadoGrupo()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="fiado-grupo-resumo" style="margin-bottom:0.9rem;font-size:0.88rem;color:var(--text-muted);"></div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Parcela</th>
+                <th>Valor</th>
+                <th>Vencimento</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="lista-fiado-grupo-parcelas"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="imprimirGrupoFiado(window._fiadoGrupoKey || '')">🖨️ Imprimir carnê</button>
+        <button class="btn btn-secondary" onclick="fecharModalFiadoGrupo()">Fechar</button>
       </div>
     </div>
   </div>
@@ -4079,16 +4161,87 @@
       `).join('');
       const total = carrinho.reduce((s, i) => s + i.total, 0);
       document.getElementById('carrinho-total').textContent = 'Total: ' + formatarMoeda(total);
+      if (typeof atualizarPreviewParcelas === 'function') atualizarPreviewParcelas();
     }
 
     function togglePrazo() {
       const isFiado = document.getElementById('venda-pagamento').value === 'fiado';
       document.getElementById('grupo-prazo').style.display = isFiado ? 'flex' : 'none';
+      const gp = document.getElementById('grupo-parcelas');
+      const gi = document.getElementById('grupo-intervalo-parcela');
+      const gprev = document.getElementById('grupo-preview-parcelas');
+      if (gp) gp.style.display = isFiado ? 'flex' : 'none';
+      if (gi) gi.style.display = isFiado ? 'flex' : 'none';
+      if (gprev) gprev.style.display = isFiado ? 'block' : 'none';
       if (isFiado && !document.getElementById('venda-prazo').value) {
         const d = new Date();
         d.setDate(d.getDate() + 7);
         document.getElementById('venda-prazo').value = d.toISOString().slice(0, 10);
       }
+      if (isFiado) atualizarPreviewParcelas();
+    }
+
+    function adicionarDiasISO(dataISO, dias) {
+      const d = new Date(dataISO + 'T12:00:00');
+      d.setDate(d.getDate() + Number(dias || 0));
+      return d.toISOString().slice(0, 10);
+    }
+
+    function montarParcelasFiado(valorTotal, numParcelas, primeiroPrazo, intervaloDias) {
+      const n = Math.max(1, Math.min(12, parseInt(numParcelas, 10) || 1));
+      const totalCentavos = Math.round(Number(valorTotal || 0) * 100);
+      if (totalCentavos <= 0) return [];
+      const base = Math.floor(totalCentavos / n);
+      let resto = totalCentavos - (base * n);
+      const parcelas = [];
+      for (let i = 0; i < n; i++) {
+        const extra = resto > 0 ? 1 : 0;
+        if (resto > 0) resto--;
+        const valor = (base + extra) / 100;
+        const prazo = i === 0
+          ? primeiroPrazo
+          : adicionarDiasISO(primeiroPrazo, intervaloDias * i);
+        parcelas.push({
+          numero: i + 1,
+          total: n,
+          valor,
+          prazo
+        });
+      }
+      return parcelas;
+    }
+
+    function atualizarPreviewParcelas() {
+      const preview = document.getElementById('preview-parcelas');
+      if (!preview) return;
+      const isFiado = document.getElementById('venda-pagamento').value === 'fiado';
+      if (!isFiado) {
+        preview.innerHTML = '';
+        return;
+      }
+      const totalCarrinho = carrinho.reduce((s, i) => s + i.total, 0);
+      const pago = parseFloat(document.getElementById('venda-pago').value) || 0;
+      const valorDevido = Math.max(0, totalCarrinho - pago);
+      const n = parseInt(document.getElementById('venda-parcelas').value, 10) || 1;
+      const intervalo = parseInt(document.getElementById('venda-intervalo-parcela').value, 10) || 30;
+      let prazo = document.getElementById('venda-prazo').value;
+      if (!prazo) {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        prazo = d.toISOString().slice(0, 10);
+        document.getElementById('venda-prazo').value = prazo;
+      }
+      if (valorDevido <= 0) {
+        preview.innerHTML = '<span style="color:var(--text-muted);">Adicione itens e informe o valor a receber no fiado para ver as parcelas.</span>';
+        return;
+      }
+      const parcelas = montarParcelasFiado(valorDevido, n, prazo, intervalo);
+      preview.innerHTML = parcelas.map(p =>
+        `<div style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.2rem 0;border-bottom:1px dashed var(--border);">
+          <span><strong>${p.numero}/${p.total}</strong> — vence ${formatarData(p.prazo)}</span>
+          <strong>${formatarMoeda(p.valor)}</strong>
+        </div>`
+      ).join('') + `<div style="margin-top:0.4rem;text-align:right;font-weight:700;color:var(--primary-dark);">Total a receber: ${formatarMoeda(valorDevido)}</div>`;
     }
 
     function finalizarVenda() {
@@ -4139,7 +4292,12 @@
       }
 
       if (carrinho.length === 0) { toast('Adicione pelo menos um item', 'error'); return; }
-      if (forma === 'fiado' && !prazo) { toast('Informe o prazo de pagamento', 'error'); return; }
+      if (forma === 'fiado' && !prazo) { toast('Informe o 1º vencimento das parcelas', 'error'); return; }
+      const numParcelasCheck = parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 0;
+      if (forma === 'fiado' && (numParcelasCheck < 1 || numParcelasCheck > 12)) {
+        toast('Informe em quantas vezes vai parcelar (1 a 12)', 'error');
+        return;
+      }
 
       // Fiado exige cliente cadastrado (para controle de dívida)
       if (forma === 'fiado' && !clienteId) {
@@ -4216,11 +4374,26 @@
       };
 
       if (forma === 'fiado' && valorDevido > 0 && clienteId) {
-        estado.dividas.push({
-          id: uid(), clienteId, valor: valorDevido,
-          dataCompra: hoje(), prazo, status: 'aberto',
-          vendaId: venda.id, itens: venda.itens,
-          totalVenda: total, valorPago: pago
+        const numParcelas = parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 1;
+        const intervalo = parseInt((document.getElementById('venda-intervalo-parcela') || {}).value, 10) || 30;
+        const parcelas = montarParcelasFiado(valorDevido, numParcelas, prazo, intervalo);
+        venda.parcelas = numParcelas;
+        venda.intervaloParcela = intervalo;
+        parcelas.forEach(p => {
+          estado.dividas.push({
+            id: uid(),
+            clienteId,
+            valor: p.valor,
+            dataCompra: hoje(),
+            prazo: p.prazo,
+            status: 'aberto',
+            vendaId: venda.id,
+            itens: venda.itens,
+            totalVenda: total,
+            valorPago: p.numero === 1 ? pago : 0,
+            parcelaNumero: p.numero,
+            parcelaTotal: p.total
+          });
         });
       }
 
@@ -4249,12 +4422,19 @@
       const itensResumo = (venda.itens || []).map(i => i.nome + ' x' + i.qtd).join(', ');
       registrarLog(
         'Venda',
-        clienteNome + ' · ' + formatarMoeda(total) + ' · ' + (forma === 'fiado' ? 'Fiado' : 'À vista') +
+        clienteNome + ' · ' + formatarMoeda(total) + ' · ' + (forma === 'fiado' ? ('Fiado ' + ((document.getElementById('venda-parcelas')||{}).value || '1') + 'x') : 'À vista') +
           (precisaEntrega ? ' · ENTREGA' : '') + ' · ' + itensResumo,
         'venda'
       );
       salvar();
-      if (precisaEntrega) {
+      if (forma === 'fiado' && valorDevido > 0) {
+        const nParc = parseInt((document.getElementById('venda-parcelas') || {}).value, 10) || 1;
+        toast(
+          'Venda fiado finalizada em ' + nParc + 'x' +
+          (precisaEntrega ? ' · entrega enviada ao entregador' : '') + '!',
+          'success'
+        );
+      } else if (precisaEntrega) {
         toast('Venda finalizada! Entrega enviada para o entregador.', 'success');
       } else {
         toast('Venda finalizada com sucesso!', 'success');
@@ -4786,30 +4966,121 @@
     // ===================== FIADO =====================
     function filtrarFiado(f) { filtroFiadoAtual = f; renderFiado(); }
 
+    /** Agrupa dívidas da mesma venda (parcelas) em um único registro de lista */
+    function chaveGrupoFiado(d) {
+      if (d.vendaId) return 'v:' + d.vendaId;
+      // Dívidas antigas sem vendaId: agrupa por cliente + data compra
+      return 'c:' + (d.clienteId || '') + '|' + (d.dataCompra || '') + '|' + (d.totalVenda != null ? d.totalVenda : d.valor);
+    }
+
+    function montarGruposFiado() {
+      const map = {};
+      (estado.dividas || []).forEach(d => {
+        const key = chaveGrupoFiado(d);
+        if (!map[key]) map[key] = [];
+        map[key].push(d);
+      });
+      return Object.keys(map).map(key => {
+        const parcelas = map[key].slice().sort((a, b) => {
+          const na = Number(a.parcelaNumero) || 0;
+          const nb = Number(b.parcelaNumero) || 0;
+          if (na !== nb) return na - nb;
+          return String(a.prazo || '').localeCompare(String(b.prazo || ''));
+        });
+        const primeira = parcelas[0];
+        const clienteId = primeira.clienteId;
+        const totalParcelas = Math.max(
+          parcelas.length,
+          ...parcelas.map(p => Number(p.parcelaTotal) || 0)
+        );
+        const pagas = parcelas.filter(p => statusDivida(p) === 'pago' || p.status === 'pago').length;
+        const abertas = parcelas.filter(p => statusDivida(p) !== 'pago');
+        const valorTotal = parcelas.reduce((s, p) => s + Number(p.valor || 0), 0);
+        const valorAberto = abertas.reduce((s, p) => s + Number(p.valor || 0), 0);
+        const temAtrasado = abertas.some(p => statusDivida(p) === 'atrasado');
+        let statusGrupo = 'pago';
+        if (abertas.length === 0) statusGrupo = 'pago';
+        else if (temAtrasado) statusGrupo = 'atrasado';
+        else statusGrupo = 'aberto';
+        // Próximo vencimento entre as em aberto
+        let proxVenc = null;
+        abertas.forEach(p => {
+          if (!proxVenc || String(p.prazo) < String(proxVenc)) proxVenc = p.prazo;
+        });
+        return {
+          key,
+          vendaId: primeira.vendaId || null,
+          clienteId,
+          dataCompra: primeira.dataCompra,
+          itens: primeira.itens || [],
+          parcelas,
+          totalParcelas,
+          pagas,
+          emAberto: abertas.length,
+          valorTotal,
+          valorAberto,
+          statusGrupo,
+          proxVenc,
+          totalVenda: primeira.totalVenda
+        };
+      });
+    }
+
     function marcarPago(id) {
       const d = estado.dividas.find(x => x.id === id);
       if (!d) return;
       d.status = 'pago';
       const cli = getCliente(d.clienteId);
-      registrarLog('Marcar fiado como pago', (cli ? cli.nome : 'Cliente') + ' · ' + formatarMoeda(d.valor), 'fiado');
+      const parc = (d.parcelaNumero && d.parcelaTotal) ? (' · parc. ' + d.parcelaNumero + '/' + d.parcelaTotal) : '';
+      registrarLog('Marcar fiado como pago', (cli ? cli.nome : 'Cliente') + ' · ' + formatarMoeda(d.valor) + parc, 'fiado');
       salvar();
       renderFiado();
+      // Se o modal de grupo estiver aberto, atualiza
+      const modal = document.getElementById('modal-fiado-grupo');
+      if (modal && modal.classList.contains('show') && window._fiadoGrupoKey) {
+        abrirModalFiadoGrupo(window._fiadoGrupoKey);
+      }
       if (isAdmin()) { renderDashboard(); renderNotificacoes(); }
       atualizarBadges();
-      toast('Dívida marcada como paga!', 'success');
+      toast('Parcela marcada como paga!', 'success');
     }
 
     function excluirDivida(id) {
       const d = estado.dividas.find(x => x.id === id);
-      if (!confirm('Excluir esta dívida?')) return;
+      if (!confirm('Excluir esta parcela/dívida?')) return;
       const cli = d ? getCliente(d.clienteId) : null;
       estado.dividas = estado.dividas.filter(x => x.id !== id);
       registrarLog('Excluir fiado', (cli ? cli.nome : '') + (d ? ' · ' + formatarMoeda(d.valor) : ''), 'fiado');
       salvar();
       renderFiado();
+      const modal = document.getElementById('modal-fiado-grupo');
+      if (modal && modal.classList.contains('show') && window._fiadoGrupoKey) {
+        // Se não restou nenhuma parcela do grupo, fecha o modal
+        const ainda = (estado.dividas || []).some(x => chaveGrupoFiado(x) === window._fiadoGrupoKey);
+        if (ainda) abrirModalFiadoGrupo(window._fiadoGrupoKey);
+        else fecharModalFiadoGrupo();
+      }
       if (isAdmin()) { renderDashboard(); renderNotificacoes(); }
       atualizarBadges();
-      toast('Dívida excluída');
+      toast('Parcela excluída');
+    }
+
+    function excluirGrupoFiado(key) {
+      try { key = decodeURIComponent(key); } catch (e) {}
+      const grupo = montarGruposFiado().find(g => g.key === key);
+      if (!grupo) return;
+      const cli = getCliente(grupo.clienteId);
+      const nome = cli ? cli.nome : 'Cliente';
+      if (!confirm('Excluir TODAS as ' + grupo.parcelas.length + ' parcela(s) deste fiado de ' + nome + '?')) return;
+      const ids = new Set(grupo.parcelas.map(p => p.id));
+      estado.dividas = estado.dividas.filter(x => !ids.has(x.id));
+      registrarLog('Excluir fiado (grupo)', nome + ' · ' + grupo.parcelas.length + ' parcelas · ' + formatarMoeda(grupo.valorTotal), 'fiado');
+      salvar();
+      fecharModalFiadoGrupo();
+      renderFiado();
+      if (isAdmin()) { renderDashboard(); renderNotificacoes(); }
+      atualizarBadges();
+      toast('Fiado excluído');
     }
 
     function abrirModalDivida(id) {
@@ -4838,55 +5109,113 @@
       salvar();
       fecharModalDivida();
       renderFiado();
+      if (window._fiadoGrupoKey) {
+        const modal = document.getElementById('modal-fiado-grupo');
+        if (modal && modal.classList.contains('show')) abrirModalFiadoGrupo(window._fiadoGrupoKey);
+      }
       if (isAdmin()) { renderDashboard(); renderNotificacoes(); }
       atualizarBadges();
-      toast('Dívida atualizada!', 'success');
+      toast('Parcela atualizada!', 'success');
+    }
+
+    function abrirModalFiadoGrupo(key) {
+      try { key = decodeURIComponent(key); } catch (e) {}
+      const grupo = montarGruposFiado().find(g => g.key === key);
+      if (!grupo) {
+        fecharModalFiadoGrupo();
+        return;
+      }
+      window._fiadoGrupoKey = key;
+      const cli = getCliente(grupo.clienteId);
+      const nome = cli ? cli.nome : 'Cliente removido';
+      document.getElementById('modal-fiado-grupo-titulo').textContent = 'Fiado — ' + nome;
+      document.getElementById('fiado-grupo-resumo').innerHTML =
+        '<strong>Pagou:</strong> ' + grupo.pagas + ' de ' + grupo.totalParcelas + ' parcela(s) · ' +
+        '<strong>Em aberto:</strong> ' + grupo.emAberto + ' · ' +
+        '<strong>A receber:</strong> ' + formatarMoeda(grupo.valorAberto) +
+        (grupo.valorTotal ? ' <span style="color:var(--text-muted)">(total ' + formatarMoeda(grupo.valorTotal) + ')</span>' : '');
+
+      const tbody = document.getElementById('lista-fiado-grupo-parcelas');
+      tbody.innerHTML = grupo.parcelas.map(d => {
+        const st = statusDivida(d);
+        const statusLabel = { aberto: 'Em aberto', pago: 'Pago', atrasado: 'Atrasado' }[st];
+        const num = d.parcelaNumero || 1;
+        const tot = d.parcelaTotal || grupo.totalParcelas;
+        return `
+          <tr>
+            <td><strong>${num}/${tot}</strong></td>
+            <td>${formatarMoeda(d.valor)}</td>
+            <td>${formatarData(d.prazo)}</td>
+            <td><span class="status ${st}">${statusLabel}</span></td>
+            <td class="actions-cell">
+              ${st !== 'pago' ? `<button class="btn btn-sm btn-success" onclick="marcarPago('${d.id}')" title="Marcar pago">✅ Pagar</button>` : ''}
+              <button class="btn btn-sm btn-secondary" onclick="abrirModalDivida('${d.id}')">✏️</button>
+              <button class="btn btn-sm btn-secondary" onclick="imprimirDivida('${d.id}')">🖨️</button>
+              <button class="btn btn-sm btn-danger" onclick="excluirDivida('${d.id}')">🗑️</button>
+            </td>
+          </tr>`;
+      }).join('');
+      document.getElementById('modal-fiado-grupo').classList.add('show');
+    }
+
+    function fecharModalFiadoGrupo() {
+      document.getElementById('modal-fiado-grupo').classList.remove('show');
+      window._fiadoGrupoKey = null;
     }
 
     function renderFiado() {
       const busca = (document.getElementById('busca-fiado')?.value || '').toLowerCase();
-      let lista = estado.dividas.map(d => ({ ...d, statusCalc: statusDivida(d) }));
-      if (filtroFiadoAtual === 'aberto') lista = lista.filter(d => d.statusCalc === 'aberto');
-      if (filtroFiadoAtual === 'atrasado') lista = lista.filter(d => d.statusCalc === 'atrasado');
-      if (filtroFiadoAtual === 'pago') lista = lista.filter(d => d.statusCalc === 'pago');
+      let grupos = montarGruposFiado();
+
+      if (filtroFiadoAtual === 'aberto') grupos = grupos.filter(g => g.statusGrupo === 'aberto');
+      if (filtroFiadoAtual === 'atrasado') grupos = grupos.filter(g => g.statusGrupo === 'atrasado');
+      if (filtroFiadoAtual === 'pago') grupos = grupos.filter(g => g.statusGrupo === 'pago');
+
       if (busca) {
-        lista = lista.filter(d => {
-          const cli = getCliente(d.clienteId);
+        grupos = grupos.filter(g => {
+          const cli = getCliente(g.clienteId);
           return (cli?.nome || '').toLowerCase().includes(busca);
         });
       }
+
       const ordem = { atrasado: 0, aberto: 1, pago: 2 };
-      lista.sort((a, b) => (ordem[a.statusCalc] ?? 9) - (ordem[b.statusCalc] ?? 9));
+      grupos.sort((a, b) => (ordem[a.statusGrupo] ?? 9) - (ordem[b.statusGrupo] ?? 9));
 
       const tbody = document.getElementById('lista-fiado');
-      if (lista.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">💰</div>Nenhuma dívida encontrada.</td></tr>';
+      if (grupos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="icon">💰</div>Nenhuma dívida encontrada.</td></tr>';
         return;
       }
-      tbody.innerHTML = lista.map(d => {
-        const cli = getCliente(d.clienteId);
-        const statusLabel = { aberto: 'Em aberto', pago: 'Pago', atrasado: 'Atrasado' }[d.statusCalc];
-        const itensTxt = (d.itens && d.itens.length) ? d.itens.map(i => `${i.nome} (${i.qtd})`).join(', ') : '—';
+      tbody.innerHTML = grupos.map(g => {
+        const cli = getCliente(g.clienteId);
+        const statusLabel = { aberto: 'Em aberto', pago: 'Quitado', atrasado: 'Atrasado' }[g.statusGrupo];
+        const itensTxt = (g.itens && g.itens.length) ? g.itens.map(i => `${i.nome} (${i.qtd})`).join(', ') : '—';
+        const parcelaResumo = g.pagas + '/' + g.totalParcelas + ' pagas';
+        const keyEnc = encodeURIComponent(g.key);
         return `
-          <tr>
+          <tr style="cursor:pointer;" onclick="abrirModalFiadoGrupo('${keyEnc}')">
             <td><strong>${cli ? cli.nome : 'Cliente removido'}</strong></td>
             <td style="max-width:170px;font-size:0.8rem;">${itensTxt}</td>
-            <td>${formatarMoeda(d.valor)}</td>
-            <td>${formatarData(d.dataCompra)}</td>
-            <td>${formatarData(d.prazo)}</td>
-            <td><span class="status ${d.statusCalc}">${statusLabel}</span></td>
-            <td class="actions-cell">
-              ${d.statusCalc !== 'pago' ? `<button class="btn btn-sm btn-success" onclick="marcarPago('${d.id}')" title="Marcar pago">✅</button>` : ''}
-              <button class="btn btn-sm btn-secondary" onclick="abrirModalDivida('${d.id}')">✏️</button>
-              <button class="btn btn-sm btn-secondary" onclick="imprimirDivida('${d.id}')">🖨️</button>
-              <button class="btn btn-sm btn-danger" onclick="excluirDivida('${d.id}')">🗑️</button>
+            <td>
+              <span class="status ${g.statusGrupo === 'pago' ? 'pago' : 'aberto'}">${parcelaResumo}</span>
+              ${g.emAberto > 0 ? `<br><small style="color:var(--text-muted)">${g.emAberto} em aberto</small>` : ''}
+            </td>
+            <td>
+              <strong>${formatarMoeda(g.valorTotal)}</strong>
+              ${g.valorAberto > 0 ? `<br><small style="color:var(--danger)">Aberto: ${formatarMoeda(g.valorAberto)}</small>` : '<br><small style="color:var(--success)">Quitado</small>'}
+            </td>
+            <td>${formatarData(g.dataCompra)}</td>
+            <td>${g.proxVenc ? formatarData(g.proxVenc) : '—'}</td>
+            <td><span class="status ${g.statusGrupo}">${statusLabel}</span></td>
+            <td class="actions-cell" onclick="event.stopPropagation()">
+              <button class="btn btn-sm btn-primary" onclick="abrirModalFiadoGrupo('${keyEnc}')" title="Ver parcelas">👁️ Ver</button>
+              <button class="btn btn-sm btn-danger" onclick="excluirGrupoFiado('${keyEnc}')" title="Excluir fiado">🗑️</button>
             </td>
           </tr>
         `;
       }).join('');
     }
 
-    // ===================== NOTIFICAÇÕES =====================
     function getNotificacoes() {
       const hojeStr = hoje();
       const itens = [];
@@ -4894,11 +5223,47 @@
         if (d.status === 'pago') return;
         const cli = getCliente(d.clienteId);
         const nome = cli ? cli.nome : 'Cliente removido';
+        const parcelaInfo = (d.parcelaNumero && d.parcelaTotal)
+          ? ` (parcela ${d.parcelaNumero}/${d.parcelaTotal})`
+          : '';
         const dias = diasEntre(hojeStr, d.prazo);
-        if (dias < 0) itens.push({ tipo: 'atrasado', titulo: 'Pagamento atrasado', texto: `${nome} — ${formatarMoeda(d.valor)} (venceu em ${formatarData(d.prazo)})`, dias });
-        else if (dias === 0) itens.push({ tipo: 'hoje', titulo: 'Vence hoje', texto: `${nome} — ${formatarMoeda(d.valor)}`, dias });
-        else if (dias === 1) itens.push({ tipo: 'amanha', titulo: 'Vence amanhã', texto: `${nome} — ${formatarMoeda(d.valor)}`, dias });
-        else if (dias <= 3) itens.push({ tipo: 'proximo', titulo: `Vence em ${dias} dias`, texto: `${nome} — ${formatarMoeda(d.valor)} (em ${formatarData(d.prazo)})`, dias });
+        // Notifica: atrasados, no dia do vencimento e até 3 dias antes
+        if (dias < 0) {
+          itens.push({
+            tipo: 'atrasado',
+            titulo: 'Pagamento atrasado',
+            texto: `${nome}${parcelaInfo} — ${formatarMoeda(d.valor)} (venceu em ${formatarData(d.prazo)})`,
+            dias
+          });
+        } else if (dias === 0) {
+          itens.push({
+            tipo: 'hoje',
+            titulo: '⚠️ Vence HOJE',
+            texto: `${nome}${parcelaInfo} — ${formatarMoeda(d.valor)} — vencimento ${formatarData(d.prazo)}`,
+            dias
+          });
+        } else if (dias === 1) {
+          itens.push({
+            tipo: 'amanha',
+            titulo: 'Vence amanhã',
+            texto: `${nome}${parcelaInfo} — ${formatarMoeda(d.valor)} (em ${formatarData(d.prazo)})`,
+            dias
+          });
+        } else if (dias === 2) {
+          itens.push({
+            tipo: 'proximo',
+            titulo: 'Vence em 2 dias',
+            texto: `${nome}${parcelaInfo} — ${formatarMoeda(d.valor)} (em ${formatarData(d.prazo)})`,
+            dias
+          });
+        } else if (dias === 3) {
+          itens.push({
+            tipo: 'proximo',
+            titulo: '📅 Faltam 3 dias para vencer',
+            texto: `${nome}${parcelaInfo} — ${formatarMoeda(d.valor)} (vencimento ${formatarData(d.prazo)})`,
+            dias
+          });
+        }
       });
       itens.sort((a, b) => a.dias - b.dias);
       return itens;
@@ -5071,73 +5436,175 @@
 
     function imprimirDivida(id) {
       const d = estado.dividas.find(x => x.id === id);
-      if (!d) return;
+      if (!d) { toast('Dívida não encontrada', 'error'); return; }
       const cli = getCliente(d.clienteId);
       let vendaOrig = null;
       if (d.vendaId) vendaOrig = (estado.vendas || []).find(x => x.id === d.vendaId);
+
+      // Todas as parcelas do mesmo grupo (mesma venda)
+      const key = chaveGrupoFiado(d);
+      const parcelasGrupo = (estado.dividas || [])
+        .filter(x => chaveGrupoFiado(x) === key)
+        .slice()
+        .sort((a, b) => (Number(a.parcelaNumero) || 0) - (Number(b.parcelaNumero) || 0));
+
+      const parcelaLabel = (d.parcelaNumero && d.parcelaTotal)
+        ? ('Parcela ' + d.parcelaNumero + '/' + d.parcelaTotal)
+        : (parcelasGrupo.length > 1 ? 'Parcela 1/' + parcelasGrupo.length : null);
+
       gerarImpressao({
-        clienteNome: cli ? cli.nome : 'Cliente removido',
-        clienteTelefone: cli ? cli.telefone : '',
-        clienteEndereco: cli ? formatarEnderecoCliente(cli) : '',
-        itens: d.itens || [{ nome: 'Produto', qtd: 1, precoUnit: d.valor, total: d.valor }],
-        total: d.totalVenda || d.valor,
-        pago: d.valorPago || 0,
-        valorDevido: d.valor,
+        clienteNome: (cli && cli.nome) || (vendaOrig && vendaOrig.clienteNome) || 'Cliente removido',
+        clienteTelefone: (cli && cli.telefone) || (vendaOrig && vendaOrig.clienteTelefone) || '',
+        clienteEndereco: (cli ? formatarEnderecoCliente(cli) : '') || (vendaOrig && vendaOrig.clienteEndereco) || '',
+        clienteDocumento: (cli && cli.documento) || '',
+        itens: (d.itens && d.itens.length) ? d.itens : ((vendaOrig && vendaOrig.itens) || [{ nome: 'Produto / serviço', qtd: 1, precoUnit: d.valor, total: d.valor }]),
+        total: (d.totalVenda != null ? d.totalVenda : null) || (vendaOrig && vendaOrig.total) || parcelasGrupo.reduce((s, p) => s + Number(p.valor || 0), 0) || d.valor,
+        pago: Number(d.valorPago) || 0,
+        valorDevido: Number(d.valor) || 0,
         forma: 'fiado',
         prazo: d.prazo,
-        data: d.dataCompra,
+        data: d.dataCompra || (vendaOrig && vendaOrig.data) || hoje(),
         hora: (vendaOrig && vendaOrig.hora) || '—',
         vendedor: (vendaOrig && vendaOrig.vendedor) || (usuarioAtual ? usuarioAtual.nome : '—'),
-        entregador: (vendaOrig && vendaOrig.entregador) || (usuarioAtual ? usuarioAtual.nome : '—')
+        entregador: (vendaOrig && vendaOrig.entreguePor) || (usuarioAtual ? usuarioAtual.nome : '—'),
+        parcelaLabel,
+        parcelaNumero: d.parcelaNumero || 1,
+        parcelaTotal: d.parcelaTotal || parcelasGrupo.length || 1,
+        statusParcela: statusDivida(d),
+        parcelasGrupo: parcelasGrupo.map(p => ({
+          numero: p.parcelaNumero || 1,
+          total: p.parcelaTotal || parcelasGrupo.length,
+          valor: Number(p.valor) || 0,
+          prazo: p.prazo,
+          status: statusDivida(p)
+        })),
+        destaqueParcelaId: d.id
       });
+    }
+
+    /** Imprime o carnê completo do grupo de fiado */
+    function imprimirGrupoFiado(key) {
+      try { key = decodeURIComponent(key); } catch (e) {}
+      const grupo = montarGruposFiado().find(g => g.key === key);
+      if (!grupo || !grupo.parcelas.length) {
+        toast('Fiado não encontrado', 'error');
+        return;
+      }
+      // Imprime com foco na 1ª parcela em aberto, ou a primeira
+      const alvo = grupo.parcelas.find(p => statusDivida(p) !== 'pago') || grupo.parcelas[0];
+      imprimirDivida(alvo.id);
     }
 
     function gerarImpressao(v) {
       const area = document.getElementById('print-area');
+      if (!area) {
+        toast('Área de impressão não encontrada', 'error');
+        return;
+      }
+
       const formaLabel = v.forma === 'fiado' ? 'FIADO' : 'À VISTA';
       const nomeEntregador = v.entregador || v.vendedor || (usuarioAtual ? usuarioAtual.nome : '________________');
-      const itensHtml = (v.itens || []).map(i => `
-        <tr>
-          <td style="padding:4px 3px;">${i.nome}</td>
-          <td style="text-align:center;padding:4px 3px;">${i.qtd}</td>
-          <td style="text-align:right;padding:4px 3px;">${formatarMoeda(i.precoUnit)}</td>
-          <td style="text-align:right;padding:4px 3px;">${formatarMoeda(i.total)}</td>
-        </tr>
-      `).join('');
+      const empresa = nomeEmpresaExibicao();
 
-      const blocoAssinaturaFiado = v.forma === 'fiado' ? `
-          <div style="margin-top:28px;">
-            <div style="border-top:1px solid #000;width:75%;margin:0 auto;text-align:center;padding-top:6px;font-size:12px;">
-              <strong>RECEBI OS PRODUTOS</strong><br>
-              Assinatura do cliente
+      const itens = Array.isArray(v.itens) ? v.itens : [];
+      const itensHtml = itens.length
+        ? itens.map(i => `
+            <tr>
+              <td style="padding:5px 4px;border-bottom:1px dotted #333;">${i.nome || '—'}${i.unidade ? ' (' + i.unidade + ')' : ''}</td>
+              <td style="text-align:center;padding:5px 4px;border-bottom:1px dotted #333;">${i.qtd != null ? i.qtd : 1}</td>
+              <td style="text-align:right;padding:5px 4px;border-bottom:1px dotted #333;">${formatarMoeda(i.precoUnit)}</td>
+              <td style="text-align:right;padding:5px 4px;border-bottom:1px dotted #333;">${formatarMoeda(i.total != null ? i.total : (Number(i.qtd || 1) * Number(i.precoUnit || 0)))}</td>
+            </tr>`).join('')
+        : `<tr><td colspan="4" style="padding:6px;text-align:center;">—</td></tr>`;
+
+      // Tabela de parcelas (fiado)
+      let blocoParcelas = '';
+      if (v.forma === 'fiado' && Array.isArray(v.parcelasGrupo) && v.parcelasGrupo.length) {
+        const rows = v.parcelasGrupo.map(p => {
+          const st = p.status === 'pago' ? 'PAGO' : (p.status === 'atrasado' ? 'ATRASADO' : 'EM ABERTO');
+          const destaque = (v.parcelaNumero && p.numero === v.parcelaNumero)
+            ? 'font-weight:bold;background:#f0f0f0;'
+            : '';
+          return `<tr style="${destaque}">
+            <td style="padding:4px 3px;border-bottom:1px dotted #333;">${p.numero}/${p.total}</td>
+            <td style="padding:4px 3px;border-bottom:1px dotted #333;text-align:right;">${formatarMoeda(p.valor)}</td>
+            <td style="padding:4px 3px;border-bottom:1px dotted #333;text-align:center;">${formatarData(p.prazo)}</td>
+            <td style="padding:4px 3px;border-bottom:1px dotted #333;text-align:center;">${st}</td>
+          </tr>`;
+        }).join('');
+        blocoParcelas = `
+          <div style="margin:12px 0 10px;">
+            <strong>PLANILHA DE PARCELAS</strong>
+            <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12px;">
+              <thead>
+                <tr>
+                  <th style="border-bottom:1px solid #000;text-align:left;padding:3px;">Parc.</th>
+                  <th style="border-bottom:1px solid #000;text-align:right;padding:3px;">Valor</th>
+                  <th style="border-bottom:1px solid #000;text-align:center;padding:3px;">Vencimento</th>
+                  <th style="border-bottom:1px solid #000;text-align:center;padding:3px;">Status</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+      }
+
+      const valorAbertoGrupo = Array.isArray(v.parcelasGrupo)
+        ? v.parcelasGrupo.filter(p => p.status !== 'pago').reduce((s, p) => s + Number(p.valor || 0), 0)
+        : Number(v.valorDevido || 0);
+
+      const blocoAssinatura = `
+          <div style="margin-top:36px;page-break-inside:avoid;">
+            <p style="font-size:11px;margin-bottom:22px;line-height:1.45;">
+              Declaro ter recebido os produtos/serviços acima e estou ciente do valor e das condições de pagamento
+              ${v.forma === 'fiado' ? '(fiado/parcelado)' : ''}.
+            </p>
+            <div style="display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:200px;text-align:center;">
+                <div style="border-top:1px solid #000;margin:0 auto;width:90%;padding-top:6px;font-size:11px;line-height:1.35;">
+                  <strong>ASSINATURA DO CLIENTE</strong><br>
+                  ${v.clienteNome || 'Nome legível'}
+                </div>
+              </div>
+              <div style="flex:1;min-width:200px;text-align:center;">
+                <div style="border-top:1px solid #000;margin:0 auto;width:90%;padding-top:6px;font-size:11px;line-height:1.35;">
+                  <strong>RESPONSÁVEL / VENDEDOR</strong><br>
+                  ${v.vendedor || nomeEntregador || '________________'}
+                </div>
+              </div>
             </div>
-          </div>
-          <div style="margin-top:28px;">
-            <div style="border-top:1px solid #000;width:75%;margin:0 auto;text-align:center;padding-top:6px;font-size:12px;">
-              <strong>ENTREGADOR</strong><br>
-              ${nomeEntregador}
+            <div style="margin-top:28px;text-align:center;">
+              <div style="border-top:1px solid #000;width:55%;margin:0 auto;padding-top:6px;font-size:11px;">
+                Local e data: _____ / _____ / ________
+              </div>
             </div>
-          </div>
-      ` : '';
+          </div>`;
 
       area.innerHTML = `
-        <div style="max-width:420px;margin:0 auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.4;">
-          <div style="text-align:center;margin-bottom:12px;">
-            <strong style="font-size:16px;">${nomeEmpresaExibicao()}</strong><br>
-            <span style="font-size:12px;">${v.forma === 'fiado' ? 'NOTA DE FIADO / COMPROVANTE' : 'COMPROVANTE DE VENDA'}</span>
+        <div style="max-width:480px;margin:0 auto;font-family:'Courier New',Courier,monospace;font-size:13px;line-height:1.4;color:#000;">
+          <div style="text-align:center;margin-bottom:14px;border-bottom:2px solid #000;padding-bottom:10px;">
+            <strong style="font-size:17px;">${empresa}</strong><br>
+            <span style="font-size:13px;letter-spacing:0.5px;">
+              ${v.forma === 'fiado' ? 'COMPROVANTE DE FIADO / CARNÊ' : 'COMPROVANTE DE VENDA'}
+            </span>
           </div>
+
           <div style="margin-bottom:10px;">
-            Data: ${formatarData(v.data)} &nbsp;&nbsp; Horário: ${v.hora || '—'}
-            ${v.vendedor ? `<br>Vendedor: ${v.vendedor}` : ''}
+            <strong>Data:</strong> ${formatarData(v.data)} &nbsp;&nbsp; <strong>Hora:</strong> ${v.hora || '—'}<br>
+            <strong>Vendedor:</strong> ${v.vendedor || '—'}
+            ${v.parcelaLabel ? `<br><strong>Referência:</strong> ${v.parcelaLabel}` : ''}
           </div>
-          <div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;margin-bottom:10px;">
+
+          <div style="border:1px solid #000;padding:8px;margin-bottom:12px;">
             <strong>CLIENTE</strong><br>
-            Nome: ${v.clienteNome || '__________________________________________'}<br>
-            Telefone: ${v.clienteTelefone || '_______________________________________'}<br>
-            Endereço: ${v.clienteEndereco || '_______________________________________'}
+            Nome: ${v.clienteNome || '________________________________'}<br>
+            Telefone: ${v.clienteTelefone || '____________________________'}<br>
+            ${v.clienteDocumento ? ('Documento: ' + v.clienteDocumento + '<br>') : ''}
+            Endereço: ${v.clienteEndereco || '____________________________'}
           </div>
+
           <div style="margin-bottom:10px;">
-            <strong>PRODUTOS</strong>
+            <strong>PRODUTOS / ITENS</strong>
             <table style="width:100%;border-collapse:collapse;margin-top:6px;font-size:12px;">
               <thead>
                 <tr>
@@ -5150,22 +5617,41 @@
               <tbody>${itensHtml}</tbody>
             </table>
           </div>
-          <div style="margin-bottom:10px;">
+
+          <div style="margin-bottom:8px;border-top:1px dashed #000;border-bottom:1px dashed #000;padding:8px 0;">
             <strong>TOTAL DA VENDA:</strong> ${formatarMoeda(v.total)}<br>
-            <strong>FORMA DE PAGAMENTO:</strong> ${formaLabel}<br>
-            ${v.forma === 'fiado' ? `<strong>PRAZO PARA PAGAMENTO:</strong> ${formatarData(v.prazo)}<br>` : ''}
-            ${v.pago > 0 ? `<strong>VALOR JÁ PAGO:</strong> ${formatarMoeda(v.pago)}<br>` : ''}
-            <strong>VALOR A PAGAR:</strong> ${formatarMoeda(v.valorDevido)}
+            <strong>FORMA DE PAGAMENTO:</strong> ${formaLabel}
+            ${v.forma === 'fiado' && v.parcelaTotal ? ` em ${v.parcelaTotal}x` : ''}<br>
+            ${v.forma === 'fiado' && v.parcelaLabel ? `<strong>PARCELA DESTA VIA:</strong> ${v.parcelaLabel} — ${formatarMoeda(v.valorDevido)}<br>` : ''}
+            ${v.forma === 'fiado' && v.prazo ? `<strong>VENCIMENTO DESTA PARCELA:</strong> ${formatarData(v.prazo)}<br>` : ''}
+            ${v.pago > 0 ? `<strong>VALOR JÁ PAGO (entrada):</strong> ${formatarMoeda(v.pago)}<br>` : ''}
+            ${v.forma === 'fiado'
+              ? `<strong>SALDO EM ABERTO (todas as parcelas):</strong> ${formatarMoeda(valorAbertoGrupo)}`
+              : `<strong>VALOR A PAGAR:</strong> ${formatarMoeda(v.valorDevido)}`}
           </div>
-          ${blocoAssinaturaFiado}
-          <div style="text-align:center;margin-top:20px;font-size:11px;">
-            Obrigado pela compra!
+
+          ${blocoParcelas}
+          ${blocoAssinatura}
+
+          <div style="text-align:center;margin-top:18px;font-size:11px;">
+            Obrigado pela preferência!
           </div>
         </div>
       `;
+
+      // Garante visibilidade e só esconde depois da impressão
       area.style.display = 'block';
-      window.print();
-      setTimeout(() => { area.style.display = 'none'; }, 500);
+      const limpar = () => {
+        area.style.display = 'none';
+        area.innerHTML = '';
+        window.removeEventListener('afterprint', limpar);
+      };
+      window.addEventListener('afterprint', limpar);
+      // Fallback se o navegador não disparar afterprint
+      setTimeout(() => {
+        try { window.print(); } catch (e) { console.warn(e); }
+      }, 50);
+      setTimeout(limpar, 120000);
     }
 
 
