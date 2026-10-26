@@ -1631,6 +1631,21 @@
           </p>
           <div id="lista-modulos-loja" style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem 0.85rem;"></div>
         </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Ordem do menu lateral</h3>
+            <div class="btn-group">
+              <button class="btn btn-secondary btn-sm" onclick="restaurarOrdemMenuPadrao()">Ordem padrão</button>
+              <button class="btn btn-primary" onclick="salvarOrdemMenu()">Salvar ordem</button>
+            </div>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
+            Use as setas para subir ou descer cada tela no menu. Exemplo: deixe <strong>Nova Venda</strong> em 2º lugar.
+            A ordem vale para todos os usuários desta empresa (cada um só vê as telas que tem permissão).
+          </p>
+          <div id="lista-ordem-menu" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+        </div>
       </section>
 
     </div>
@@ -1912,6 +1927,97 @@
       { id: 'usuarios', label: '👤 Usuários e cargos' }
     ];
 
+    /** Ordem padrão do menu: Nova Venda em 2º lugar */
+    function ordemMenuPadrao() {
+      return [
+        'dashboard',
+        'venda',
+        'produtos',
+        'estoque',
+        'clientes',
+        'fiado',
+        'vendas',
+        'notificacoes',
+        'entregas',
+        'mensal',
+        'logs',
+        'usuarios'
+      ];
+    }
+
+    function ordemMenuAtual() {
+      const idsValidos = new Set(PERMISSOES_APP.map(p => p.id));
+      let ordem = (estado && Array.isArray(estado.ordemMenu)) ? estado.ordemMenu.filter(id => idsValidos.has(id)) : [];
+      if (!ordem.length) ordem = ordemMenuPadrao().slice();
+      // Garante que todos os módulos existam na lista (novos módulos no fim)
+      PERMISSOES_APP.forEach(p => {
+        if (!ordem.includes(p.id)) ordem.push(p.id);
+      });
+      return ordem;
+    }
+
+    function aplicarOrdemMenu() {
+      const nav = document.querySelector('.sidebar .nav');
+      if (!nav) return;
+      const ordem = ordemMenuAtual();
+      ordem.forEach(id => {
+        const btn = nav.querySelector('.nav-btn[data-page="' + id + '"]');
+        if (btn) nav.appendChild(btn);
+      });
+      // Visibilidade conforme permissão
+      document.querySelectorAll('.nav-btn[data-page]').forEach(el => {
+        const page = el.dataset.page;
+        el.style.display = temPermissao(page) ? '' : 'none';
+      });
+    }
+
+    function renderOrdemMenu() {
+      const box = document.getElementById('lista-ordem-menu');
+      if (!box) return;
+      const ordem = ordemMenuAtual();
+      box.innerHTML = ordem.map((id, idx) => {
+        const p = PERMISSOES_APP.find(x => x.id === id);
+        const label = p ? p.label : id;
+        const ativo = moduloAtivoNaLoja(id);
+        return `
+          <div style="display:flex;align-items:center;gap:0.5rem;background:#f8faf9;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.65rem;">
+            <span style="min-width:1.6rem;font-weight:700;color:var(--text-muted);font-size:0.85rem;">${idx + 1}.</span>
+            <span style="flex:1;font-size:0.9rem;${ativo ? '' : 'opacity:0.55;'}">${label}${ativo ? '' : ' <small style="color:var(--text-muted)">(módulo desligado)</small>'}</span>
+            <button type="button" class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="moverItemMenu(${idx}, -1)" title="Subir">↑</button>
+            <button type="button" class="btn btn-sm btn-secondary" ${idx === ordem.length - 1 ? 'disabled' : ''} onclick="moverItemMenu(${idx}, 1)" title="Descer">↓</button>
+          </div>`;
+      }).join('');
+    }
+
+    function moverItemMenu(idx, dir) {
+      const ordem = ordemMenuAtual();
+      const novo = idx + dir;
+      if (novo < 0 || novo >= ordem.length) return;
+      const tmp = ordem[idx];
+      ordem[idx] = ordem[novo];
+      ordem[novo] = tmp;
+      estado.ordemMenu = ordem;
+      renderOrdemMenu();
+    }
+
+    function salvarOrdemMenu() {
+      if (!isAdmin() && !temPermissao('usuarios')) return;
+      estado.ordemMenu = ordemMenuAtual();
+      registrarLog('Editar ordem do menu', estado.ordemMenu.join(' → '), 'usuario');
+      salvar();
+      aplicarOrdemMenu();
+      toast('Ordem do menu salva!', 'success');
+    }
+
+    function restaurarOrdemMenuPadrao() {
+      if (!confirm('Restaurar a ordem padrão do menu (Nova Venda em 2º)?')) return;
+      estado.ordemMenu = ordemMenuPadrao().slice();
+      renderOrdemMenu();
+      aplicarOrdemMenu();
+      salvar();
+      toast('Ordem padrão aplicada', 'success');
+    }
+
     function cargosPadrao() {
       const todas = PERMISSOES_APP.map(p => p.id);
       return [
@@ -2062,7 +2168,7 @@
     }
 
     function primeiraPaginaPermitida() {
-      const ordem = ['dashboard', 'venda', 'entregas', 'fiado', 'clientes', 'estoque', 'produtos', 'vendas', 'notificacoes', 'mensal', 'logs', 'usuarios'];
+      const ordem = ordemMenuAtual();
       for (const p of ordem) {
         if (temPermissao(p)) return p;
       }
@@ -2289,6 +2395,16 @@
       } else {
         e.modulosAtivos = e.modulosAtivos.filter(id => PERMISSOES_APP.some(p => p.id === id));
         if (!e.modulosAtivos.includes('usuarios')) e.modulosAtivos.push('usuarios');
+      }
+      // Ordem do menu lateral
+      const idsOk = new Set(PERMISSOES_APP.map(p => p.id));
+      if (!Array.isArray(e.ordemMenu) || !e.ordemMenu.length) {
+        e.ordemMenu = ordemMenuPadrao().slice();
+      } else {
+        e.ordemMenu = e.ordemMenu.filter(id => idsOk.has(id));
+        PERMISSOES_APP.forEach(p => {
+          if (!e.ordemMenu.includes(p.id)) e.ordemMenu.push(p.id);
+        });
       }
       return e;
     }
@@ -3236,11 +3352,8 @@
 
       aplicarMarcaEmpresa();
 
-      // Menus conforme permissões do cargo
-      document.querySelectorAll('.nav-btn[data-page]').forEach(el => {
-        const page = el.dataset.page;
-        el.style.display = temPermissao(page) ? '' : 'none';
-      });
+      // Ordem do menu + permissões do cargo
+      aplicarOrdemMenu();
 
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -3269,7 +3382,7 @@
       else if (paginaIni === 'entregas') renderEntregas();
       else if (paginaIni === 'mensal') renderResumoMensal();
       else if (paginaIni === 'logs') renderLogs();
-      else if (paginaIni === 'usuarios') { renderUsuarios(); renderCargos(); }
+      else if (paginaIni === 'usuarios') { renderUsuarios(); renderCargos(); renderOrdemMenu(); }
       else if (paginaIni === 'venda') {
         preencherSelectClientes();
         preencherSelectProdutos('cart-produto');
@@ -3342,7 +3455,7 @@
           renderCarrinho();
           resetClienteVenda();
         }
-        if (page === 'usuarios') { renderUsuarios(); renderCargos(); }
+        if (page === 'usuarios') { renderUsuarios(); renderCargos(); renderOrdemMenu(); }
       });
     });
 
@@ -3620,6 +3733,7 @@
         `;
       }).join('');
       renderModulosLoja();
+      renderOrdemMenu();
     }
 
     function renderModulosLoja() {
@@ -3649,10 +3763,8 @@
       renderModulosLoja();
       renderCargos();
       // Atualiza menu na hora
-      document.querySelectorAll('.nav-btn[data-page]').forEach(el => {
-        const page = el.dataset.page;
-        el.style.display = temPermissao(page) ? '' : 'none';
-      });
+      aplicarOrdemMenu();
+      renderOrdemMenu();
       toast('Módulos da loja atualizados!', 'success');
     }
 
