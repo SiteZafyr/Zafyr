@@ -10,22 +10,22 @@
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <style>
     :root {
-      --primary: #1a5f2a;
-      --primary-dark: #13401c;
-      --primary-light: #2d8a3e;
-      --accent: #f5c518;
+      --primary: #2f3e6b;
+      --primary-dark: #1a2544;
+      --primary-light: #4a5d8c;
+      --accent: #c9a84c;
       --danger: #c0392b;
       --warning: #e67e22;
-      --info: #2980b9;
-      --success: #27ae60;
-      --bg: #f4f6f5;
+      --info: #3b82f6;
+      --success: #059669;
+      --bg: #f0f2f7;
       --card: #ffffff;
-      --text: #1e1e1e;
-      --text-muted: #5a5a5a;
-      --border: #e0e5e2;
-      --sidebar-w: 250px;
-      --radius: 10px;
-      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --text: #1a1d26;
+      --text-muted: #6b7280;
+      --border: #e2e5ed;
+      --sidebar-w: 268px;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(26, 37, 68, 0.07);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,9 +36,10 @@
       color: var(--text);
       min-height: 100vh;
       display: flex;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ===== LOGIN ===== */
+    /* ===== LOGIN (visual descolado / split) ===== */
     #tela-login {
       position: fixed;
       inset: 0;
@@ -46,123 +47,294 @@
       overflow-y: auto;
       overflow-x: hidden;
       -webkit-overflow-scrolling: touch;
-      background:
-        radial-gradient(ellipse 80% 60% at 10% 20%, rgba(45,138,62,0.35), transparent 50%),
-        radial-gradient(ellipse 70% 50% at 90% 80%, rgba(245,197,24,0.12), transparent 45%),
-        linear-gradient(145deg, #0d2818 0%, #13401c 35%, #1a5f2a 70%, #163d22 100%);
+      background: #0a0e1a;
       display: flex;
-      align-items: flex-start;
+      align-items: stretch;
       justify-content: center;
-      padding: 1.5rem 1rem 2.5rem;
+      padding: 0;
       box-sizing: border-box;
     }
 
     #tela-login.hidden { display: none; }
 
-    .login-box {
-      background: #fff;
-      border-radius: 20px;
-      padding: 1.85rem 1.6rem 1.5rem;
+    .login-shell {
+      display: flex;
       width: 100%;
-      max-width: 440px;
-      margin: auto 0;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06);
-      flex-shrink: 0;
+      min-height: 100%;
       position: relative;
+      z-index: 2;
     }
 
-    .login-box .logo {
-      text-align: center;
-      margin-bottom: 1.25rem;
+    /* Painel esquerdo — marca */
+    .login-brand {
+      display: none;
+      flex: 1.05;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 20%, rgba(90, 110, 180, 0.35), transparent 55%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, rgba(201, 168, 76, 0.12), transparent 50%),
+        linear-gradient(160deg, #0c1222 0%, #151d35 45%, #1a2544 100%);
+      color: #fff;
+      padding: 3rem 3.2rem;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
-    .login-box .logo .logo-icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 0.75rem;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #1a5f2a, #2d8a3e);
+    .login-brand::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 90% 80% at 40% 40%, #000 10%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 90% 80% at 40% 40%, #000 10%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .login-brand::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.28;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 160px 160px;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .login-brand-top {
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 0.4rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      margin-bottom: 2rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .login-brand-badge span {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c9a84c;
+      box-shadow: 0 0 10px rgba(201,168,76,0.7);
+    }
+
+    .login-brand h2 {
+      font-size: clamp(1.85rem, 3.2vw, 2.55rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+      margin-bottom: 1rem;
+      max-width: 420px;
+    }
+
+    .login-brand h2 em {
+      font-style: normal;
+      background: linear-gradient(90deg, #e8d48b, #c9a84c);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .login-brand p.lead {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: rgba(255,255,255,0.65);
+      max-width: 360px;
+      margin-bottom: 2rem;
+    }
+
+    .login-brand-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .login-brand-features li {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.78);
+    }
+
+    .login-brand-features li i {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.6rem;
-      box-shadow: 0 8px 20px rgba(26,95,42,0.35);
+      font-style: normal;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+
+    .login-brand-footer {
+      position: relative;
+      z-index: 1;
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.4);
+      margin-top: 2.5rem;
+    }
+
+    /* Painel direito — formulário */
+    .login-panel {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem 2.5rem;
+      background:
+        radial-gradient(ellipse 70% 50% at 90% 10%, rgba(74, 93, 140, 0.18), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 10% 90%, rgba(201, 168, 76, 0.06), transparent 45%),
+        #0f1424;
+      position: relative;
+    }
+
+    .login-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
+      opacity: 0.18;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .login-box {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: 24px;
+      padding: 2rem 1.75rem 1.75rem;
+      width: 100%;
+      max-width: 420px;
+      margin: 0;
+      box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.15);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .login-box .logo {
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-box .logo .logo-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 0 1rem;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #2f3e6b 0%, #4a5d8c 55%, #1a2544 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      box-shadow: 0 8px 24px rgba(47, 62, 107, 0.35);
     }
 
     .login-box .logo h1 {
-      font-size: 1.45rem;
-      color: var(--primary-dark);
+      font-size: 1.55rem;
+      color: #0f1424;
       margin-bottom: 0.3rem;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.04em;
       font-weight: 800;
     }
 
     .login-box .logo p {
-      font-size: 0.84rem;
-      color: var(--text-muted);
-      line-height: 1.4;
+      font-size: 0.88rem;
+      color: #6b7280;
+      line-height: 1.45;
     }
 
     .login-tabs {
       display: flex;
-      gap: 0.3rem;
-      margin-bottom: 1.15rem;
-      background: #f0f4f1;
-      padding: 0.3rem;
-      border-radius: 12px;
+      gap: 0.25rem;
+      margin-bottom: 1.35rem;
+      background: #f1f3f8;
+      padding: 0.28rem;
+      border-radius: 14px;
     }
 
     .login-tabs .btn {
       flex: 1;
       min-width: 0;
       margin-top: 0;
-      padding: 0.55rem 0.4rem;
-      font-size: 0.78rem;
-      border-radius: 9px;
-      font-weight: 600;
+      padding: 0.62rem 0.35rem;
+      font-size: 0.8rem;
+      border-radius: 11px;
+      font-weight: 650;
       box-shadow: none;
+      letter-spacing: 0.01em;
     }
 
     .login-tabs .btn.btn-secondary {
       background: transparent;
-      color: var(--text-muted);
+      color: #6b7280;
     }
 
     .login-tabs .btn.btn-secondary:hover {
-      background: rgba(255,255,255,0.7);
-      color: var(--text);
+      background: rgba(255, 255, 255, 0.7);
+      color: #1a1d26;
     }
 
     .login-tabs .btn.btn-primary {
-      box-shadow: 0 2px 8px rgba(26,95,42,0.25);
+      background: #1a2544;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(26, 37, 68, 0.3);
     }
 
-    .login-box .form-group { margin-bottom: 0.9rem; }
+    .login-box .form-group { margin-bottom: 1rem; }
 
     .login-box label {
       display: block;
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      margin-bottom: 0.3rem;
+      font-size: 0.76rem;
+      font-weight: 650;
+      color: #6b7280;
+      margin-bottom: 0.35rem;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     .login-box input, .login-box select {
       width: 100%;
-      padding: 0.72rem 0.9rem;
-      border: 1px solid var(--border);
-      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      border: 1.5px solid #e5e8f0;
+      border-radius: 12px;
       font-size: 0.95rem;
       font-family: inherit;
-      background: #fafbfa;
-      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+      background: #f8f9fc;
+      transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+      color: #1a1d26;
     }
 
     .login-box input:focus, .login-box select:focus {
       outline: none;
-      border-color: var(--primary);
+      border-color: #4a5d8c;
       background: #fff;
-      box-shadow: 0 0 0 3px rgba(26,95,42,0.15);
+      box-shadow: 0 0 0 4px rgba(47, 62, 107, 0.12);
     }
 
     .login-box > .btn,
@@ -172,10 +344,36 @@
     #dono-gate > .btn,
     #dono-painel > .btn {
       width: 100%;
-      margin-top: 0.35rem;
-      padding: 0.78rem;
+      margin-top: 0.45rem;
+      padding: 0.88rem;
       font-size: 0.95rem;
-      border-radius: 10px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    #form-login > .btn.btn-primary {
+      background: linear-gradient(135deg, #2f3e6b, #1a2544);
+      box-shadow: 0 8px 24px rgba(26, 37, 68, 0.3);
+      border: none;
+    }
+    #form-login > .btn.btn-primary:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-demo {
+      width: 100%;
+      margin-top: 0.65rem !important;
+      padding: 0.82rem !important;
+      border-radius: 12px !important;
+      font-weight: 650 !important;
+      background: transparent !important;
+      color: #2f3e6b !important;
+      border: 1.5px solid #d4d8e8 !important;
+      box-shadow: none !important;
+    }
+    .btn-demo:hover {
+      background: #f4f5f9 !important;
+      border-color: #4a5d8c !important;
     }
 
     .login-box .btn-sm {
@@ -185,76 +383,156 @@
       font-size: 0.76rem;
     }
 
+    /* Painel do dono expandido (legível) */
+    .login-box.modo-dono {
+      max-width: min(960px, 96vw);
+      padding: 1.75rem 1.6rem 1.5rem;
+    }
+    .login-panel.modo-dono {
+      max-width: none;
+      flex: 1.4;
+      align-items: flex-start;
+      padding-top: 1.5rem;
+      padding-bottom: 2rem;
+      overflow-y: auto;
+    }
+    @media (min-width: 900px) {
+      .login-panel.modo-dono {
+        max-width: none;
+      }
+    }
+
+    .dono-toolbar {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 640px) {
+      .dono-toolbar {
+        grid-template-columns: 1fr 1fr;
+        align-items: end;
+      }
+    }
+
+    .dono-listas-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 720px) {
+      .dono-listas-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     .dono-lista-box {
-      min-height: 120px;
-      max-height: 240px;
+      min-height: 200px;
+      max-height: min(42vh, 380px);
       overflow: auto;
-      margin-bottom: 0.85rem;
-      border: 1px solid #c5d0c8;
-      border-radius: 12px;
-      padding: 0.65rem 0.7rem;
-      background: #fbfcfb;
+      margin-bottom: 0;
+      border: 1px solid #d4d8e4;
+      border-radius: 14px;
+      padding: 0.75rem 0.8rem;
+      background: #f8f9fc;
     }
 
     .dono-lista-box > .dono-lista-titulo {
-      font-size: 0.82rem;
-      font-weight: 700;
+      font-size: 0.84rem;
+      font-weight: 750;
       color: var(--primary-dark);
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.35rem;
+      margin-bottom: 0.55rem;
+      padding-bottom: 0.4rem;
       border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: #f8f9fc;
+      z-index: 1;
     }
 
     .dono-lista-box .dono-item {
-      margin-bottom: 0.45rem;
-      padding: 0.45rem 0.4rem;
-      border-radius: 8px;
+      margin-bottom: 0.5rem;
+      padding: 0.65rem 0.7rem;
+      border-radius: 10px;
       background: #fff;
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 0.8rem;
-      line-height: 1.4;
+      font-size: 0.84rem;
+      line-height: 1.5;
     }
 
     .dono-lista-box .dono-vazio {
       color: var(--text-muted);
-      font-size: 0.8rem;
-      padding: 0.75rem 0.25rem;
+      font-size: 0.84rem;
+      padding: 1.5rem 0.5rem;
       text-align: center;
     }
 
+    .dono-acoes-box {
+      background: #eef0f6;
+      border: 1px solid #d4d8e4;
+      border-radius: 14px;
+      padding: 1rem 1.05rem;
+      margin-bottom: 1rem;
+    }
+    .dono-acoes-box > p {
+      font-size: 0.88rem;
+      font-weight: 750;
+      color: var(--primary-dark);
+      margin-bottom: 0.7rem;
+    }
+    .dono-acoes-btns {
+      display: flex;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+      margin-top: 0.35rem;
+    }
+    .dono-acoes-btns .btn {
+      width: auto !important;
+      margin-top: 0 !important;
+      padding: 0.45rem 0.85rem !important;
+      font-size: 0.82rem !important;
+    }
+
     .login-erro {
-      background: #fdecea;
-      color: #922b21;
-      padding: 0.65rem 0.9rem;
-      border-radius: 10px;
+      background: #fef2f2;
+      color: #991b1b;
+      padding: 0.7rem 0.95rem;
+      border-radius: 12px;
       font-size: 0.84rem;
-      margin-bottom: 0.95rem;
+      margin-bottom: 1rem;
       display: none;
-      border: 1px solid #f5c6cb;
+      border: 1px solid #fecaca;
     }
 
     .login-erro.show { display: block; }
 
     .login-hint {
-      margin-top: 1.15rem;
-      padding-top: 0.95rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.76rem;
-      color: var(--text-muted);
+      margin-top: 1.25rem;
+      padding-top: 1rem;
+      border-top: 1px solid #eef0f5;
+      font-size: 0.75rem;
+      color: #9ca3af;
       text-align: center;
       line-height: 1.55;
     }
 
+    @media (min-width: 900px) {
+      .login-brand { display: flex; }
+      .login-panel { flex: 0.95; max-width: 560px; }
+    }
+
     @media (max-height: 700px) {
-      #tela-login { align-items: flex-start; padding-top: 1rem; }
-      .login-box { margin-top: 0.5rem; margin-bottom: 1rem; }
+      .login-panel { align-items: flex-start; padding-top: 1.25rem; }
     }
 
     /* ===== SIDEBAR ===== */
     .sidebar {
       width: var(--sidebar-w);
-      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+      background:
+        radial-gradient(ellipse 120% 50% at 0% 0%, rgba(74, 93, 140, 0.35), transparent 55%),
+        linear-gradient(175deg, #151d35 0%, #1a2544 55%, #0f1424 100%);
       color: #fff;
       position: fixed;
       top: 0; left: 0; bottom: 0;
@@ -262,31 +540,37 @@
       flex-direction: column;
       z-index: 100;
       transition: transform 0.3s ease;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 8px 0 40px rgba(15, 20, 36, 0.2);
     }
 
     .sidebar-header {
-      padding: 1.3rem 1.2rem;
-      border-bottom: 1px solid rgba(255,255,255,0.15);
+      padding: 1.4rem 1.25rem 1.15rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     .sidebar-header h1 {
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: 0.4px;
+      font-size: 1.12rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
       display: flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.5rem;
     }
 
     .sidebar-header p {
       font-size: 0.72rem;
-      opacity: 0.8;
-      margin-top: 0.2rem;
+      opacity: 0.55;
+      margin-top: 0.25rem;
+      letter-spacing: 0.01em;
     }
 
     .user-info {
-      padding: 0.8rem 1.1rem;
-      background: rgba(0,0,0,0.15);
+      padding: 0.85rem 1.15rem;
+      margin: 0.75rem 0.7rem 0.35rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
       font-size: 0.8rem;
       display: flex;
       align-items: center;
@@ -295,76 +579,93 @@
     }
 
     .user-info .nome {
-      font-weight: 600;
+      font-weight: 650;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
     .user-info .papel {
-      font-size: 0.68rem;
-      background: rgba(255,255,255,0.2);
-      padding: 0.15rem 0.45rem;
+      font-size: 0.66rem;
+      background: rgba(201, 168, 76, 0.2);
+      color: #e8d48b;
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      padding: 0.18rem 0.5rem;
       border-radius: 999px;
       white-space: nowrap;
+      font-weight: 650;
     }
 
     .nav {
       flex: 1;
-      padding: 0.8rem 0.7rem;
+      padding: 0.55rem 0.7rem 0.8rem;
       display: flex;
       flex-direction: column;
-      gap: 0.28rem;
+      gap: 0.2rem;
       overflow-y: auto;
     }
 
     .nav-btn {
       background: transparent;
       border: none;
-      color: rgba(255,255,255,0.85);
-      padding: 0.65rem 0.9rem;
-      border-radius: 8px;
+      color: rgba(255,255,255,0.72);
+      padding: 0.68rem 0.9rem;
+      border-radius: 11px;
       text-align: left;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      transition: all 0.2s;
+      transition: all 0.18s;
       font-family: inherit;
+      font-weight: 500;
     }
 
-    .nav-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
-    .nav-btn.active { background: rgba(255,255,255,0.2); color: #fff; font-weight: 600; }
+    .nav-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+    .nav-btn.active {
+      background: linear-gradient(135deg, rgba(74, 93, 140, 0.55), rgba(47, 62, 107, 0.75));
+      color: #fff;
+      font-weight: 650;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18), inset 0 0 0 1px rgba(255,255,255,0.08);
+    }
 
     .nav-btn .badge {
       margin-left: auto;
-      background: var(--danger);
+      background: #ef4444;
       color: #fff;
-      font-size: 0.68rem;
-      padding: 0.12rem 0.4rem;
+      font-size: 0.66rem;
+      padding: 0.14rem 0.42rem;
       border-radius: 999px;
       font-weight: 700;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
     }
 
     .sidebar-footer {
-      padding: 0.8rem;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 0.75rem 0.85rem 1rem;
+      border-top: 1px solid rgba(255,255,255,0.08);
     }
 
     .btn-logout {
       width: 100%;
-      background: rgba(255,255,255,0.12);
-      border: none;
-      color: #fff;
-      padding: 0.6rem;
-      border-radius: 7px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.85);
+      padding: 0.68rem;
+      border-radius: 11px;
       cursor: pointer;
       font-size: 0.85rem;
       font-family: inherit;
-      transition: background 0.2s;
+      font-weight: 600;
+      transition: all 0.18s;
     }
-    .btn-logout:hover { background: rgba(255,255,255,0.22); }
+    .btn-logout:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
 
     /* ===== MAIN ===== */
     .main {
@@ -373,89 +674,115 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      background: var(--bg);
     }
 
     #app.hidden { display: none; }
 
     .topbar {
-      background: var(--card);
-      padding: 0.95rem 1.4rem;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 1rem 1.5rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(226, 229, 237, 0.9);
       position: sticky;
       top: 0;
       z-index: 50;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      box-shadow: 0 1px 0 rgba(255,255,255,0.8);
     }
 
     .topbar h2 {
-      font-size: 1.25rem;
-      font-weight: 700;
+      font-size: 1.28rem;
+      font-weight: 800;
       color: var(--primary-dark);
+      letter-spacing: -0.03em;
     }
 
     .menu-toggle {
       display: none;
-      background: none;
+      background: #eef0f6;
       border: none;
-      font-size: 1.45rem;
+      font-size: 1.25rem;
       cursor: pointer;
       color: var(--primary);
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      align-items: center;
+      justify-content: center;
     }
 
-    .content { padding: 1.4rem; flex: 1; }
+    .content { padding: 1.5rem 1.5rem 2rem; flex: 1; }
 
     /* ===== CARDS ===== */
     .cards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 0.9rem;
-      margin-bottom: 1.4rem;
+      grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .stat-card {
       background: var(--card);
-      border-radius: var(--radius);
-      padding: 1.1rem;
+      border-radius: 16px;
+      padding: 1.2rem 1.15rem;
       box-shadow: var(--shadow);
+      border: 1px solid rgba(226, 229, 237, 0.8);
       border-left: 4px solid var(--primary);
-      transition: transform 0.15s;
+      transition: transform 0.18s, box-shadow 0.18s;
     }
-    .stat-card:hover { transform: translateY(-2px); }
+    .stat-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(26, 37, 68, 0.12);
+    }
     .stat-card.danger { border-left-color: var(--danger); }
     .stat-card.warning { border-left-color: var(--warning); }
     .stat-card.info { border-left-color: var(--info); }
     .stat-card.success { border-left-color: var(--success); }
 
-    .stat-card .label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem; }
-    .stat-card .value { font-size: 1.4rem; font-weight: 700; }
-    .stat-card .sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.15rem; }
+    .stat-card .label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .stat-card .value {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--primary-dark);
+    }
+    .stat-card .sub { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
 
     /* ===== ALERTS ===== */
-    .alerts { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.4rem; }
+    .alerts { display: flex; flex-direction: column; gap: 0.55rem; margin-bottom: 1.4rem; }
 
     .alert {
-      padding: 0.75rem 1rem;
-      border-radius: 8px;
+      padding: 0.8rem 1.05rem;
+      border-radius: 12px;
       font-size: 0.88rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-weight: 500;
+      font-weight: 550;
     }
-    .alert.danger { background: #fdecea; color: #922b21; border: 1px solid #f5c6cb; }
-    .alert.warning { background: #fef5e7; color: #9a4d0a; border: 1px solid #f9e79f; }
-    .alert.info { background: #eaf2f8; color: #1a5276; border: 1px solid #aed6f1; }
-    .alert.success { background: #e8f8f0; color: #1e6b3a; border: 1px solid #a9dfbf; }
+    .alert.danger { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .alert.warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .alert.info { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+    .alert.success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 
     /* ===== PANEL ===== */
     .panel {
       background: var(--card);
-      border-radius: var(--radius);
+      border-radius: 16px;
       box-shadow: var(--shadow);
-      padding: 1.15rem;
+      border: 1px solid rgba(226, 229, 237, 0.85);
+      padding: 1.25rem 1.3rem;
       margin-bottom: 1.4rem;
     }
 
@@ -465,49 +792,53 @@
       align-items: center;
       justify-content: space-between;
       gap: 0.65rem;
-      margin-bottom: 0.95rem;
-      padding-bottom: 0.65rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.85rem;
       border-bottom: 1px solid var(--border);
     }
 
     .panel-header h3 {
       font-size: 1.05rem;
-      font-weight: 700;
+      font-weight: 800;
       color: var(--primary-dark);
+      letter-spacing: -0.02em;
     }
 
     /* ===== FORMS ===== */
     .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 0.85rem;
+      gap: 0.9rem;
     }
 
-    .form-group { display: flex; flex-direction: column; gap: 0.28rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.32rem; }
 
     .form-group label {
-      font-size: 0.76rem;
-      font-weight: 600;
+      font-size: 0.74rem;
+      font-weight: 650;
       color: var(--text-muted);
+      letter-spacing: 0.02em;
     }
 
     .form-group input,
     .form-group select,
     .form-group textarea {
-      padding: 0.52rem 0.7rem;
-      border: 1px solid var(--border);
-      border-radius: 7px;
+      padding: 0.58rem 0.8rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
       font-size: 0.9rem;
       font-family: inherit;
-      background: #fff;
+      background: #fafbfd;
+      transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
     }
 
     .form-group input:focus,
     .form-group select:focus,
     .form-group textarea:focus {
       outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(26,95,42,0.15);
+      border-color: var(--primary-light);
+      background: #fff;
+      box-shadow: 0 0 0 3.5px rgba(47, 62, 107, 0.12);
     }
 
     .form-group textarea { resize: vertical; min-height: 60px; }
@@ -518,79 +849,96 @@
       align-items: center;
       justify-content: center;
       gap: 0.35rem;
-      padding: 0.52rem 0.95rem;
+      padding: 0.55rem 1rem;
       border: none;
-      border-radius: 7px;
+      border-radius: 10px;
       font-size: 0.86rem;
-      font-weight: 600;
+      font-weight: 650;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.18s;
       font-family: inherit;
     }
-    .btn-primary { background: var(--primary); color: #fff; }
-    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-primary {
+      background: linear-gradient(135deg, #2f3e6b, #1a2544);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(26, 37, 68, 0.22);
+    }
+    .btn-primary:hover { filter: brightness(1.08); }
     .btn-success { background: var(--success); color: #fff; }
-    .btn-success:hover { background: #1e8449; }
+    .btn-success:hover { background: #047857; }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-danger:hover { background: #a93226; }
     .btn-warning { background: var(--warning); color: #fff; }
     .btn-warning:hover { background: #d35400; }
-    .btn-secondary { background: #e8ece9; color: var(--text); }
-    .btn-secondary:hover { background: #d5dbd7; }
-    .btn-sm { padding: 0.28rem 0.55rem; font-size: 0.76rem; }
+    .btn-secondary { background: #eef0f5; color: var(--text); }
+    .btn-secondary:hover { background: #e0e3ec; }
+    .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.76rem; border-radius: 8px; }
     .btn-group { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 
     /* ===== TABLE ===== */
-    .table-wrap { overflow-x: auto; }
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
 
     table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
 
     th, td {
-      padding: 0.65rem 0.75rem;
+      padding: 0.72rem 0.85rem;
       text-align: left;
       border-bottom: 1px solid var(--border);
     }
 
     th {
-      background: #f0f4f1;
-      font-weight: 600;
+      background: #f4f5f9;
+      font-weight: 700;
       color: var(--primary-dark);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.04em;
       white-space: nowrap;
     }
 
-    tr:hover td { background: #f8faf9; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7f8fc; }
 
     .status {
       display: inline-block;
-      padding: 0.15rem 0.45rem;
+      padding: 0.2rem 0.55rem;
       border-radius: 999px;
       font-size: 0.7rem;
       font-weight: 700;
     }
-    .status.aberto { background: #fef5e7; color: #9a4d0a; }
-    .status.pago { background: #e8f8f0; color: #1e6b3a; }
-    .status.atrasado { background: #fdecea; color: #922b21; }
-    .status.baixo { background: #fdecea; color: #922b21; }
-    .status.ok { background: #e8f8f0; color: #1e6b3a; }
-    .status.admin { background: #eaf2f8; color: #1a5276; }
-    .status.vendedor { background: #fef5e7; color: #9a4d0a; }
+    .status.aberto { background: #fffbeb; color: #92400e; }
+    .status.pago { background: #ecfdf5; color: #065f46; }
+    .status.atrasado { background: #fef2f2; color: #991b1b; }
+    .status.baixo { background: #fef2f2; color: #991b1b; }
+    .status.ok { background: #ecfdf5; color: #065f46; }
+    .status.admin { background: #eff6ff; color: #1e40af; }
+    .status.vendedor { background: #fffbeb; color: #92400e; }
 
     /* ===== SEARCH ===== */
-    .search-box { position: relative; max-width: 290px; }
+    .search-box { position: relative; max-width: 300px; }
     .search-box input {
       width: 100%;
-      padding: 0.48rem 0.8rem 0.48rem 2rem;
-      border: 1px solid var(--border);
-      border-radius: 7px;
+      padding: 0.55rem 0.85rem 0.55rem 2.1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
       font-size: 0.86rem;
+      background: #fafbfd;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(47, 62, 107, 0.1);
     }
     .search-box::before {
       content: '🔎';
       position: absolute;
-      left: 0.6rem;
+      left: 0.7rem;
       top: 50%;
       transform: translateY(-50%);
       font-size: 0.82rem;
@@ -600,7 +948,9 @@
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.45);
+      background: rgba(15, 20, 36, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -614,38 +964,51 @@
 
     .modal {
       background: var(--card);
-      border-radius: 12px;
+      border-radius: 18px;
       width: 100%;
       max-width: 500px;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      box-shadow: 0 28px 80px rgba(15, 20, 36, 0.35);
+      border: 1px solid rgba(255,255,255,0.5);
       transform: translateY(20px);
       transition: transform 0.25s;
     }
     .modal-overlay.show .modal { transform: translateY(0); }
 
     .modal-header {
-      padding: 0.95rem 1.15rem;
+      padding: 1.1rem 1.25rem;
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .modal-header h3 { font-size: 1.08rem; color: var(--primary-dark); }
+    .modal-header h3 {
+      font-size: 1.1rem;
+      color: var(--primary-dark);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
 
     .modal-close {
-      background: none;
+      background: #f4f5f9;
       border: none;
-      font-size: 1.35rem;
+      font-size: 1.2rem;
       cursor: pointer;
       color: var(--text-muted);
       line-height: 1;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+    .modal-close:hover { background: #e8eaf0; color: var(--text); }
 
-    .modal-body { padding: 1.15rem; }
+    .modal-body { padding: 1.25rem; }
     .modal-footer {
-      padding: 0.85rem 1.15rem;
+      padding: 0.95rem 1.25rem;
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: flex-end;
@@ -663,12 +1026,13 @@
       gap: 0.45rem;
     }
     .toast {
-      background: var(--primary-dark);
+      background: #1a2544;
       color: #fff;
-      padding: 0.75rem 1.1rem;
-      border-radius: 8px;
+      padding: 0.8rem 1.15rem;
+      border-radius: 12px;
       font-size: 0.86rem;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      font-weight: 550;
+      box-shadow: 0 10px 32px rgba(15, 20, 36, 0.3);
       animation: slideIn 0.3s ease;
       max-width: 330px;
     }
@@ -732,11 +1096,12 @@
       .sidebar { transform: translateX(-100%); }
       .sidebar.open { transform: translateX(0); }
       .main { margin-left: 0; }
-      .menu-toggle { display: block; }
+      .menu-toggle { display: inline-flex; }
       .content { padding: 1rem; }
       .cards-grid { grid-template-columns: 1fr 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .topbar h2 { font-size: 1.05rem; }
+      .topbar { padding: 0.85rem 1rem; gap: 0.6rem; }
     }
     @media (max-width: 480px) { .cards-grid { grid-template-columns: 1fr; } }
 
@@ -811,7 +1176,7 @@
       position: fixed;
       inset: 0;
       z-index: 10000;
-      background: rgba(13, 40, 24, 0.92);
+      background: rgba(12, 18, 34, 0.94);
       display: none;
       align-items: center;
       justify-content: center;
@@ -879,18 +1244,37 @@
 
   <!-- ===================== TELA DE LOGIN ===================== -->
   <div id="tela-login">
+    <div class="login-shell">
+      <!-- Painel de marca (desktop) -->
+      <aside class="login-brand" aria-hidden="true">
+        <div class="login-brand-top">
+          <div class="login-brand-badge"><span></span> Sistema multi-empresa</div>
+          <h2>Controle total do seu<br><em>negócio</em>, em um só lugar</h2>
+          <p class="lead">Estoque, clientes, vendas, fiado e entregas — sincronizado e pronto para o dia a dia da sua equipe.</p>
+          <ul class="login-brand-features">
+            <li><i>📦</i> Estoque e produtos em tempo real</li>
+            <li><i>🛒</i> Vendas com caixa e código de barras</li>
+            <li><i>💰</i> Fiado, parcelas e cobranças</li>
+            <li><i>🚚</i> Entregas e equipe com permissões</li>
+          </ul>
+        </div>
+        <div class="login-brand-footer">Site de Gestão · acesso seguro por empresa</div>
+      </aside>
+
+      <!-- Painel do formulário -->
+      <div class="login-panel">
     <div class="login-box">
       <div class="logo">
-        <div class="logo-icon">🏢</div>
-        <h1>Site de Gestão</h1>
-        <p>Gestão de estoque, clientes e vendas<br>para várias empresas</p>
+        <div class="logo-icon">✦</div>
+        <h1>Bem-vindo de volta</h1>
+        <p>Acesse sua empresa ou explore a demonstração</p>
       </div>
 
-      <!-- Abas Login / Criar / Dono -->
+      <!-- Abas Login / Criar / Assinar (PIX) -->
       <div class="login-tabs">
         <button type="button" class="btn btn-primary" id="tab-login" onclick="mostrarAbaLogin()">Entrar</button>
         <button type="button" class="btn btn-secondary" id="tab-criar" onclick="mostrarAbaCriar()">Criar</button>
-        <button type="button" class="btn btn-secondary" id="tab-dono" onclick="mostrarAbaDono()">Dono</button>
+        <button type="button" class="btn btn-secondary" id="tab-assinar" onclick="mostrarAbaAssinar()">Assinar</button>
       </div>
 
       <div class="login-erro" id="login-erro"></div>
@@ -910,12 +1294,12 @@
           <label>Senha</label>
           <input type="password" id="login-senha" placeholder="Digite sua senha" autocomplete="current-password" />
         </div>
-        <button class="btn btn-primary" onclick="fazerLogin()">Entrar</button>
-        <button type="button" class="btn btn-secondary" style="width:100%;margin-top:0.55rem;background:linear-gradient(135deg,#2980b9,#1a5276);color:#fff;" onclick="iniciarDemonstracao()">
-          👀 Ver demonstração (sem criar conta)
+        <button class="btn btn-primary" onclick="fazerLogin()">Entrar no sistema</button>
+        <button type="button" class="btn btn-demo" onclick="iniciarDemonstracao()">
+          👀 Ver demonstração — sem criar conta
         </button>
-        <p style="font-size:0.72rem;color:var(--text-muted);text-align:center;margin-top:0.45rem;line-height:1.4;">
-          Explore o sistema com dados de exemplo. Nada é gravado de forma definitiva.
+        <p style="font-size:0.72rem;color:#9ca3af;text-align:center;margin-top:0.55rem;line-height:1.4;">
+          Dados de exemplo. Nada é gravado de forma definitiva.
         </p>
       </div>
 
@@ -933,7 +1317,7 @@
           <input type="text" id="nova-empresa-nome" placeholder="Ex: Minha Empresa Centro" />
         </div>
         <div class="form-group">
-          <label>Código da empresa * <small>(único, sem espaços será o indentificador da loja só entra com ele)</small></label>
+          <label>Código da empresa * <small>(único, sem espaços)</small></label>
           <input type="text" id="nova-empresa-codigo" placeholder="Ex: ovos-centro" />
         </div>
         <div class="form-group">
@@ -951,81 +1335,189 @@
         <button class="btn btn-success" onclick="criarEmpresa()">Criar empresa e entrar</button>
       </div>
 
-      <!-- ÁREA DO DONO (você controla quem paga) -->
-      <div id="form-dono" class="hidden">
-        <div id="dono-gate">
-          <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.9rem;line-height:1.45;">
-            Área restrita: gere códigos de liberação, bloqueie empresas que não pagaram e libere de novo quando pagar.
+      <!-- ASSINAR / PAGAR PIX (gera pedido; dono confirma e libera código) -->
+      <div id="form-assinar" class="hidden">
+        <div id="assinar-form-wrap">
+          <p style="font-size:0.86rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+            Preencha os dados da sua empresa. Você receberá as instruções de <strong>PIX</strong>.
+            Depois que o pagamento for confirmado, o sistema gera um <strong>código de liberação</strong> com o nome da empresa.
           </p>
           <div class="form-group">
-            <label>Senha do dono *</label>
-            <input type="password" id="dono-senha" placeholder="Senha do dono do sistema" autocomplete="off" />
+            <label>Nome da empresa *</label>
+            <input type="text" id="assinar-empresa-nome" placeholder="Ex: Padaria Centro" />
           </div>
-          <button class="btn btn-primary" onclick="entrarAreaDono()">Acessar painel</button>
+          <div class="form-group">
+            <label>Telefone / WhatsApp *</label>
+            <input type="text" id="assinar-telefone" placeholder="(00) 00000-0000" />
+          </div>
+          <div class="form-group">
+            <label>E-mail (opcional)</label>
+            <input type="email" id="assinar-email" placeholder="contato@empresa.com" />
+          </div>
+          <div class="form-group">
+            <label>Observação (opcional)</label>
+            <input type="text" id="assinar-obs" placeholder="Plano mensal, quantos usuários..." />
+          </div>
+          <button type="button" class="btn btn-primary" onclick="criarPedidoAssinaturaPix()">Gerar pedido e ver PIX</button>
         </div>
-        <div id="dono-painel" class="hidden">
-          <p style="font-size:0.8rem;color:var(--success);margin-bottom:0.65rem;font-weight:600;">✓ Painel do dono ativo</p>
-
-          <div class="form-group">
-            <label>🔎 Buscar (código, empresa, observação)</label>
-            <input type="text" id="dono-busca" placeholder="Digite para filtrar listas..." oninput="renderPainelDono()" />
+        <div id="assinar-pix-resultado" class="hidden">
+          <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:1rem 1.05rem;margin-bottom:1rem;">
+            <p style="font-weight:750;color:#065f46;margin-bottom:0.45rem;">Pedido criado — pague via PIX</p>
+            <p style="font-size:0.86rem;color:var(--text);line-height:1.5;margin-bottom:0.65rem;" id="assinar-pix-resumo"></p>
+            <div class="form-group" style="margin-bottom:0.55rem;">
+              <label>Chave PIX</label>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <input type="text" id="assinar-pix-chave" readonly style="flex:1;min-width:140px;font-weight:600;" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copiarTextoEl('assinar-pix-chave')">Copiar chave</button>
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0.55rem;">
+              <label>Valor sugerido</label>
+              <input type="text" id="assinar-pix-valor" readonly />
+            </div>
+            <div class="form-group" style="margin-bottom:0.55rem;">
+              <label>Identificação no PIX (cole na descrição)</label>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <input type="text" id="assinar-pix-ident" readonly style="flex:1;min-width:140px;font-weight:700;color:var(--primary-dark);" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copiarTextoEl('assinar-pix-ident')">Copiar</button>
+              </div>
+            </div>
+            <p style="font-size:0.8rem;color:var(--text-muted);line-height:1.45;" id="assinar-pix-instrucao"></p>
           </div>
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:1rem 1.05rem;margin-bottom:1rem;">
+            <p style="font-weight:750;color:#1e40af;margin-bottom:0.45rem;">📱 Envie o comprovante no WhatsApp</p>
+            <p style="font-size:0.86rem;color:var(--text);line-height:1.5;margin-bottom:0.75rem;">
+              Depois de pagar o PIX, <strong>mande o comprovante</strong> para liberarmos o código da sua empresa.
+              Toque no botão abaixo para abrir o WhatsApp já com a mensagem pronta.
+            </p>
+            <button type="button" class="btn btn-success" style="width:100%;" onclick="enviarComprovanteWhatsAppAssinatura()">
+              💬 Enviar comprovante no WhatsApp
+            </button>
+          </div>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.45;">
+            Após a confirmação, o <strong>código de liberação</strong> é gerado com o nome da sua empresa.
+            Use esse código na aba <strong>Criar</strong>.
+          </p>
+          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="voltarFormAssinar()">Novo pedido</button>
+        </div>
+      </div>
 
-          <div class="form-group">
-            <label>Criar código de liberação</label>
-            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
-              <input type="text" id="dono-chave-obs" placeholder="Observação (cliente, telefone...)" style="flex:1;min-width:140px;" />
-              <button type="button" class="btn btn-success btn-sm" onclick="gerarChaveLiberacao()">+ Criar</button>
+      <!-- ÁREA DO DONO (acesso via login: código DONO14062000) -->
+      <div id="form-dono" class="hidden">
+        <div id="dono-painel">
+          <p style="font-size:0.88rem;color:var(--success);margin-bottom:1rem;font-weight:700;">✓ Painel do dono ativo</p>
+
+          <div class="dono-acoes-box" style="margin-bottom:1rem;">
+            <p>⚙️ Configuração PIX (aparece para quem assina)</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
+              <div class="form-group" style="margin-bottom:0.55rem;grid-column:1/-1;">
+                <label>Chave PIX *</label>
+                <input type="text" id="dono-pix-chave" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" />
+              </div>
+              <div class="form-group" style="margin-bottom:0.55rem;">
+                <label>Nome do beneficiário</label>
+                <input type="text" id="dono-pix-beneficiario" placeholder="Seu nome ou da empresa" />
+              </div>
+              <div class="form-group" style="margin-bottom:0.55rem;">
+                <label>Valor padrão (R$)</label>
+                <input type="text" id="dono-pix-valor" placeholder="Ex: 49,90" />
+              </div>
+              <div class="form-group" style="margin-bottom:0.55rem;grid-column:1/-1;">
+                <label>Instrução extra para o cliente</label>
+                <input type="text" id="dono-pix-instrucao" placeholder="Ex: envie o comprovante no WhatsApp..." />
+              </div>
+            </div>
+            <div class="dono-acoes-btns">
+              <button type="button" class="btn btn-primary" onclick="salvarConfigPixDono()">Salvar PIX</button>
             </div>
           </div>
-          <div id="dono-chave-gerada" class="hidden" style="background:#e8f8f0;border:1px solid #a9dfbf;border-radius:10px;padding:0.7rem;margin-bottom:0.8rem;font-size:0.85rem;color:var(--text);">
+
+          <div class="dono-lista-box" style="max-height:min(42vh,380px);margin-bottom:1rem;">
+            <div class="dono-lista-titulo">💳 Pedidos PIX · confirmar pagamento</div>
+            <div class="form-group" style="margin-bottom:0.65rem;">
+              <label style="font-size:0.76rem;font-weight:650;color:var(--text-muted);">🔎 Buscar empresa para confirmar PIX</label>
+              <input type="text" id="dono-busca-pix" placeholder="Digite o nome da empresa..." oninput="renderPainelDono()" autocomplete="off" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d4d8e4;border-radius:10px;font-size:0.92rem;background:#fff;" />
+            </div>
+            <div id="dono-lista-pedidos"><div class="dono-vazio">Nenhum pedido ainda.</div></div>
+          </div>
+
+          <div class="dono-toolbar">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>🔎 Buscar (código, empresa, observação)</label>
+              <input type="text" id="dono-busca" placeholder="Digite para filtrar listas..." oninput="renderPainelDono()" />
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Criar código de liberação (manual)</label>
+              <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:center;">
+                <input type="text" id="dono-chave-obs" placeholder="Observação (cliente, telefone...)" style="flex:1;min-width:140px;" />
+                <button type="button" class="btn btn-success btn-sm" onclick="gerarChaveLiberacao()">+ Criar</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="dono-chave-gerada" class="hidden" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:0.85rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:var(--text);">
             <strong>Código gerado (envie ao cliente):</strong><br>
-            <code id="dono-chave-valor" style="font-size:1rem;word-break:break-all;"></code>
-            <div style="margin-top:0.4rem;">
+            <code id="dono-chave-valor" style="font-size:1.05rem;word-break:break-all;"></code>
+            <div style="margin-top:0.5rem;">
               <button type="button" class="btn btn-sm btn-secondary" onclick="copiarChaveGerada()">Copiar</button>
             </div>
           </div>
 
-          <!-- LISTAS (sempre visíveis) -->
-          <div class="dono-lista-box">
-            <div class="dono-lista-titulo">Códigos de liberação</div>
-            <div id="dono-lista-chaves"><div class="dono-vazio">Carregando…</div></div>
-          </div>
-
-          <div class="dono-lista-box">
-            <div class="dono-lista-titulo">Empresas · pagamento e acesso</div>
-            <div id="dono-lista-empresas"><div class="dono-vazio">Carregando…</div></div>
-          </div>
-
-          <div style="background:#f0f4f1;border:1px solid #c5d0c8;border-radius:12px;padding:0.8rem;margin-bottom:0.85rem;">
-            <p style="font-size:0.82rem;font-weight:700;color:var(--primary-dark);margin-bottom:0.55rem;">Pagamento / acesso da empresa</p>
-            <div class="form-group" style="margin-bottom:0.55rem;">
-              <label>Código da empresa</label>
-              <input type="text" id="dono-empresa-codigo" placeholder="ex: ovos-centro" />
+          <!-- LISTAS lado a lado -->
+          <div class="dono-listas-grid">
+            <div class="dono-lista-box">
+              <div class="dono-lista-titulo">Códigos de liberação</div>
+              <div id="dono-lista-chaves"><div class="dono-vazio">Carregando…</div></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-              <div class="form-group" style="margin-bottom:0.55rem;">
+            <div class="dono-lista-box">
+              <div class="dono-lista-titulo">Empresas · pagamento e acesso</div>
+              <div id="dono-lista-empresas"><div class="dono-vazio">Carregando…</div></div>
+            </div>
+          </div>
+
+          <div id="dono-alertas-vencimento" style="margin-bottom:1rem;"></div>
+
+          <div class="dono-acoes-box">
+            <p>Pagamento / acesso da empresa</p>
+            <div class="form-group" style="margin-bottom:0.6rem;">
+              <label>Código da empresa</label>
+              <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+                <input type="text" id="dono-empresa-codigo" placeholder="ex: ovos-centro" style="flex:1;min-width:140px;" oninput="aoDigitarCodigoEmpresaDono()" onchange="aoDigitarCodigoEmpresaDono()" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="carregarEmpresaNoFormDono()">Carregar</button>
+              </div>
+            </div>
+            <div id="dono-empresa-status-box" class="hidden" style="background:#fff;border:1px solid #d4d8e4;border-radius:12px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;font-size:0.86rem;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
+              <div class="form-group" style="margin-bottom:0.6rem;">
                 <label>Status pagamento</label>
                 <select id="dono-pago-status">
                   <option value="nao">Não pago</option>
                   <option value="sim">Pago</option>
                 </select>
               </div>
-              <div class="form-group" style="margin-bottom:0.55rem;">
+              <div class="form-group" style="margin-bottom:0.6rem;">
                 <label>Data do pagamento</label>
                 <input type="date" id="dono-pago-data" />
               </div>
+              <div class="form-group" style="margin-bottom:0.6rem;">
+                <label>Vencimento (próximo)</label>
+                <input type="date" id="dono-pago-vencimento" />
+              </div>
+              <div class="form-group" style="margin-bottom:0.6rem;">
+                <label>Observação</label>
+                <input type="text" id="dono-pago-obs" placeholder="Ex: PIX, mensalidade março..." />
+              </div>
             </div>
-            <div class="form-group" style="margin-bottom:0.55rem;">
-              <label>Observação do pagamento</label>
-              <input type="text" id="dono-pago-obs" placeholder="Ex: PIX, mensalidade março..." />
+            <div class="dono-acoes-btns" style="margin-bottom:0.55rem;">
+              <button type="button" class="btn btn-success" onclick="marcarPagamentoEmpresaDono(true)">✅ Está pago</button>
+              <button type="button" class="btn btn-warning" onclick="marcarPagamentoEmpresaDono(false)">⏳ Não está pago</button>
+              <button type="button" class="btn btn-primary" onclick="salvarPagamentoEmpresaDono()">Salvar dados</button>
             </div>
-            <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="salvarPagamentoEmpresaDono()">Salvar pagamento</button>
-              <button type="button" class="btn btn-success btn-sm" onclick="liberarEmpresaDono()">Liberar</button>
-              <button type="button" class="btn btn-danger btn-sm" onclick="bloquearEmpresaDono()">Bloquear</button>
-              <button type="button" class="btn btn-danger btn-sm" onclick="apagarEmpresaDono()" title="Remove a empresa da plataforma">🗑️ Apagar empresa</button>
-              <button type="button" class="btn btn-secondary btn-sm" onclick="renderPainelDono()">🔄 Atualizar</button>
+            <div class="dono-acoes-btns">
+              <button type="button" class="btn btn-success" onclick="liberarEmpresaDono()">Liberar acesso</button>
+              <button type="button" class="btn btn-danger" onclick="bloquearEmpresaDono()">Bloquear acesso</button>
+              <button type="button" class="btn btn-danger" onclick="apagarEmpresaDono()" title="Remove a empresa da plataforma">🗑️ Apagar empresa</button>
+              <button type="button" class="btn btn-secondary" onclick="renderPainelDono()">🔄 Atualizar</button>
             </div>
           </div>
 
@@ -1039,8 +1531,10 @@
         <br><br>
         <span id="login-sync-msg" style="opacity:0.9;">☁️ Verificando sincronização…</span>
       </div>
-    </div>
-  </div>
+    </div><!-- /.login-box -->
+      </div><!-- /.login-panel -->
+    </div><!-- /.login-shell -->
+  </div><!-- /#tela-login -->
 
   <!-- ===================== APP ===================== -->
   <div id="app" class="hidden" style="display:contents;">
@@ -1306,7 +1800,7 @@
             </div>
 
             <!-- Campos para cliente avulso (não cadastrado) -->
-            <div id="grupo-cliente-avulso" class="hidden" style="background:#f8faf9;border:1px solid var(--border);border-radius:8px;padding:0.9rem;margin-top:0.5rem;">
+            <div id="grupo-cliente-avulso" class="hidden" style="background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:0.9rem;margin-top:0.5rem;">
               <p style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.6rem;">Dados do cliente (não cadastrado)</p>
               <div class="form-grid">
                 <div class="form-group">
@@ -1389,7 +1883,7 @@
             </div>
             <div class="form-group" id="grupo-preview-parcelas" style="display:none;grid-column:1/-1;">
               <label>Resumo das parcelas</label>
-              <div id="preview-parcelas" style="font-size:0.84rem;background:#f8faf9;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.8rem;color:var(--text);"></div>
+              <div id="preview-parcelas" style="font-size:0.84rem;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.8rem;color:var(--text);"></div>
             </div>
             <div class="form-group">
               <label>Valor já pago (R$)</label>
@@ -1427,7 +1921,7 @@
             </div>
           </div>
 
-          <div class="panel" style="background:#f8faf9;box-shadow:none;border:1px solid var(--border);">
+          <div class="panel" style="background:#f8f9fc;box-shadow:none;border:1px solid var(--border);">
             <div class="panel-header" style="border-bottom:none;margin-bottom:0.45rem;padding-bottom:0;">
               <h3 style="font-size:0.92rem;">Adicionar produto</h3>
             </div>
@@ -1499,7 +1993,7 @@
               </div>
             </div>
           </div>
-          <div id="caixa-detalhe" class="hidden" style="background:#f8faf9;border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;"></div>
+          <div id="caixa-detalhe" class="hidden" style="background:#f8f9fc;border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1rem;"></div>
           <div class="alerts" id="caixa-alertas"></div>
           <div class="table-wrap">
             <table>
@@ -2070,7 +2564,7 @@
         const label = p ? p.label : id;
         const ativo = moduloAtivoNaLoja(id);
         return `
-          <div style="display:flex;align-items:center;gap:0.5rem;background:#f8faf9;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.65rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.65rem;">
             <span style="min-width:1.6rem;font-weight:700;color:var(--text-muted);font-size:0.85rem;">${idx + 1}.</span>
             <span style="flex:1;font-size:0.9rem;${ativo ? '' : 'opacity:0.55;'}">${label}${ativo ? '' : ' <small style="color:var(--text-muted)">(módulo desligado)</small>'}</span>
             <button type="button" class="btn btn-sm btn-secondary" ${idx === 0 ? 'disabled' : ''} onclick="moverItemMenu(${idx}, -1)" title="Subir">↑</button>
@@ -2116,7 +2610,7 @@
     }
 
     function personalizacaoPadrao() {
-      return { nomeExibicao: '', primary: '#1a5f2a', primaryDark: '#13401c', accent: '#f5c518' };
+      return { nomeExibicao: '', primary: '#2f3e6b', primaryDark: '#1a2544', accent: '#c9a84c' };
     }
 
     function obterPersonalizacao() {
@@ -2458,11 +2952,13 @@
     // ===== DONO DO SISTEMA (troque esta senha!) =====
     // Usada só no painel "Área do dono" para gerar códigos e bloquear/liberar contas
     const SENHA_DONO_SISTEMA = '14062000';
+    /** Código secreto no campo "empresa" para abrir o painel do dono pelo login normal */
+    const CODIGO_LOGIN_DONO = 'dono14062000';
     const PLATAFORMA_LS_KEY = 'casaDosOvos_plataforma_v1';
 
     // Telefone exibido no fim da demonstração (troque pelo número real)
-    const TELEFONE_CONTATO_DEMO = '8199999999';
-    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 9999-9999';
+    const TELEFONE_CONTATO_DEMO = '8100000000';
+    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 0000-0000';
 
     let db = null;
     let firebaseOk = false;
@@ -2472,31 +2968,46 @@
     let modoDemo = false;
 
     /** Dados da plataforma (chaves + status das empresas) — nuvem + local */
+    function platPadrao() {
+      return {
+        chaves: {},
+        acessos: {},
+        pedidosPix: {},
+        configPix: {
+          chave: '',
+          beneficiario: '',
+          valorPadrao: '',
+          instrucao: 'Envie o comprovante após o pagamento. O código de liberação será gerado após a confirmação.'
+        }
+      };
+    }
+
+    function normalizarPlat(v) {
+      const base = platPadrao();
+      if (!v || typeof v !== 'object') return base;
+      return {
+        chaves: v.chaves && typeof v.chaves === 'object' ? v.chaves : {},
+        acessos: v.acessos && typeof v.acessos === 'object' ? v.acessos : {},
+        pedidosPix: v.pedidosPix && typeof v.pedidosPix === 'object' ? v.pedidosPix : {},
+        configPix: {
+          ...base.configPix,
+          ...(v.configPix && typeof v.configPix === 'object' ? v.configPix : {})
+        }
+      };
+    }
+
     async function lerPlataforma() {
-      const vazio = { chaves: {}, acessos: {} };
       if (firebaseOk && db) {
         try {
           const snap = await db.ref('plataforma').once('value');
-          if (snap.exists()) {
-            const v = snap.val() || {};
-            return {
-              chaves: v.chaves && typeof v.chaves === 'object' ? v.chaves : {},
-              acessos: v.acessos && typeof v.acessos === 'object' ? v.acessos : {}
-            };
-          }
+          if (snap.exists()) return normalizarPlat(snap.val());
         } catch (e) { console.warn(e); }
       }
       try {
         const raw = localStorage.getItem(PLATAFORMA_LS_KEY);
-        if (raw) {
-          const v = JSON.parse(raw);
-          return {
-            chaves: v.chaves && typeof v.chaves === 'object' ? v.chaves : {},
-            acessos: v.acessos && typeof v.acessos === 'object' ? v.acessos : {}
-          };
-        }
+        if (raw) return normalizarPlat(JSON.parse(raw));
       } catch (e) {}
-      return vazio;
+      return platPadrao();
     }
 
     async function salvarPlataforma(plat) {
@@ -2512,16 +3023,289 @@
       }
     }
 
+    /** Dias após o vencimento em que o acesso ainda funciona; depois disso bloqueia sozinho */
+    const DIAS_GRACA_BLOQUEIO_PAGAMENTO = 5;
+
+    /**
+     * Se o pagamento venceu há mais de DIAS_GRACA_BLOQUEIO_PAGAMENTO dias,
+     * marca a empresa como bloqueada automaticamente.
+     * Retorna true se houve alteração salva.
+     */
+    function marcarBloqueioAutomaticoSeVencido(a) {
+      if (!a || a.status === 'bloqueado') return false;
+      let dataVenc = a.dataVencimento ? String(a.dataVencimento).slice(0, 10) : '';
+      if (!dataVenc && a.dataPagamento) {
+        try {
+          if (typeof adicionarDiasDataISO === 'function') {
+            dataVenc = adicionarDiasDataISO(a.dataPagamento, 30);
+          } else {
+            const base = new Date(String(a.dataPagamento).slice(0, 10) + 'T12:00:00');
+            if (!isNaN(base.getTime())) {
+              base.setDate(base.getDate() + 30);
+              dataVenc = base.toISOString().slice(0, 10);
+            }
+          }
+        } catch (e) {}
+      }
+      if (!dataVenc) return false;
+      let dias = null;
+      try {
+        if (typeof diasAteDataISO === 'function') dias = diasAteDataISO(dataVenc);
+        else {
+          const alvo = new Date(dataVenc + 'T12:00:00');
+          const agora = new Date();
+          const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+          dias = Math.round((alvo - hoje) / 86400000);
+        }
+      } catch (e) { return false; }
+      if (dias == null) return false;
+      // Bloqueia quando passaram 5 dias ou mais do vencimento (dias <= -5)
+      if (dias <= -DIAS_GRACA_BLOQUEIO_PAGAMENTO) {
+        a.status = 'bloqueado';
+        a.bloqueadoAutomatico = true;
+        a.bloqueadoEm = new Date().toISOString();
+        a.bloqueadoMotivo = 'Pagamento vencido há ' + Math.abs(dias) + ' dia(s) (limite: ' + DIAS_GRACA_BLOQUEIO_PAGAMENTO + ' dias após o vencimento)';
+        a.atualizadoEm = new Date().toISOString();
+        return true;
+      }
+      return false;
+    }
+
+    async function aplicarBloqueioAutomaticoPorVencimento(plat, codigo) {
+      if (!plat || !codigo || !plat.acessos) return false;
+      const a = plat.acessos[codigo];
+      if (!a) return false;
+      const mudou = marcarBloqueioAutomaticoSeVencido(a);
+      if (mudou) await salvarPlataforma(plat);
+      return mudou;
+    }
+
     async function obterStatusAcessoEmpresa(codigo) {
       const plat = await lerPlataforma();
       const a = plat.acessos[codigo];
       if (!a) return { status: 'inexistente', registro: null, plat };
-      return { status: a.status || 'bloqueado', registro: a, plat };
+      try {
+        await aplicarBloqueioAutomaticoPorVencimento(plat, codigo);
+      } catch (e) {
+        console.warn('Bloqueio automático:', e);
+      }
+      const reg = plat.acessos[codigo];
+      return { status: (reg && reg.status) || 'bloqueado', registro: reg, plat };
     }
 
     function gerarCodigoChave() {
       const parte = () => Math.random().toString(36).slice(2, 6).toUpperCase();
       return 'LIB-' + parte() + '-' + parte() + '-' + parte();
+    }
+
+    /** Código de liberação com nome da empresa (fácil de identificar) */
+    function gerarCodigoChaveComEmpresa(nomeEmpresa) {
+      const slug = String(nomeEmpresa || 'EMPRESA')
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/[^A-Z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 18) || 'EMPRESA';
+      const sufixo = Math.random().toString(36).slice(2, 6).toUpperCase();
+      return 'LIB-' + slug + '-' + sufixo;
+    }
+
+    function copiarTextoEl(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const t = el.value || el.textContent || '';
+      if (!t) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(t).then(() => toast('Copiado!', 'success')).catch(() => prompt('Copie:', t));
+      } else {
+        prompt('Copie:', t);
+      }
+    }
+
+    async function criarPedidoAssinaturaPix() {
+      const nome = (document.getElementById('assinar-empresa-nome').value || '').trim();
+      const telefone = (document.getElementById('assinar-telefone').value || '').trim();
+      const email = (document.getElementById('assinar-email').value || '').trim();
+      const obs = (document.getElementById('assinar-obs').value || '').trim();
+      const erroEl = document.getElementById('login-erro');
+      if (!nome) {
+        erroEl.textContent = 'Informe o nome da empresa.';
+        erroEl.classList.add('show');
+        return;
+      }
+      if (!telefone) {
+        erroEl.textContent = 'Informe o telefone / WhatsApp.';
+        erroEl.classList.add('show');
+        return;
+      }
+      erroEl.classList.remove('show');
+
+      const plat = await lerPlataforma();
+      const cfg = plat.configPix || {};
+      if (!cfg.chave || !String(cfg.chave).trim()) {
+        erroEl.textContent = 'Pagamento PIX ainda não configurado pelo dono do sistema. Tente mais tarde ou fale no contato da demonstração.';
+        erroEl.classList.add('show');
+        return;
+      }
+
+      const id = 'pix-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      const ident = ('SG-' + nome).replace(/\s+/g, ' ').slice(0, 40);
+      const pedido = {
+        id,
+        empresaNome: nome,
+        telefone,
+        email,
+        obs,
+        valor: cfg.valorPadrao || '',
+        identificacaoPix: ident,
+        status: 'pendente',
+        criadoEm: new Date().toISOString(),
+        confirmadoEm: null,
+        chaveGerada: null
+      };
+      if (!plat.pedidosPix) plat.pedidosPix = {};
+      plat.pedidosPix[id] = pedido;
+      await salvarPlataforma(plat);
+
+      document.getElementById('assinar-form-wrap').classList.add('hidden');
+      document.getElementById('assinar-pix-resultado').classList.remove('hidden');
+      document.getElementById('assinar-pix-resumo').innerHTML =
+        'Empresa: <strong>' + nome + '</strong><br>Telefone: ' + telefone +
+        (cfg.beneficiario ? '<br>Recebedor: ' + cfg.beneficiario : '');
+      document.getElementById('assinar-pix-chave').value = cfg.chave;
+      document.getElementById('assinar-pix-valor').value = cfg.valorPadrao
+        ? (String(cfg.valorPadrao).includes('R$') ? cfg.valorPadrao : 'R$ ' + cfg.valorPadrao)
+        : 'Combinar com o suporte';
+      document.getElementById('assinar-pix-ident').value = ident;
+      document.getElementById('assinar-pix-instrucao').textContent =
+        cfg.instrucao || 'Após pagar, envie o comprovante no WhatsApp para liberarmos o código da sua empresa.';
+      toast('Pedido criado! Faça o PIX e envie o comprovante no WhatsApp.', 'success');
+    }
+
+    function enviarComprovanteWhatsAppAssinatura() {
+      const num = String(TELEFONE_CONTATO_DEMO || '').replace(/\D/g, '');
+      if (!num) {
+        toast('Telefone de contato não configurado', 'error');
+        return;
+      }
+      const nomeEl = document.getElementById('assinar-empresa-nome');
+      let empresa = nomeEl ? (nomeEl.value || '').trim() : '';
+      if (!empresa) {
+        const resumo = document.getElementById('assinar-pix-resumo');
+        const strong = resumo ? resumo.querySelector('strong') : null;
+        if (strong) empresa = (strong.textContent || '').trim();
+      }
+      const identEl = document.getElementById('assinar-pix-ident');
+      const valorEl = document.getElementById('assinar-pix-valor');
+      const ident = identEl ? (identEl.value || '').trim() : '';
+      const valor = valorEl ? (valorEl.value || '').trim() : '';
+      let msg = 'Olá! Acabei de pagar o PIX do *Site de Gestão* e estou enviando o comprovante para liberação.';
+      if (empresa) msg += '\n\n*Empresa:* ' + empresa;
+      if (ident) msg += '\n*Identificação no PIX:* ' + ident;
+      if (valor) msg += '\n*Valor:* ' + valor;
+      msg += '\n\nSegue o comprovante em anexo.';
+      const url = 'https://wa.me/55' + num + '?text=' + encodeURIComponent(msg);
+      window.open(url, '_blank');
+    }
+
+    function voltarFormAssinar() {
+      document.getElementById('assinar-pix-resultado').classList.add('hidden');
+      document.getElementById('assinar-form-wrap').classList.remove('hidden');
+      ['assinar-empresa-nome', 'assinar-telefone', 'assinar-email', 'assinar-obs'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+    }
+
+    async function salvarConfigPixDono() {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      plat.configPix = {
+        chave: (document.getElementById('dono-pix-chave').value || '').trim(),
+        beneficiario: (document.getElementById('dono-pix-beneficiario').value || '').trim(),
+        valorPadrao: (document.getElementById('dono-pix-valor').value || '').trim(),
+        instrucao: (document.getElementById('dono-pix-instrucao').value || '').trim() ||
+          'Envie o comprovante após o pagamento. O código de liberação será gerado após a confirmação.'
+      };
+      if (!plat.configPix.chave) {
+        toast('Informe a chave PIX', 'error');
+        return;
+      }
+      await salvarPlataforma(plat);
+      toast('Configuração PIX salva!', 'success');
+    }
+
+    async function carregarConfigPixNoPainel() {
+      const plat = await lerPlataforma();
+      const cfg = plat.configPix || {};
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+      set('dono-pix-chave', cfg.chave);
+      set('dono-pix-beneficiario', cfg.beneficiario);
+      set('dono-pix-valor', cfg.valorPadrao);
+      set('dono-pix-instrucao', cfg.instrucao);
+    }
+
+    async function confirmarPedidoPix(pedidoId) {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      const p = plat.pedidosPix && plat.pedidosPix[pedidoId];
+      if (!p) { toast('Pedido não encontrado', 'error'); return; }
+      if (p.status === 'pago' && p.chaveGerada) {
+        toast('Já confirmado. Código: ' + p.chaveGerada, 'success');
+        return;
+      }
+      if (!confirm('Confirmar PIX recebido de "' + p.empresaNome + '"?\nSerá gerado o código de liberação com o nome da empresa.')) return;
+
+      let chave = gerarCodigoChaveComEmpresa(p.empresaNome);
+      while (plat.chaves[chave]) chave = gerarCodigoChaveComEmpresa(p.empresaNome);
+
+      const obsChave = [
+        p.empresaNome,
+        p.telefone ? 'Tel: ' + p.telefone : '',
+        p.email ? p.email : '',
+        p.obs || '',
+        'Pedido ' + pedidoId
+      ].filter(Boolean).join(' · ');
+
+      plat.chaves[chave] = {
+        chave,
+        status: 'livre',
+        obs: obsChave,
+        criadaEm: new Date().toISOString(),
+        empresaCodigo: null,
+        usadaEm: null,
+        empresaNomePedido: p.empresaNome,
+        pedidoPixId: pedidoId
+      };
+
+      p.status = 'pago';
+      p.confirmadoEm = new Date().toISOString();
+      p.chaveGerada = chave;
+
+      await salvarPlataforma(plat);
+      renderPainelDono();
+      toast('PIX confirmado! Código: ' + chave, 'success');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try { await navigator.clipboard.writeText(chave); } catch (e) {}
+      }
+      alert('Código de liberação gerado para "' + p.empresaNome + '":\n\n' + chave + '\n\n(Já copiado se o navegador permitir)\nEnvie este código ao cliente para usar na aba Criar.');
+    }
+
+    async function cancelarPedidoPix(pedidoId) {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      const p = plat.pedidosPix && plat.pedidosPix[pedidoId];
+      if (!p) return;
+      if (p.status === 'pago') {
+        toast('Pedido já confirmado; não cancele por aqui.', 'error');
+        return;
+      }
+      if (!confirm('Cancelar pedido de "' + (p.empresaNome || '') + '"?')) return;
+      p.status = 'cancelado';
+      p.canceladoEm = new Date().toISOString();
+      await salvarPlataforma(plat);
+      renderPainelDono();
+      toast('Pedido cancelado');
     }
 
     function setSyncStatus(tipo, texto) {
@@ -2821,8 +3605,26 @@
     }
 
     // ===================== ABAS LOGIN / CRIAR / DONO =====================
+    function setModoDonoUI(ativo) {
+      const box = document.querySelector('.login-box');
+      const panel = document.querySelector('.login-panel');
+      if (box) box.classList.toggle('modo-dono', !!ativo);
+      if (panel) panel.classList.toggle('modo-dono', !!ativo);
+      const tabs = document.querySelector('.login-tabs');
+      if (tabs) tabs.style.display = ativo ? 'none' : '';
+      const logoH = document.querySelector('.login-box .logo h1');
+      const logoP = document.querySelector('.login-box .logo p');
+      if (ativo) {
+        if (logoH) logoH.textContent = 'Painel do dono';
+        if (logoP) logoP.textContent = 'Códigos, empresas, pagamentos e acesso';
+      } else {
+        if (logoH) logoH.textContent = 'Bem-vindo de volta';
+        if (logoP) logoP.textContent = 'Acesse sua empresa ou explore a demonstração';
+      }
+    }
+
     function resetAbasLogin() {
-      ['tab-login', 'tab-criar', 'tab-dono'].forEach(id => {
+      ['tab-login', 'tab-criar', 'tab-assinar'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
         el.classList.remove('btn-primary');
@@ -2830,8 +3632,11 @@
       });
       document.getElementById('form-login').classList.add('hidden');
       document.getElementById('form-criar-empresa').classList.add('hidden');
+      const formAssinar = document.getElementById('form-assinar');
+      if (formAssinar) formAssinar.classList.add('hidden');
       document.getElementById('form-dono').classList.add('hidden');
       document.getElementById('login-erro').classList.remove('show');
+      setModoDonoUI(false);
     }
 
     function mostrarAbaLogin() {
@@ -2848,42 +3653,47 @@
       document.getElementById('tab-criar').classList.remove('btn-secondary');
     }
 
-    function mostrarAbaDono() {
+    function mostrarAbaAssinar() {
       resetAbasLogin();
-      document.getElementById('form-dono').classList.remove('hidden');
-      document.getElementById('tab-dono').classList.add('btn-primary');
-      document.getElementById('tab-dono').classList.remove('btn-secondary');
-      if (donoLogado) {
-        document.getElementById('dono-gate').classList.add('hidden');
-        document.getElementById('dono-painel').classList.remove('hidden');
-        renderPainelDono();
-      } else {
-        document.getElementById('dono-gate').classList.remove('hidden');
-        document.getElementById('dono-painel').classList.add('hidden');
+      const formAssinar = document.getElementById('form-assinar');
+      if (formAssinar) formAssinar.classList.remove('hidden');
+      const tab = document.getElementById('tab-assinar');
+      if (tab) {
+        tab.classList.add('btn-primary');
+        tab.classList.remove('btn-secondary');
       }
+      const logoH = document.querySelector('.login-box .logo h1');
+      const logoP = document.querySelector('.login-box .logo p');
+      if (logoH) logoH.textContent = 'Assinar o sistema';
+      if (logoP) logoP.textContent = 'Pague via PIX e receba o código de liberação';
     }
 
-    function entrarAreaDono() {
-      const senha = document.getElementById('dono-senha').value;
-      const erroEl = document.getElementById('login-erro');
-      if (senha !== SENHA_DONO_SISTEMA) {
-        erroEl.textContent = 'Senha do dono incorreta.';
-        erroEl.classList.add('show');
-        return;
-      }
-      erroEl.classList.remove('show');
+    function abrirPainelDonoAposLogin() {
       donoLogado = true;
-      document.getElementById('dono-senha').value = '';
-      document.getElementById('dono-gate').classList.add('hidden');
-      document.getElementById('dono-painel').classList.remove('hidden');
+      document.getElementById('form-login').classList.add('hidden');
+      document.getElementById('form-criar-empresa').classList.add('hidden');
+      const formAssinar = document.getElementById('form-assinar');
+      if (formAssinar) formAssinar.classList.add('hidden');
+      document.getElementById('form-dono').classList.remove('hidden');
+      const painel = document.getElementById('dono-painel');
+      if (painel) painel.classList.remove('hidden');
+      setModoDonoUI(true);
+      carregarConfigPixNoPainel();
       renderPainelDono();
     }
 
     function sairAreaDono() {
       donoLogado = false;
-      document.getElementById('dono-gate').classList.remove('hidden');
-      document.getElementById('dono-painel').classList.add('hidden');
-      document.getElementById('dono-chave-gerada').classList.add('hidden');
+      const gerada = document.getElementById('dono-chave-gerada');
+      if (gerada) gerada.classList.add('hidden');
+      document.getElementById('form-dono').classList.add('hidden');
+      setModoDonoUI(false);
+      mostrarAbaLogin();
+      const erroEl = document.getElementById('login-erro');
+      if (erroEl) {
+        erroEl.classList.remove('show');
+        erroEl.textContent = '';
+      }
     }
 
     async function gerarChaveLiberacao() {
@@ -2941,10 +3751,12 @@
           nome: codigo,
           pago: false,
           dataPagamento: '',
+          dataVencimento: '',
           obsPagamento: '',
           atualizadoEm: new Date().toISOString()
         };
       }
+      if (plat.acessos[codigo].dataVencimento == null) plat.acessos[codigo].dataVencimento = '';
       return plat.acessos[codigo];
     }
 
@@ -2968,10 +3780,75 @@
       const plat = await lerPlataforma();
       const a = garantirAcesso(plat, codigo);
       a.status = 'liberado';
+      a.bloqueadoAutomatico = false;
+      a.bloqueadoMotivo = '';
+      a.bloqueadoEm = null;
       a.atualizadoEm = new Date().toISOString();
       await salvarPlataforma(plat);
       toast('Empresa liberada: ' + codigo, 'success');
       renderPainelDono();
+    }
+
+    function adicionarDiasDataISO(dataISO, dias) {
+      const base = dataISO ? new Date(String(dataISO).slice(0, 10) + 'T12:00:00') : new Date();
+      if (isNaN(base.getTime())) {
+        const d = new Date();
+        d.setDate(d.getDate() + Number(dias || 0));
+        return d.toISOString().slice(0, 10);
+      }
+      base.setDate(base.getDate() + Number(dias || 0));
+      return base.toISOString().slice(0, 10);
+    }
+
+    function hojeISOLocal() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
+    function diasAteDataISO(dataISO) {
+      if (!dataISO) return null;
+      const alvo = new Date(String(dataISO).slice(0, 10) + 'T12:00:00');
+      if (isNaN(alvo.getTime())) return null;
+      const hoje = new Date(hojeISOLocal() + 'T12:00:00');
+      return Math.round((alvo - hoje) / 86400000);
+    }
+
+    function obterDataVencimentoAcesso(a) {
+      if (!a) return '';
+      if (a.dataVencimento) return String(a.dataVencimento).slice(0, 10);
+      if (a.dataPagamento) return adicionarDiasDataISO(a.dataPagamento, 30);
+      return '';
+    }
+
+    function statusVencimentoPagamento(a) {
+      const venc = obterDataVencimentoAcesso(a);
+      if (!venc) return { tipo: 'sem', dias: null, venc: '', label: 'Sem data de vencimento' };
+      const dias = diasAteDataISO(venc);
+      if (dias == null) return { tipo: 'sem', dias: null, venc, label: 'Sem data de vencimento' };
+      const graca = (typeof DIAS_GRACA_BLOQUEIO_PAGAMENTO === 'number') ? DIAS_GRACA_BLOQUEIO_PAGAMENTO : 5;
+      if (dias <= -graca) {
+        return {
+          tipo: 'bloqueio',
+          dias,
+          venc,
+          label: 'Bloqueio automático (vencido há ' + Math.abs(dias) + ' dia(s))'
+        };
+      }
+      if (dias < 0) {
+        const restam = graca - Math.abs(dias);
+        return {
+          tipo: 'vencido',
+          dias,
+          venc,
+          label: 'Vencido há ' + Math.abs(dias) + ' dia(s) — bloqueio em ' + Math.max(0, restam) + ' dia(s)'
+        };
+      }
+      if (dias === 0) return { tipo: 'hoje', dias, venc, label: 'Vence HOJE' };
+      if (dias <= 3) return { tipo: 'proximo', dias, venc, label: 'Vence em ' + dias + ' dia(s)' };
+      return { tipo: 'ok', dias, venc, label: 'Vence em ' + dias + ' dia(s)' };
     }
 
     async function salvarPagamentoEmpresaDono() {
@@ -2979,35 +3856,110 @@
       const codigo = normalizarCodigoEmpresa(document.getElementById('dono-empresa-codigo').value);
       if (!codigo) { toast('Informe o código da empresa', 'error'); return; }
       const pago = document.getElementById('dono-pago-status').value === 'sim';
-      const dataPagamento = document.getElementById('dono-pago-data').value || '';
+      let dataPagamento = document.getElementById('dono-pago-data').value || '';
+      let dataVencimento = (document.getElementById('dono-pago-vencimento') || {}).value || '';
       const obsPagamento = (document.getElementById('dono-pago-obs').value || '').trim();
       if (pago && !dataPagamento) {
-        toast('Informe a data do pagamento', 'error');
-        return;
+        dataPagamento = hojeISOLocal();
+        document.getElementById('dono-pago-data').value = dataPagamento;
+      }
+      if (pago && !dataVencimento) {
+        dataVencimento = adicionarDiasDataISO(dataPagamento || hojeISOLocal(), 30);
+        const elV = document.getElementById('dono-pago-vencimento');
+        if (elV) elV.value = dataVencimento;
       }
       const plat = await lerPlataforma();
       const a = garantirAcesso(plat, codigo);
       a.pago = pago;
       a.dataPagamento = dataPagamento;
+      a.dataVencimento = pago ? dataVencimento : (dataVencimento || a.dataVencimento || '');
       a.obsPagamento = obsPagamento;
       a.atualizadoEm = new Date().toISOString();
-      // Se marcou como pago, libera acesso automaticamente; se não pago, mantém status atual
-      if (pago) a.status = 'liberado';
+      if (pago) {
+        a.status = 'liberado';
+        a.bloqueadoAutomatico = false;
+        a.bloqueadoMotivo = '';
+        a.bloqueadoEm = null;
+      }
       await salvarPlataforma(plat);
       toast(pago ? 'Pagamento registrado e acesso liberado' : 'Marcado como não pago', 'success');
-      renderPainelDono();
+      await renderPainelDono();
+      carregarEmpresaNoFormDono();
+    }
+
+    async function marcarPagamentoEmpresaDono(pago) {
+      if (!donoLogado) return;
+      const codigo = normalizarCodigoEmpresa(document.getElementById('dono-empresa-codigo').value);
+      if (!codigo) { toast('Informe o código da empresa', 'error'); return; }
+      document.getElementById('dono-pago-status').value = pago ? 'sim' : 'nao';
+      if (pago) {
+        if (!document.getElementById('dono-pago-data').value) {
+          document.getElementById('dono-pago-data').value = hojeISOLocal();
+        }
+        const elV = document.getElementById('dono-pago-vencimento');
+        if (elV && !elV.value) {
+          elV.value = adicionarDiasDataISO(document.getElementById('dono-pago-data').value, 30);
+        }
+      }
+      await salvarPagamentoEmpresaDono();
     }
 
     function preencherFormEmpresaDono(codigo) {
       const el = document.getElementById('dono-empresa-codigo');
       if (el) el.value = codigo || '';
-      lerPlataforma().then(plat => {
-        const a = plat.acessos[codigo];
-        if (!a) return;
-        document.getElementById('dono-pago-status').value = a.pago ? 'sim' : 'nao';
-        document.getElementById('dono-pago-data').value = a.dataPagamento || '';
-        document.getElementById('dono-pago-obs').value = a.obsPagamento || '';
-      });
+      carregarEmpresaNoFormDono();
+    }
+
+    function aoDigitarCodigoEmpresaDono() {
+      clearTimeout(window._donoCodigoTimer);
+      window._donoCodigoTimer = setTimeout(() => {
+        const codigo = normalizarCodigoEmpresa((document.getElementById('dono-empresa-codigo') || {}).value || '');
+        if (codigo && codigo.length >= 3) carregarEmpresaNoFormDono();
+      }, 350);
+    }
+
+    async function carregarEmpresaNoFormDono() {
+      const codigo = normalizarCodigoEmpresa((document.getElementById('dono-empresa-codigo') || {}).value || '');
+      const box = document.getElementById('dono-empresa-status-box');
+      if (!codigo) {
+        if (box) { box.classList.add('hidden'); box.innerHTML = ''; }
+        return;
+      }
+      const plat = await lerPlataforma();
+      const a = plat.acessos[codigo];
+      if (!a) {
+        if (box) {
+          box.classList.remove('hidden');
+          box.innerHTML = '<span style="color:var(--warning);">Empresa <strong>' + codigo + '</strong> ainda não registrada. Salvar cria o registro.</span>';
+        }
+        return;
+      }
+      document.getElementById('dono-pago-status').value = a.pago ? 'sim' : 'nao';
+      document.getElementById('dono-pago-data').value = a.dataPagamento || '';
+      const elV = document.getElementById('dono-pago-vencimento');
+      if (elV) elV.value = obterDataVencimentoAcesso(a) || '';
+      document.getElementById('dono-pago-obs').value = a.obsPagamento || '';
+      if (box) {
+        const stAcesso = a.status === 'liberado' ? '✅ Acesso liberado' : '🚫 Acesso bloqueado';
+        const stPago = a.pago
+          ? '💰 <strong style="color:var(--success);">Pago</strong>'
+          : '⏳ <strong style="color:var(--warning);">Não pago</strong>';
+        const vencInfo = statusVencimentoPagamento(a);
+        let vencHtml = '';
+        if (vencInfo.tipo === 'vencido' || vencInfo.tipo === 'hoje') {
+          vencHtml = '<div style="margin-top:0.35rem;color:var(--danger);font-weight:700;">⚠️ ' + vencInfo.label + ' (' + formatarDataCurta(vencInfo.venc) + ')</div>';
+        } else if (vencInfo.tipo === 'proximo') {
+          vencHtml = '<div style="margin-top:0.35rem;color:var(--warning);font-weight:700;">🟠 ' + vencInfo.label + ' (' + formatarDataCurta(vencInfo.venc) + ')</div>';
+        } else if (vencInfo.venc) {
+          vencHtml = '<div style="margin-top:0.35rem;color:var(--text-muted);">Próximo vencimento: ' + formatarDataCurta(vencInfo.venc) + '</div>';
+        }
+        box.classList.remove('hidden');
+        box.innerHTML =
+          '<strong>' + (a.nome || a.codigo) + '</strong> <span style="color:var(--text-muted);">(' + a.codigo + ')</span><br>' +
+          stAcesso + ' · ' + stPago +
+          (a.dataPagamento ? '<br>Pago em: ' + formatarDataCurta(a.dataPagamento) : '') +
+          vencHtml;
+      }
     }
 
     async function apagarEmpresaDono(codigoOpcional) {
@@ -3063,7 +4015,11 @@
       document.getElementById('dono-empresa-codigo').value = '';
       document.getElementById('dono-pago-status').value = 'nao';
       document.getElementById('dono-pago-data').value = '';
+      const elVenc = document.getElementById('dono-pago-vencimento');
+      if (elVenc) elVenc.value = '';
       document.getElementById('dono-pago-obs').value = '';
+      const boxSt = document.getElementById('dono-empresa-status-box');
+      if (boxSt) { boxSt.classList.add('hidden'); boxSt.innerHTML = ''; }
       toast('Empresa "' + codigo + '" apagada', 'success');
       renderPainelDono();
     }
@@ -3084,10 +4040,69 @@
     async function renderPainelDono() {
       if (!donoLogado) return;
       const plat = await lerPlataforma();
+      // Atualiza bloqueios automáticos de todas as empresas (5 dias após vencimento)
+      try {
+        let mudouLote = false;
+        Object.keys(plat.acessos || {}).forEach(cod => {
+          if (marcarBloqueioAutomaticoSeVencido(plat.acessos[cod])) mudouLote = true;
+        });
+        if (mudouLote) await salvarPlataforma(plat);
+      } catch (e) {
+        console.warn('Bloqueio automático em lote:', e);
+      }
       const busca = ((document.getElementById('dono-busca') || {}).value || '').toLowerCase().trim();
       const elCh = document.getElementById('dono-lista-chaves');
       const elEm = document.getElementById('dono-lista-empresas');
+      const elPed = document.getElementById('dono-lista-pedidos');
       if (!elCh || !elEm) return;
+
+      // Pedidos PIX
+      if (elPed) {
+        const buscaPix = ((document.getElementById('dono-busca-pix') || {}).value || '').toLowerCase().trim() || busca;
+        let pedidos = Object.values(plat.pedidosPix || {}).sort((a, b) =>
+          String(b.criadoEm || '').localeCompare(String(a.criadoEm || ''))
+        );
+        if (buscaPix) {
+          pedidos = pedidos.filter(p =>
+            String(p.empresaNome || '').toLowerCase().includes(buscaPix) ||
+            String(p.telefone || '').toLowerCase().includes(buscaPix) ||
+            String(p.status || '').toLowerCase().includes(buscaPix) ||
+            String(p.chaveGerada || '').toLowerCase().includes(buscaPix) ||
+            String(p.identificacaoPix || '').toLowerCase().includes(buscaPix) ||
+            String(p.email || '').toLowerCase().includes(buscaPix)
+          );
+        }
+        if (!pedidos.length) {
+          elPed.innerHTML = '<div class="dono-vazio">' + (buscaPix ? 'Nenhuma empresa encontrada com esse nome.' : 'Nenhum pedido PIX ainda. Clientes usam a aba Assinar.') + '</div>';
+        } else {
+          elPed.innerHTML = pedidos.slice(0, 40).map(p => {
+            const idEsc = String(p.id).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            let stLabel = '⏳ Pendente';
+            let stColor = 'var(--warning)';
+            if (p.status === 'pago') { stLabel = '✅ Pago'; stColor = 'var(--success)'; }
+            if (p.status === 'cancelado') { stLabel = '❌ Cancelado'; stColor = 'var(--danger)'; }
+            return `<div class="dono-item">
+              <div style="display:flex;justify-content:space-between;gap:0.5rem;align-items:flex-start;">
+                <div style="flex:1;min-width:0;">
+                  <strong style="color:var(--primary-dark);">${p.empresaNome || '—'}</strong>
+                  <span style="color:${stColor};font-weight:700;margin-left:0.35rem;">${stLabel}</span><br>
+                  <span style="font-size:0.82rem;">📞 ${p.telefone || '—'}${p.email ? ' · ' + p.email : ''}</span><br>
+                  ${p.identificacaoPix ? '<span style="font-size:0.78rem;color:var(--text-muted);">PIX desc.: <code>' + p.identificacaoPix + '</code></span><br>' : ''}
+                  ${p.chaveGerada ? '<span style="font-size:0.84rem;">Código: <code style="font-weight:700;color:var(--primary-dark);">' + p.chaveGerada + '</code></span><br>' : ''}
+                  <span style="font-size:0.72rem;color:var(--text-muted);">Pedido: ${formatarDataCurta(p.criadoEm)}${p.confirmadoEm ? ' · conf. ' + formatarDataCurta(p.confirmadoEm) : ''}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:0.25rem;">
+                  ${p.status === 'pendente' ? `
+                    <button type="button" class="btn btn-sm btn-success" onclick="confirmarPedidoPix('${idEsc}')">✓ Confirmar PIX</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelarPedidoPix('${idEsc}')">Cancelar</button>
+                  ` : ''}
+                  ${p.chaveGerada ? `<button type="button" class="btn btn-sm btn-secondary" onclick="navigator.clipboard&&navigator.clipboard.writeText('${String(p.chaveGerada).replace(/'/g, "\\'")}');toast('Código copiado!','success')">Copiar código</button>` : ''}
+                </div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      }
 
       let chaves = Object.values(plat.chaves || {}).sort((a, b) => String(b.criadaEm || '').localeCompare(String(a.criadaEm || '')));
       if (busca) {
@@ -3095,11 +4110,12 @@
           String(c.chave || '').toLowerCase().includes(busca) ||
           String(c.obs || '').toLowerCase().includes(busca) ||
           String(c.empresaCodigo || '').toLowerCase().includes(busca) ||
+          String(c.empresaNomePedido || '').toLowerCase().includes(busca) ||
           String(c.status || '').toLowerCase().includes(busca)
         );
       }
       if (!chaves.length) {
-        elCh.innerHTML = '<div class="dono-vazio">' + (busca ? 'Nenhum código encontrado na busca.' : 'Nenhum código gerado ainda. Use “+ Criar” acima.') + '</div>';
+        elCh.innerHTML = '<div class="dono-vazio">' + (busca ? 'Nenhum código encontrado na busca.' : 'Nenhum código gerado ainda. Confirme um PIX ou use “+ Criar”.') + '</div>';
       } else {
         elCh.innerHTML = chaves.slice(0, 50).map(c => {
           const st = c.status === 'livre' ? '🟢 livre' : '🔵 usada';
@@ -3107,6 +4123,7 @@
           return `<div class="dono-item" style="display:flex;justify-content:space-between;gap:0.45rem;align-items:flex-start;">
             <div style="flex:1;min-width:0;color:var(--text);">
               <code style="word-break:break-all;color:var(--primary-dark);font-weight:600;">${c.chave}</code> — ${st}<br>
+              ${c.empresaNomePedido ? 'Pedido: <strong>' + c.empresaNomePedido + '</strong><br>' : ''}
               ${c.empresaCodigo ? 'Empresa: <strong>' + c.empresaCodigo + '</strong><br>' : ''}
               ${c.obs ? '<span style="color:var(--text-muted);">' + c.obs + '</span><br>' : ''}
               <span style="color:var(--text-muted);font-size:0.72rem;">Criado: ${formatarDataCurta(c.criadaEm)}</span>
@@ -3123,17 +4140,70 @@
           String(a.nome || '').toLowerCase().includes(busca) ||
           String(a.obsPagamento || '').toLowerCase().includes(busca) ||
           String(a.status || '').toLowerCase().includes(busca) ||
+          String(a.dataVencimento || '').toLowerCase().includes(busca) ||
           (a.pago ? 'pago' : 'nao pago').includes(busca)
         );
       }
+
+      // Alertas de vencimento para o dono (vence em até 3 dias, hoje ou já venceu)
+      const elAlertas = document.getElementById('dono-alertas-vencimento');
+      if (elAlertas) {
+        const todos = Object.values(plat.acessos || {});
+        const alertas = [];
+        todos.forEach(a => {
+          const info = statusVencimentoPagamento(a);
+          if (info.tipo === 'bloqueio' || info.tipo === 'vencido' || info.tipo === 'hoje' || info.tipo === 'proximo') {
+            alertas.push({ a, info });
+          } else if (!a.pago) {
+            alertas.push({ a, info: { tipo: 'nao_pago', label: 'Não pago', venc: info.venc || '' } });
+          }
+        });
+        alertas.sort((x, y) => {
+          const ordem = { bloqueio: 0, vencido: 1, hoje: 2, proximo: 3, nao_pago: 4 };
+          return (ordem[x.info.tipo] ?? 9) - (ordem[y.info.tipo] ?? 9);
+        });
+        if (!alertas.length) {
+          elAlertas.innerHTML = '';
+        } else {
+          elAlertas.innerHTML = alertas.slice(0, 12).map(({ a, info }) => {
+            let cls = 'warning';
+            let icon = '🟠';
+            if (info.tipo === 'bloqueio' || info.tipo === 'vencido' || info.tipo === 'hoje') { cls = 'danger'; icon = '🔴'; }
+            if (info.tipo === 'nao_pago') { cls = 'warning'; icon = '⏳'; }
+            const nome = (a.nome && a.nome !== a.codigo) ? (a.nome + ' (' + a.codigo + ')') : a.codigo;
+            const extra = info.venc ? ' · venc. ' + formatarDataCurta(info.venc) : '';
+            const codEsc = String(a.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return '<div class="alert ' + cls + '" style="cursor:pointer;margin-bottom:0.4rem;" onclick="preencherFormEmpresaDono(\'' + codEsc + '\')">' +
+              icon + ' <strong>' + nome + '</strong> — ' + info.label + extra +
+              ' <span style="opacity:0.85;">(toque para abrir)</span></div>';
+          }).join('');
+        }
+      }
+
       if (!acessos.length) {
         elEm.innerHTML = '<div class="dono-vazio">' + (busca ? 'Nenhuma empresa encontrada na busca.' : 'Nenhuma empresa registrada ainda.') + '</div>';
       } else {
         elEm.innerHTML = acessos.map(a => {
           const st = a.status === 'liberado' ? '✅ acesso liberado' : '🚫 acesso bloqueado';
-          const pg = a.pago
-            ? '💰 <strong style="color:var(--success);">Pago</strong> em ' + formatarDataCurta(a.dataPagamento)
-            : '⏳ <strong style="color:var(--warning);">Não pago</strong>';
+          const vencInfo = statusVencimentoPagamento(a);
+          let pg;
+          if (a.pago) {
+            pg = '💰 <strong style="color:var(--success);">Pago</strong>' +
+              (a.dataPagamento ? ' em ' + formatarDataCurta(a.dataPagamento) : '');
+            if (vencInfo.tipo === 'bloqueio') {
+              pg += '<br><span style="color:var(--danger);font-weight:700;">🔒 ' + vencInfo.label + ' (' + formatarDataCurta(vencInfo.venc) + ')</span>';
+            } else if (vencInfo.tipo === 'vencido') {
+              pg += '<br><span style="color:var(--danger);font-weight:700;">⚠️ ' + vencInfo.label + ' (' + formatarDataCurta(vencInfo.venc) + ')</span>';
+            } else if (vencInfo.tipo === 'hoje') {
+              pg += '<br><span style="color:var(--danger);font-weight:700;">⚠️ Vence HOJE (' + formatarDataCurta(vencInfo.venc) + ')</span>';
+            } else if (vencInfo.tipo === 'proximo') {
+              pg += '<br><span style="color:var(--warning);font-weight:700;">🟠 ' + vencInfo.label + ' (' + formatarDataCurta(vencInfo.venc) + ')</span>';
+            } else if (vencInfo.venc) {
+              pg += '<br><span style="color:var(--text-muted);font-size:0.8rem;">Vence em ' + formatarDataCurta(vencInfo.venc) + '</span>';
+            }
+          } else {
+            pg = '⏳ <strong style="color:var(--warning);">Não pago</strong>';
+          }
           const codEsc = String(a.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
           return `<div class="dono-item">
             <div style="display:flex;justify-content:space-between;gap:0.4rem;align-items:flex-start;">
@@ -3172,6 +4242,21 @@
         return;
       }
 
+      // Acesso do dono pelo login normal (código especial + usuário/senha)
+      // Código: DONO14062000 | Usuário: dono | Senha: 14062000
+      if (codigo === CODIGO_LOGIN_DONO) {
+        const userOk = login === 'dono' || login === 'admin' || login === 'owner';
+        if (!userOk || senha !== SENHA_DONO_SISTEMA) {
+          erroEl.textContent = 'Usuário ou senha do dono incorretos.';
+          erroEl.classList.add('show');
+          return;
+        }
+        erroEl.classList.remove('show');
+        document.getElementById('login-senha').value = '';
+        abrirPainelDonoAposLogin();
+        return;
+      }
+
       erroEl.classList.remove('show');
       setSyncStatus('pendente', 'Carregando empresa…');
 
@@ -3202,7 +4287,11 @@
       // Bloqueio por falta de pagamento / decisão do dono
       const acessoInfo = await obterStatusAcessoEmpresa(codigo);
       if (acessoInfo.status === 'bloqueado') {
-        erroEl.textContent = 'Esta empresa está bloqueada. Entre em contato com o suporte para regularizar o pagamento.';
+        const reg = acessoInfo.registro || {};
+        const motivo = reg.bloqueadoMotivo
+          ? (' ' + reg.bloqueadoMotivo + '.')
+          : ' Entre em contato com o suporte para regularizar o pagamento.';
+        erroEl.textContent = 'Esta empresa está bloqueada.' + motivo;
         erroEl.classList.add('show');
         setSyncStatus(firebaseOk ? 'ok' : 'local', firebaseOk ? 'Nuvem pronta' : 'Local');
         return;
@@ -3326,14 +4415,20 @@
         empresaCodigo: codigo,
         usadaEm: new Date().toISOString()
       };
+      const hojeCriacao = new Date();
+      const vencCriacao = new Date(hojeCriacao);
+      vencCriacao.setDate(vencCriacao.getDate() + 30);
+      const dataPagamentoCriacao = hojeCriacao.toISOString().slice(0, 10);
+      const dataVencimentoCriacao = vencCriacao.toISOString().slice(0, 10);
       plat.acessos[codigo] = {
         codigo,
         status: 'liberado',
         nome,
         chaveUsada: chaveLib,
-        pago: false,
-        dataPagamento: '',
-        obsPagamento: '',
+        pago: true,
+        dataPagamento: dataPagamentoCriacao,
+        dataVencimento: dataVencimentoCriacao,
+        obsPagamento: 'Pago na criação (código de liberação ' + chaveLib + ')',
         atualizadoEm: new Date().toISOString()
       };
       await salvarPlataforma(plat);
