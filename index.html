@@ -8,6 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <style>
     :root {
       --primary: #2f3e6b;
@@ -384,6 +385,11 @@
     }
 
     /* Painel do dono expandido (legível) */
+
+    /* Painel do dono — páginas (mesmo visual do app) */
+    .dono-page.hidden { display: none !important; }
+    #app-dono:not(.hidden) { display: contents; }
+
     .login-box.modo-dono {
       max-width: min(960px, 96vw);
       padding: 1.75rem 1.6rem 1.5rem;
@@ -1364,6 +1370,18 @@
           <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:1rem 1.05rem;margin-bottom:1rem;">
             <p style="font-weight:750;color:#065f46;margin-bottom:0.45rem;">Pedido criado — pague via PIX</p>
             <p style="font-size:0.86rem;color:var(--text);line-height:1.5;margin-bottom:0.65rem;" id="assinar-pix-resumo"></p>
+            <div id="assinar-pix-qr-wrap" style="text-align:center;margin:0.75rem 0 1rem;">
+              <p style="font-size:0.84rem;font-weight:700;color:#065f46;margin-bottom:0.5rem;">Escaneie o QR Code para pagar</p>
+              <canvas id="assinar-pix-qr" width="220" height="220" style="border:1px solid #a7f3d0;border-radius:14px;background:#fff;max-width:100%;"></canvas>
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.45rem;">Abra o app do banco → Pix → Ler QR Code</p>
+            </div>
+            <div class="form-group" style="margin-bottom:0.55rem;">
+              <label>PIX Copia e Cola</label>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <textarea id="assinar-pix-copia-cola" readonly rows="2" style="flex:1;min-width:140px;font-size:0.78rem;font-family:ui-monospace,monospace;padding:0.55rem 0.7rem;border:1.5px solid #a7f3d0;border-radius:10px;background:#fff;"></textarea>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copiarTextoEl('assinar-pix-copia-cola')">Copiar</button>
+              </div>
+            </div>
             <div class="form-group" style="margin-bottom:0.55rem;">
               <label>Chave PIX</label>
               <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
@@ -1402,129 +1420,6 @@
         </div>
       </div>
 
-      <!-- ÁREA DO DONO (acesso via login: código DONO14062000) -->
-      <div id="form-dono" class="hidden">
-        <div id="dono-painel">
-          <p style="font-size:0.88rem;color:var(--success);margin-bottom:1rem;font-weight:700;">✓ Painel do dono ativo</p>
-
-          <div class="dono-acoes-box" style="margin-bottom:1rem;">
-            <p>⚙️ Configuração PIX (aparece para quem assina)</p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
-              <div class="form-group" style="margin-bottom:0.55rem;grid-column:1/-1;">
-                <label>Chave PIX *</label>
-                <input type="text" id="dono-pix-chave" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" />
-              </div>
-              <div class="form-group" style="margin-bottom:0.55rem;">
-                <label>Nome do beneficiário</label>
-                <input type="text" id="dono-pix-beneficiario" placeholder="Seu nome ou da empresa" />
-              </div>
-              <div class="form-group" style="margin-bottom:0.55rem;">
-                <label>Valor padrão (R$)</label>
-                <input type="text" id="dono-pix-valor" placeholder="Ex: 49,90" />
-              </div>
-              <div class="form-group" style="margin-bottom:0.55rem;grid-column:1/-1;">
-                <label>Instrução extra para o cliente</label>
-                <input type="text" id="dono-pix-instrucao" placeholder="Ex: envie o comprovante no WhatsApp..." />
-              </div>
-            </div>
-            <div class="dono-acoes-btns">
-              <button type="button" class="btn btn-primary" onclick="salvarConfigPixDono()">Salvar PIX</button>
-            </div>
-          </div>
-
-          <div class="dono-lista-box" style="max-height:min(42vh,380px);margin-bottom:1rem;">
-            <div class="dono-lista-titulo">💳 Pedidos PIX · confirmar pagamento</div>
-            <div class="form-group" style="margin-bottom:0.65rem;">
-              <label style="font-size:0.76rem;font-weight:650;color:var(--text-muted);">🔎 Buscar empresa para confirmar PIX</label>
-              <input type="text" id="dono-busca-pix" placeholder="Digite o nome da empresa..." oninput="renderPainelDono()" autocomplete="off" style="width:100%;padding:0.65rem 0.85rem;border:1.5px solid #d4d8e4;border-radius:10px;font-size:0.92rem;background:#fff;" />
-            </div>
-            <div id="dono-lista-pedidos"><div class="dono-vazio">Nenhum pedido ainda.</div></div>
-          </div>
-
-          <div class="dono-toolbar">
-            <div class="form-group" style="margin-bottom:0;">
-              <label>🔎 Buscar (código, empresa, observação)</label>
-              <input type="text" id="dono-busca" placeholder="Digite para filtrar listas..." oninput="renderPainelDono()" />
-            </div>
-            <div class="form-group" style="margin-bottom:0;">
-              <label>Criar código de liberação (manual)</label>
-              <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:center;">
-                <input type="text" id="dono-chave-obs" placeholder="Observação (cliente, telefone...)" style="flex:1;min-width:140px;" />
-                <button type="button" class="btn btn-success btn-sm" onclick="gerarChaveLiberacao()">+ Criar</button>
-              </div>
-            </div>
-          </div>
-
-          <div id="dono-chave-gerada" class="hidden" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:0.85rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:var(--text);">
-            <strong>Código gerado (envie ao cliente):</strong><br>
-            <code id="dono-chave-valor" style="font-size:1.05rem;word-break:break-all;"></code>
-            <div style="margin-top:0.5rem;">
-              <button type="button" class="btn btn-sm btn-secondary" onclick="copiarChaveGerada()">Copiar</button>
-            </div>
-          </div>
-
-          <!-- LISTAS lado a lado -->
-          <div class="dono-listas-grid">
-            <div class="dono-lista-box">
-              <div class="dono-lista-titulo">Códigos de liberação</div>
-              <div id="dono-lista-chaves"><div class="dono-vazio">Carregando…</div></div>
-            </div>
-            <div class="dono-lista-box">
-              <div class="dono-lista-titulo">Empresas · pagamento e acesso</div>
-              <div id="dono-lista-empresas"><div class="dono-vazio">Carregando…</div></div>
-            </div>
-          </div>
-
-          <div id="dono-alertas-vencimento" style="margin-bottom:1rem;"></div>
-
-          <div class="dono-acoes-box">
-            <p>Pagamento / acesso da empresa</p>
-            <div class="form-group" style="margin-bottom:0.6rem;">
-              <label>Código da empresa</label>
-              <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
-                <input type="text" id="dono-empresa-codigo" placeholder="ex: ovos-centro" style="flex:1;min-width:140px;" oninput="aoDigitarCodigoEmpresaDono()" onchange="aoDigitarCodigoEmpresaDono()" />
-                <button type="button" class="btn btn-secondary btn-sm" onclick="carregarEmpresaNoFormDono()">Carregar</button>
-              </div>
-            </div>
-            <div id="dono-empresa-status-box" class="hidden" style="background:#fff;border:1px solid #d4d8e4;border-radius:12px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;font-size:0.86rem;"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;">
-              <div class="form-group" style="margin-bottom:0.6rem;">
-                <label>Status pagamento</label>
-                <select id="dono-pago-status">
-                  <option value="nao">Não pago</option>
-                  <option value="sim">Pago</option>
-                </select>
-              </div>
-              <div class="form-group" style="margin-bottom:0.6rem;">
-                <label>Data do pagamento</label>
-                <input type="date" id="dono-pago-data" />
-              </div>
-              <div class="form-group" style="margin-bottom:0.6rem;">
-                <label>Vencimento (próximo)</label>
-                <input type="date" id="dono-pago-vencimento" />
-              </div>
-              <div class="form-group" style="margin-bottom:0.6rem;">
-                <label>Observação</label>
-                <input type="text" id="dono-pago-obs" placeholder="Ex: PIX, mensalidade março..." />
-              </div>
-            </div>
-            <div class="dono-acoes-btns" style="margin-bottom:0.55rem;">
-              <button type="button" class="btn btn-success" onclick="marcarPagamentoEmpresaDono(true)">✅ Está pago</button>
-              <button type="button" class="btn btn-warning" onclick="marcarPagamentoEmpresaDono(false)">⏳ Não está pago</button>
-              <button type="button" class="btn btn-primary" onclick="salvarPagamentoEmpresaDono()">Salvar dados</button>
-            </div>
-            <div class="dono-acoes-btns">
-              <button type="button" class="btn btn-success" onclick="liberarEmpresaDono()">Liberar acesso</button>
-              <button type="button" class="btn btn-danger" onclick="bloquearEmpresaDono()">Bloquear acesso</button>
-              <button type="button" class="btn btn-danger" onclick="apagarEmpresaDono()" title="Remove a empresa da plataforma">🗑️ Apagar empresa</button>
-              <button type="button" class="btn btn-secondary" onclick="renderPainelDono()">🔄 Atualizar</button>
-            </div>
-          </div>
-
-          <button type="button" class="btn btn-secondary" style="width:100%;" onclick="sairAreaDono()">Sair do painel</button>
-        </div>
-      </div>
-
       <div class="login-hint">
         <strong>Licença:</strong> só cria empresa com código que o dono liberou.<br>
         Contas bloqueadas não entram até serem liberadas de novo.
@@ -1535,6 +1430,286 @@
       </div><!-- /.login-panel -->
     </div><!-- /.login-shell -->
   </div><!-- /#tela-login -->
+
+
+  <!-- ===================== APP DONO (mesmo visual do app das empresas) ===================== -->
+  <div id="app-dono" class="hidden" style="display:none;">
+    <aside class="sidebar" id="sidebar-dono">
+      <div class="sidebar-header">
+        <h1>👑 Painel do Dono</h1>
+        <p>Gestão da plataforma</p>
+      </div>
+      <div class="user-info">
+        <span class="nome">Dono do sistema</span>
+        <span class="papel">Admin</span>
+      </div>
+      <nav class="nav" id="nav-dono">
+        <button type="button" class="nav-btn active" data-dono-page="resumo" onclick="mostrarPaginaDono('resumo')">📊 Resumo</button>
+        <button type="button" class="nav-btn" data-dono-page="pedidos" onclick="mostrarPaginaDono('pedidos')">💳 Pedidos PIX</button>
+        <button type="button" class="nav-btn" data-dono-page="codigos" onclick="mostrarPaginaDono('codigos')">🔑 Códigos</button>
+        <button type="button" class="nav-btn" data-dono-page="empresas" onclick="mostrarPaginaDono('empresas')">🏢 Empresas</button>
+        <button type="button" class="nav-btn" data-dono-page="lojas" onclick="mostrarPaginaDono('lojas')">🏪 Lojas e acesso</button>
+        <button type="button" class="nav-btn" data-dono-page="pix" onclick="mostrarPaginaDono('pix')">⚙️ Config. PIX</button>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="sairAreaDono()">🚪 Sair do painel</button>
+      </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay-dono" onclick="document.getElementById('sidebar-dono').classList.remove('open');this.classList.remove('show');"></div>
+
+    <div class="main">
+      <header class="topbar">
+        <button type="button" class="menu-toggle" id="menu-toggle-dono" onclick="document.getElementById('sidebar-dono').classList.toggle('open');document.getElementById('sidebar-overlay-dono').classList.toggle('show');">☰</button>
+        <h2 id="dono-page-title">Resumo</h2>
+        <div style="font-size:0.8rem;color:var(--text-muted);">
+          <button type="button" class="btn btn-sm btn-secondary" onclick="renderPainelDono()">🔄 Atualizar</button>
+        </div>
+      </header>
+      <div class="content">
+
+        <!-- RESUMO -->
+        <section id="dono-page-resumo" class="dono-page">
+          <div id="dono-alertas-vencimento" style="margin-bottom:1rem;"></div>
+          <div class="cards-grid" id="dono-resumo-cards" style="margin-bottom:1.25rem;"></div>
+          <div class="panel">
+            <div class="panel-header"><h3>📌 Visão geral</h3></div>
+            <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.55;margin-bottom:0.75rem;">
+              Use o menu à esquerda para gerenciar cada área. Os alertas de vencimento e bloqueio aparecem acima.
+            </p>
+            <div id="dono-resumo-texto" style="font-size:0.9rem;line-height:1.6;"></div>
+          </div>
+        </section>
+
+        <!-- PEDIDOS PIX -->
+        <section id="dono-page-pedidos" class="dono-page hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>💳 Pedidos PIX · confirmar pagamento</h3>
+            </div>
+            <div class="form-group" style="margin-bottom:0.85rem;max-width:420px;">
+              <label>🔎 Buscar empresa para confirmar PIX</label>
+              <input type="text" id="dono-busca-pix" placeholder="Digite o nome da empresa..." oninput="renderPainelDono()" autocomplete="off" />
+            </div>
+            <div class="dono-lista-box" style="max-height:min(62vh,560px);">
+              <div id="dono-lista-pedidos"><div class="dono-vazio">Nenhum pedido ainda.</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CÓDIGOS -->
+        <section id="dono-page-codigos" class="dono-page hidden">
+          <div class="panel">
+            <div class="panel-header"><h3>🔑 Códigos de liberação</h3></div>
+            <div class="form-grid" style="margin-bottom:1rem;">
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>🔎 Buscar (código, empresa, observação)</label>
+                <input type="text" id="dono-busca" placeholder="Digite para filtrar listas..." oninput="renderPainelDono()" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Criar código de liberação (manual)</label>
+                <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:center;">
+                  <input type="text" id="dono-chave-obs" placeholder="Observação (cliente, telefone...)" style="flex:1;min-width:160px;" />
+                  <button type="button" class="btn btn-success" onclick="gerarChaveLiberacao()">+ Criar código</button>
+                </div>
+              </div>
+            </div>
+            <div id="dono-chave-gerada" class="hidden" style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:0.85rem 1rem;margin-bottom:1rem;font-size:0.9rem;color:var(--text);">
+              <strong>Código gerado (envie ao cliente):</strong><br>
+              <code id="dono-chave-valor" style="font-size:1.05rem;word-break:break-all;"></code>
+              <div style="margin-top:0.5rem;">
+                <button type="button" class="btn btn-sm btn-secondary" onclick="copiarChaveGerada()">Copiar</button>
+              </div>
+            </div>
+            <div class="dono-lista-box" style="max-height:min(55vh,520px);">
+              <div class="dono-lista-titulo">Códigos de liberação</div>
+              <div id="dono-lista-chaves"><div class="dono-vazio">Carregando…</div></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EMPRESAS -->
+        <section id="dono-page-empresas" class="dono-page hidden">
+          <div class="panel">
+            <div class="panel-header"><h3>🏢 Empresas · pagamento e acesso</h3></div>
+            <div class="dono-lista-box" style="max-height:min(40vh,360px);margin-bottom:1rem;">
+              <div class="dono-lista-titulo">Empresas cadastradas</div>
+              <div id="dono-lista-empresas"><div class="dono-vazio">Carregando…</div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header"><h3>Pagamento / acesso da empresa</h3></div>
+            <div class="form-group" style="margin-bottom:0.75rem;max-width:480px;">
+              <label>Código da empresa</label>
+              <div style="display:flex;gap:0.45rem;flex-wrap:wrap;">
+                <input type="text" id="dono-empresa-codigo" placeholder="ex: ovos-centro" style="flex:1;min-width:140px;" oninput="aoDigitarCodigoEmpresaDono()" onchange="aoDigitarCodigoEmpresaDono()" />
+                <button type="button" class="btn btn-secondary" onclick="carregarEmpresaNoFormDono()">Carregar</button>
+              </div>
+            </div>
+            <div id="dono-empresa-status-box" class="hidden" style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:0.75rem 0.9rem;margin-bottom:0.85rem;font-size:0.86rem;"></div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Status pagamento</label>
+                <select id="dono-pago-status">
+                  <option value="nao">Não pago</option>
+                  <option value="sim">Pago</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Data do pagamento</label>
+                <input type="date" id="dono-pago-data" />
+              </div>
+              <div class="form-group">
+                <label>Vencimento (próximo)</label>
+                <input type="date" id="dono-pago-vencimento" />
+              </div>
+              <div class="form-group">
+                <label>Observação</label>
+                <input type="text" id="dono-pago-obs" placeholder="Ex: PIX, mensalidade março..." />
+              </div>
+            </div>
+            <div class="btn-group" style="margin-top:0.9rem;margin-bottom:0.55rem;">
+              <button type="button" class="btn btn-success" onclick="marcarPagamentoEmpresaDono(true)">✅ Está pago</button>
+              <button type="button" class="btn btn-warning" onclick="marcarPagamentoEmpresaDono(false)">⏳ Não está pago</button>
+              <button type="button" class="btn btn-primary" onclick="salvarPagamentoEmpresaDono()">Salvar dados</button>
+            </div>
+            <div class="btn-group">
+              <button type="button" class="btn btn-success" onclick="liberarEmpresaDono()">Liberar acesso</button>
+              <button type="button" class="btn btn-danger" onclick="bloquearEmpresaDono()">Bloquear acesso</button>
+              <button type="button" class="btn btn-danger" onclick="apagarEmpresaDono()" title="Remove a empresa da plataforma">🗑️ Apagar empresa</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- LOJAS / RECUPERAR ACESSO -->
+        <section id="dono-page-lojas" class="dono-page hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>🏪 Todas as lojas · recuperar acesso</h3>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="renderListaLojasDono()">🔄 Atualizar lista</button>
+            </div>
+            <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+              Aqui você vê <strong>todas as lojas</strong> do sistema. Se o administrador esqueceu o <strong>login</strong> ou a <strong>senha</strong>,
+              redefina abaixo — os dados da loja (estoque, clientes, vendas) <strong>não são apagados</strong>.
+            </p>
+            <div class="form-group" style="margin-bottom:1rem;max-width:420px;">
+              <label>🔎 Buscar loja</label>
+              <input type="text" id="dono-busca-lojas" placeholder="Código ou nome da empresa..." oninput="renderListaLojasDono()" />
+            </div>
+            <div id="dono-lista-lojas"><div class="dono-vazio">Carregando lojas…</div></div>
+          </div>
+
+          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;">
+            <div class="panel-header">
+              <h3 id="dono-loja-detalhe-titulo">Acesso da loja</h3>
+            </div>
+            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;"></div>
+            <div class="table-wrap" style="margin-bottom:1rem;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Login</th>
+                    <th>Categoria</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="dono-loja-usuarios"></tbody>
+              </table>
+            </div>
+            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;">
+              <p style="font-weight:700;margin-bottom:0.65rem;color:var(--primary-dark);">Redefinir acesso de um usuário</p>
+              <input type="hidden" id="dono-rec-codigo" />
+              <input type="hidden" id="dono-rec-user-id" />
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Usuário selecionado</label>
+                  <input type="text" id="dono-rec-user-nome" readonly />
+                </div>
+                <div class="form-group">
+                  <label>Novo login *</label>
+                  <input type="text" id="dono-rec-login" placeholder="Ex: admin" autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label>Nova senha *</label>
+                  <input type="text" id="dono-rec-senha" placeholder="Mínimo 4 caracteres" autocomplete="off" />
+                </div>
+              </div>
+              <div class="btn-group" style="margin-top:0.75rem;">
+                <button type="button" class="btn btn-primary" onclick="salvarRecuperacaoAcessoDono()">💾 Salvar login e senha</button>
+                <button type="button" class="btn btn-secondary" onclick="fecharDetalheLojaDono()">Fechar</button>
+              </div>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;margin-top:1rem;">
+              <p style="font-weight:700;margin-bottom:0.65rem;color:#92400e;">Criar administrador de emergência</p>
+              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;">Use se a loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Nome</label>
+                  <input type="text" id="dono-emerg-nome" placeholder="Administrador" />
+                </div>
+                <div class="form-group">
+                  <label>Login *</label>
+                  <input type="text" id="dono-emerg-login" placeholder="admin" autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label>Senha *</label>
+                  <input type="text" id="dono-emerg-senha" placeholder="Mínimo 4 caracteres" autocomplete="off" />
+                </div>
+              </div>
+              <div style="margin-top:0.75rem;">
+                <button type="button" class="btn btn-warning" onclick="criarAdminEmergenciaLojaDono()">➕ Criar admin de emergência</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CONFIG PIX -->
+        <section id="dono-page-pix" class="dono-page hidden">
+          <div class="panel">
+            <div class="panel-header"><h3>⚙️ Configuração PIX</h3></div>
+            <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+              Esses dados aparecem para quem assina o sistema na aba <strong>Assinar</strong>.
+            </p>
+            <div class="form-grid">
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Chave PIX *</label>
+                <input type="text" id="dono-pix-chave" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>PIX Copia e Cola (para gerar o QR Code) *</label>
+                <textarea id="dono-pix-copia-cola" rows="3" placeholder="Cole aqui o código completo do Pix Copia e Cola do seu banco (começa com 000201...)" style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.82rem;font-family:ui-monospace,monospace;resize:vertical;"></textarea>
+                <small style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">No app do banco: cobrar com QR → copiar código Pix Copia e Cola e colar aqui. O cliente verá o QR na hora de assinar.</small>
+              </div>
+              <div class="form-group">
+                <label>Nome do beneficiário</label>
+                <input type="text" id="dono-pix-beneficiario" placeholder="Seu nome ou da empresa" />
+              </div>
+              <div class="form-group">
+                <label>Valor padrão (R$)</label>
+                <input type="text" id="dono-pix-valor" placeholder="Ex: 49,90" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Instrução extra para o cliente</label>
+                <input type="text" id="dono-pix-instrucao" placeholder="Ex: envie o comprovante no WhatsApp..." />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Pré-visualização do QR</label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+                  <canvas id="dono-pix-qr-preview" width="180" height="180" style="border:1px solid var(--border);border-radius:12px;background:#fff;max-width:180px;"></canvas>
+                  <button type="button" class="btn btn-secondary btn-sm" onclick="atualizarPreviewQrPixDono()">Gerar preview</button>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:1rem;">
+              <button type="button" class="btn btn-primary" onclick="salvarConfigPixDono()">Salvar PIX</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div><!-- /app-dono -->
 
   <!-- ===================== APP ===================== -->
   <div id="app" class="hidden" style="display:contents;">
@@ -2754,8 +2929,17 @@
       return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
     }
 
+    /** Data civil local (Brasil) YYYY-MM-DD — não usa UTC do toISOString */
+    function formatarDataISOLocal(d) {
+      if (!(d instanceof Date) || isNaN(d.getTime())) d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + day;
+    }
+
     function hoje() {
-      return new Date().toISOString().slice(0, 10);
+      return formatarDataISOLocal(new Date());
     }
 
     function formatarData(d) {
@@ -2907,7 +3091,7 @@
       const agora = new Date();
       estado.logs.unshift({
         id: uid(),
-        data: agora.toISOString().slice(0, 10),
+        data: formatarDataISOLocal(agora),
         hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         usuario: usuarioAtual ? usuarioAtual.nome : 'Sistema',
         login: usuarioAtual ? usuarioAtual.login : '—',
@@ -2957,8 +3141,8 @@
     const PLATAFORMA_LS_KEY = 'casaDosOvos_plataforma_v1';
 
     // Telefone exibido no fim da demonstração (troque pelo número real)
-    const TELEFONE_CONTATO_DEMO = '8100000000';
-    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 0000-0000';
+    const TELEFONE_CONTATO_DEMO = '(81) 993986285';
+    const TELEFONE_CONTATO_DEMO_EXIBIR = '(81) 99398-6285';
 
     let db = null;
     let firebaseOk = false;
@@ -2975,6 +3159,7 @@
         pedidosPix: {},
         configPix: {
           chave: '',
+          copiaCola: '',
           beneficiario: '',
           valorPadrao: '',
           instrucao: 'Envie o comprovante após o pagamento. O código de liberação será gerado após a confirmação.'
@@ -3039,10 +3224,17 @@
           if (typeof adicionarDiasDataISO === 'function') {
             dataVenc = adicionarDiasDataISO(a.dataPagamento, 30);
           } else {
-            const base = new Date(String(a.dataPagamento).slice(0, 10) + 'T12:00:00');
+            const s = String(a.dataPagamento).slice(0, 10);
+            const p = s.split('-');
+            let base;
+            if (p.length === 3) {
+              base = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
+            } else {
+              base = new Date(s + 'T12:00:00');
+            }
             if (!isNaN(base.getTime())) {
               base.setDate(base.getDate() + 30);
-              dataVenc = base.toISOString().slice(0, 10);
+              dataVenc = formatarDataISOLocal(base);
             }
           }
         } catch (e) {}
@@ -3179,6 +3371,12 @@
       document.getElementById('assinar-pix-ident').value = ident;
       document.getElementById('assinar-pix-instrucao').textContent =
         cfg.instrucao || 'Após pagar, envie o comprovante no WhatsApp para liberarmos o código da sua empresa.';
+      const copia = (cfg.copiaCola || cfg.chave || '').trim();
+      const copiaEl = document.getElementById('assinar-pix-copia-cola');
+      if (copiaEl) copiaEl.value = copia;
+      renderQrPixCanvas('assinar-pix-qr', copia, 220);
+      const qrWrap = document.getElementById('assinar-pix-qr-wrap');
+      if (qrWrap) qrWrap.style.display = copia ? '' : 'none';
       toast('Pedido criado! Faça o PIX e envie o comprovante no WhatsApp.', 'success');
     }
 
@@ -3222,6 +3420,7 @@
       const plat = await lerPlataforma();
       plat.configPix = {
         chave: (document.getElementById('dono-pix-chave').value || '').trim(),
+        copiaCola: (document.getElementById('dono-pix-copia-cola').value || '').trim(),
         beneficiario: (document.getElementById('dono-pix-beneficiario').value || '').trim(),
         valorPadrao: (document.getElementById('dono-pix-valor').value || '').trim(),
         instrucao: (document.getElementById('dono-pix-instrucao').value || '').trim() ||
@@ -3231,8 +3430,56 @@
         toast('Informe a chave PIX', 'error');
         return;
       }
+      if (!plat.configPix.copiaCola) {
+        toast('Cole o PIX Copia e Cola para gerar o QR Code', 'error');
+        return;
+      }
       await salvarPlataforma(plat);
+      atualizarPreviewQrPixDono();
       toast('Configuração PIX salva!', 'success');
+    }
+
+    function renderQrPixCanvas(canvasId, payload, size) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const texto = String(payload || '').trim();
+      const ctx = canvas.getContext && canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      if (!texto) return;
+      const opts = {
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: size || 220,
+        color: { dark: '#000000', light: '#ffffff' }
+      };
+      if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+        QRCode.toCanvas(canvas, texto, opts, function (err) {
+          if (err) console.warn('QR Code:', err);
+        });
+        return;
+      }
+      // Fallback: API pública de QR (se a lib não carregar)
+      try {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          if (!ctx) return;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + (size || 220) + 'x' + (size || 220) + '&data=' + encodeURIComponent(texto);
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function atualizarPreviewQrPixDono() {
+      const payload = (document.getElementById('dono-pix-copia-cola') || {}).value || '';
+      renderQrPixCanvas('dono-pix-qr-preview', payload, 180);
     }
 
     async function carregarConfigPixNoPainel() {
@@ -3240,9 +3487,11 @@
       const cfg = plat.configPix || {};
       const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
       set('dono-pix-chave', cfg.chave);
+      set('dono-pix-copia-cola', cfg.copiaCola);
       set('dono-pix-beneficiario', cfg.beneficiario);
       set('dono-pix-valor', cfg.valorPadrao);
       set('dono-pix-instrucao', cfg.instrucao);
+      setTimeout(atualizarPreviewQrPixDono, 50);
     }
 
     async function confirmarPedidoPix(pedidoId) {
@@ -3306,6 +3555,25 @@
       await salvarPlataforma(plat);
       renderPainelDono();
       toast('Pedido cancelado');
+    }
+
+    async function excluirPedidoPix(pedidoId) {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      const p = plat.pedidosPix && plat.pedidosPix[pedidoId];
+      if (!p) {
+        toast('Pedido não encontrado', 'error');
+        return;
+      }
+      const nome = p.empresaNome || pedidoId;
+      const avisoPago = p.status === 'pago'
+        ? '\n\nAtenção: este pedido já foi confirmado. Excluir só remove da lista (o código de liberação, se existir, continua em Códigos).'
+        : '';
+      if (!confirm('Excluir o pedido PIX de "' + nome + '"?' + avisoPago + '\n\nEsta ação não pode ser desfeita.')) return;
+      delete plat.pedidosPix[pedidoId];
+      await salvarPlataforma(plat);
+      renderPainelDono();
+      toast('Pedido excluído', 'success');
     }
 
     function setSyncStatus(tipo, texto) {
@@ -3634,7 +3902,8 @@
       document.getElementById('form-criar-empresa').classList.add('hidden');
       const formAssinar = document.getElementById('form-assinar');
       if (formAssinar) formAssinar.classList.add('hidden');
-      document.getElementById('form-dono').classList.add('hidden');
+      const formDonoLegado = document.getElementById('form-dono');
+      if (formDonoLegado) formDonoLegado.classList.add('hidden');
       document.getElementById('login-erro').classList.remove('show');
       setModoDonoUI(false);
     }
@@ -3668,17 +3937,58 @@
       if (logoP) logoP.textContent = 'Pague via PIX e receba o código de liberação';
     }
 
+    function mostrarPaginaDono(page) {
+      const pages = ['resumo', 'pedidos', 'codigos', 'empresas', 'lojas', 'pix'];
+      if (!pages.includes(page)) page = 'resumo';
+      pages.forEach(p => {
+        const el = document.getElementById('dono-page-' + p);
+        if (el) el.classList.toggle('hidden', p !== page);
+      });
+      document.querySelectorAll('#nav-dono .nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-dono-page') === page);
+      });
+      const titles = {
+        resumo: 'Resumo',
+        pedidos: 'Pedidos PIX',
+        codigos: 'Códigos de liberação',
+        empresas: 'Empresas',
+        lojas: 'Lojas e acesso',
+        pix: 'Configuração PIX'
+      };
+      const t = document.getElementById('dono-page-title');
+      if (t) t.textContent = titles[page] || 'Painel do dono';
+      // fecha menu mobile
+      const side = document.getElementById('sidebar-dono');
+      const ov = document.getElementById('sidebar-overlay-dono');
+      if (side) side.classList.remove('open');
+      if (ov) ov.classList.remove('show');
+      if (page === 'pix') {
+        try { carregarConfigPixNoPainel(); } catch (e) {}
+      }
+      if (page === 'lojas') {
+        try { renderListaLojasDono(); } catch (e) {}
+      }
+      try { renderPainelDono(); } catch (e) {}
+    }
+
     function abrirPainelDonoAposLogin() {
       donoLogado = true;
-      document.getElementById('form-login').classList.add('hidden');
-      document.getElementById('form-criar-empresa').classList.add('hidden');
-      const formAssinar = document.getElementById('form-assinar');
-      if (formAssinar) formAssinar.classList.add('hidden');
-      document.getElementById('form-dono').classList.remove('hidden');
-      const painel = document.getElementById('dono-painel');
-      if (painel) painel.classList.remove('hidden');
-      setModoDonoUI(true);
+      // Esconde login e mostra app do dono (mesmo layout das empresas)
+      const telaLogin = document.getElementById('tela-login');
+      if (telaLogin) telaLogin.classList.add('hidden');
+      const app = document.getElementById('app');
+      if (app) {
+        app.classList.add('hidden');
+        app.style.display = 'none';
+      }
+      const appDono = document.getElementById('app-dono');
+      if (appDono) {
+        appDono.classList.remove('hidden');
+        appDono.style.display = 'contents';
+      }
+      setModoDonoUI(false);
       carregarConfigPixNoPainel();
+      mostrarPaginaDono('resumo');
       renderPainelDono();
     }
 
@@ -3686,7 +3996,13 @@
       donoLogado = false;
       const gerada = document.getElementById('dono-chave-gerada');
       if (gerada) gerada.classList.add('hidden');
-      document.getElementById('form-dono').classList.add('hidden');
+      const appDono = document.getElementById('app-dono');
+      if (appDono) {
+        appDono.classList.add('hidden');
+        appDono.style.display = 'none';
+      }
+      const telaLogin = document.getElementById('tela-login');
+      if (telaLogin) telaLogin.classList.remove('hidden');
       setModoDonoUI(false);
       mostrarAbaLogin();
       const erroEl = document.getElementById('login-erro');
@@ -3694,6 +4010,319 @@
         erroEl.classList.remove('show');
         erroEl.textContent = '';
       }
+    }
+
+
+    // ===================== LOJAS / RECUPERAR ACESSO (dono) =====================
+    let _donoLojaEstadoCache = {}; // codigo -> estado carregado
+
+    async function obterCodigosTodasLojas() {
+      const codigos = new Set();
+      const plat = await lerPlataforma();
+      Object.keys(plat.acessos || {}).forEach(c => { if (c) codigos.add(String(c)); });
+      Object.values(plat.chaves || {}).forEach(ch => {
+        if (ch && ch.empresaCodigo) codigos.add(String(ch.empresaCodigo));
+      });
+      // LocalStorage: chaves casaDosOvos_v4_*_meta e estado
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i) || '';
+          if (k.indexOf(STORAGE_PREFIX) === 0) {
+            let rest = k.slice(STORAGE_PREFIX.length);
+            if (rest.endsWith('_meta')) rest = rest.slice(0, -5);
+            if (rest && rest !== 'local' && rest !== 'demo') codigos.add(rest);
+          }
+        }
+      } catch (e) {}
+      // Firebase: lista de empresas
+      if (firebaseOk && db) {
+        try {
+          const snap = await db.ref('empresas').once('value');
+          if (snap.exists()) {
+            const val = snap.val() || {};
+            Object.keys(val).forEach(c => { if (c) codigos.add(String(c)); });
+          }
+        } catch (e) {
+          console.warn('Lista empresas Firebase:', e);
+        }
+      }
+      return Array.from(codigos).filter(Boolean).sort();
+    }
+
+    async function lerMetaLoja(codigo) {
+      codigo = normalizarCodigoEmpresa(codigo);
+      let meta = null;
+      if (firebaseOk && db) {
+        try {
+          const snap = await db.ref(pathEmpresa(codigo, 'meta')).once('value');
+          if (snap.exists()) meta = snap.val();
+        } catch (e) {}
+      }
+      if (!meta) {
+        try {
+          const raw = localStorage.getItem(storageKey(codigo) + '_meta');
+          if (raw) meta = JSON.parse(raw);
+        } catch (e) {}
+      }
+      return meta || {};
+    }
+
+    async function lerEstadoLojaIsolado(codigo) {
+      codigo = normalizarCodigoEmpresa(codigo);
+      let estadoLoja = null;
+      if (firebaseOk && db) {
+        try {
+          const snap = await db.ref(pathEmpresa(codigo, 'estado')).once('value');
+          if (snap.exists()) estadoLoja = normalizarEstado(snap.val());
+        } catch (e) {
+          console.warn(e);
+        }
+      }
+      if (!estadoLoja) {
+        try {
+          const raw = localStorage.getItem(storageKey(codigo));
+          if (raw) estadoLoja = normalizarEstado(JSON.parse(raw));
+        } catch (e) {}
+      }
+      if (!estadoLoja) estadoLoja = normalizarEstado({});
+      _donoLojaEstadoCache[codigo] = estadoLoja;
+      return estadoLoja;
+    }
+
+    async function salvarEstadoLojaIsolado(codigo, estadoLoja) {
+      codigo = normalizarCodigoEmpresa(codigo);
+      try {
+        localStorage.setItem(storageKey(codigo), JSON.stringify(estadoLoja));
+      } catch (e) {}
+      if (firebaseOk && db) {
+        try {
+          await db.ref(pathEmpresa(codigo, 'estado')).set(estadoLoja);
+        } catch (e) {
+          console.warn('Falha ao salvar estado da loja', e);
+          toast('Salvo localmente; falha na nuvem: ' + (e.message || e), 'error');
+          return false;
+        }
+      }
+      _donoLojaEstadoCache[codigo] = estadoLoja;
+      return true;
+    }
+
+    async function renderListaLojasDono() {
+      if (!donoLogado) return;
+      const box = document.getElementById('dono-lista-lojas');
+      if (!box) return;
+      box.innerHTML = '<div class="dono-vazio">Carregando lojas…</div>';
+      const busca = ((document.getElementById('dono-busca-lojas') || {}).value || '').toLowerCase().trim();
+      const plat = await lerPlataforma();
+      const codigos = await obterCodigosTodasLojas();
+      const itens = [];
+      for (const codigo of codigos) {
+        if (codigo === 'demo') continue;
+        const acesso = (plat.acessos || {})[codigo] || {};
+        const meta = await lerMetaLoja(codigo);
+        const nome = acesso.nome || meta.nome || codigo;
+        const txt = (codigo + ' ' + nome + ' ' + (meta.adminLogin || '')).toLowerCase();
+        if (busca && !txt.includes(busca)) continue;
+        itens.push({ codigo, nome, meta, acesso });
+      }
+      if (!itens.length) {
+        box.innerHTML = '<div class="dono-vazio">' + (busca ? 'Nenhuma loja na busca.' : 'Nenhuma loja cadastrada ainda.') + '</div>';
+        return;
+      }
+      box.innerHTML = itens.map(it => {
+        const st = it.acesso.status === 'bloqueado' ? '🚫 bloqueada' : (it.acesso.status === 'liberado' ? '✅ liberada' : '—');
+        const pago = it.acesso.pago ? '💰 paga' : (it.acesso.pago === false ? '⏳ não paga' : '');
+        const codEsc = String(it.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `<div class="dono-item" style="display:flex;justify-content:space-between;gap:0.5rem;align-items:flex-start;">
+          <div style="flex:1;min-width:0;">
+            <strong style="color:var(--primary-dark);">${it.nome}</strong>
+            <span style="color:var(--text-muted);"> · ${it.codigo}</span><br>
+            <span style="font-size:0.82rem;">${st}${pago ? ' · ' + pago : ''}</span>
+            ${it.meta.adminLogin ? '<br><span style="font-size:0.8rem;color:var(--text-muted);">Admin inicial: <code>' + it.meta.adminLogin + '</code></span>' : ''}
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">🔑 Acessos</button>
+        </div>`;
+      }).join('');
+    }
+
+    async function abrirDetalheLojaDono(codigo) {
+      if (!donoLogado) return;
+      codigo = normalizarCodigoEmpresa(codigo);
+      const painel = document.getElementById('dono-loja-detalhe');
+      if (!painel) return;
+      painel.style.display = 'block';
+      painel.classList.remove('hidden');
+      document.getElementById('dono-rec-codigo').value = codigo;
+      document.getElementById('dono-rec-user-id').value = '';
+      document.getElementById('dono-rec-user-nome').value = '';
+      document.getElementById('dono-rec-login').value = '';
+      document.getElementById('dono-rec-senha').value = '';
+      document.getElementById('dono-emerg-nome').value = 'Administrador';
+      document.getElementById('dono-emerg-login').value = '';
+      document.getElementById('dono-emerg-senha').value = '';
+
+      const meta = await lerMetaLoja(codigo);
+      const plat = await lerPlataforma();
+      const acesso = (plat.acessos || {})[codigo] || {};
+      const nome = acesso.nome || meta.nome || codigo;
+      document.getElementById('dono-loja-detalhe-titulo').textContent = 'Acesso — ' + nome;
+      document.getElementById('dono-loja-detalhe-info').innerHTML =
+        '<strong>Código:</strong> ' + codigo +
+        (meta.adminLogin ? '<br><strong>Login do admin na criação:</strong> ' + meta.adminLogin : '') +
+        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas.</span>';
+
+      const estadoLoja = await lerEstadoLojaIsolado(codigo);
+      const users = Array.isArray(estadoLoja.usuarios) ? estadoLoja.usuarios : [];
+      const tbody = document.getElementById('dono-loja-usuarios');
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum usuário nesta loja. Use “Criar admin de emergência”.</td></tr>';
+      } else {
+        tbody.innerHTML = users.map(u => {
+          const idEsc = String(u.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const codEsc = String(codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+          const papel = u.papel || '—';
+          return `<tr>
+            <td><strong>${u.nome || '—'}</strong></td>
+            <td><code>${u.login || '—'}</code></td>
+            <td><span class="status ${papel === 'admin' ? 'admin' : 'vendedor'}">${papelLabel(papel)}</span></td>
+            <td class="actions-cell">
+              <button type="button" class="btn btn-sm btn-primary" onclick="selecionarUsuarioRecuperacaoDono('${codEsc}','${idEsc}')">Redefinir</button>
+            </td>
+          </tr>`;
+        }).join('');
+      }
+      try {
+        painel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {}
+    }
+
+    function fecharDetalheLojaDono() {
+      const painel = document.getElementById('dono-loja-detalhe');
+      if (painel) {
+        painel.style.display = 'none';
+        painel.classList.add('hidden');
+      }
+    }
+
+    function selecionarUsuarioRecuperacaoDono(codigo, userId) {
+      const estadoLoja = _donoLojaEstadoCache[codigo] || { usuarios: [] };
+      const u = (estadoLoja.usuarios || []).find(x => String(x.id) === String(userId));
+      if (!u) {
+        toast('Usuário não encontrado', 'error');
+        return;
+      }
+      document.getElementById('dono-rec-codigo').value = codigo;
+      document.getElementById('dono-rec-user-id').value = userId;
+      document.getElementById('dono-rec-user-nome').value = (u.nome || '') + ' (@' + (u.login || '') + ')';
+      document.getElementById('dono-rec-login').value = u.login || '';
+      document.getElementById('dono-rec-senha').value = '';
+      document.getElementById('dono-rec-senha').focus();
+      toast('Usuário selecionado. Informe a nova senha (e o login, se quiser alterar).', 'success');
+    }
+
+    async function salvarRecuperacaoAcessoDono() {
+      if (!donoLogado) return;
+      const codigo = normalizarCodigoEmpresa(document.getElementById('dono-rec-codigo').value);
+      const userId = document.getElementById('dono-rec-user-id').value;
+      const novoLogin = (document.getElementById('dono-rec-login').value || '').trim().toLowerCase();
+      const novaSenha = (document.getElementById('dono-rec-senha').value || '').trim();
+      if (!codigo || !userId) {
+        toast('Selecione um usuário na lista (botão Redefinir)', 'error');
+        return;
+      }
+      if (!novoLogin) {
+        toast('Informe o login', 'error');
+        return;
+      }
+      if (!novaSenha || novaSenha.length < 4) {
+        toast('Senha deve ter pelo menos 4 caracteres', 'error');
+        return;
+      }
+      const estadoLoja = await lerEstadoLojaIsolado(codigo);
+      const users = Array.isArray(estadoLoja.usuarios) ? estadoLoja.usuarios : [];
+      const u = users.find(x => String(x.id) === String(userId));
+      if (!u) {
+        toast('Usuário não encontrado', 'error');
+        return;
+      }
+      const conflito = users.find(x => String(x.id) !== String(userId) && String(x.login || '').toLowerCase() === novoLogin);
+      if (conflito) {
+        toast('Já existe outro usuário com este login nesta loja', 'error');
+        return;
+      }
+      if (!confirm('Redefinir acesso de "' + (u.nome || u.login) + '" na loja "' + codigo + '"?\n\nNovo login: ' + novoLogin + '\nOs dados da loja serão mantidos.')) return;
+
+      u.login = novoLogin;
+      u.senha = hashSenha(novaSenha);
+      const ok = await salvarEstadoLojaIsolado(codigo, estadoLoja);
+      if (!ok && firebaseOk) return;
+
+      // Atualiza meta.adminLogin se for admin
+      try {
+        const meta = await lerMetaLoja(codigo);
+        if (u.papel === 'admin' || meta.adminLogin) {
+          meta.adminLogin = meta.adminLogin || novoLogin;
+          // se o login antigo era o da meta, atualiza
+          if (!meta.adminLogin || users.filter(x => x.papel === 'admin').length <= 1) {
+            meta.adminLogin = novoLogin;
+          }
+          try { localStorage.setItem(storageKey(codigo) + '_meta', JSON.stringify(meta)); } catch (e) {}
+          if (firebaseOk && db) {
+            try { await db.ref(pathEmpresa(codigo, 'meta')).update({ adminLogin: meta.adminLogin }); } catch (e) {}
+          }
+        }
+      } catch (e) {}
+
+      toast('Acesso atualizado! Login: ' + novoLogin, 'success');
+      document.getElementById('dono-rec-senha').value = '';
+      await abrirDetalheLojaDono(codigo);
+    }
+
+    async function criarAdminEmergenciaLojaDono() {
+      if (!donoLogado) return;
+      const codigo = normalizarCodigoEmpresa(document.getElementById('dono-rec-codigo').value);
+      if (!codigo) {
+        toast('Abra uma loja primeiro', 'error');
+        return;
+      }
+      const nome = (document.getElementById('dono-emerg-nome').value || '').trim() || 'Administrador';
+      const login = (document.getElementById('dono-emerg-login').value || '').trim().toLowerCase();
+      const senha = (document.getElementById('dono-emerg-senha').value || '').trim();
+      if (!login) {
+        toast('Informe o login do admin', 'error');
+        return;
+      }
+      if (!senha || senha.length < 4) {
+        toast('Senha deve ter pelo menos 4 caracteres', 'error');
+        return;
+      }
+      const estadoLoja = await lerEstadoLojaIsolado(codigo);
+      if (!Array.isArray(estadoLoja.usuarios)) estadoLoja.usuarios = [];
+      if (estadoLoja.usuarios.some(u => String(u.login || '').toLowerCase() === login)) {
+        toast('Já existe usuário com este login. Use Redefinir nele.', 'error');
+        return;
+      }
+      if (!confirm('Criar administrador de emergência na loja "' + codigo + '"?\nLogin: ' + login + '\n\nNenhum dado da loja será apagado.')) return;
+      estadoLoja.usuarios.push({
+        id: uid(),
+        nome,
+        login,
+        senha: hashSenha(senha),
+        papel: 'admin'
+      });
+      const ok = await salvarEstadoLojaIsolado(codigo, estadoLoja);
+      if (!ok && firebaseOk) return;
+      try {
+        const meta = await lerMetaLoja(codigo);
+        meta.adminLogin = login;
+        try { localStorage.setItem(storageKey(codigo) + '_meta', JSON.stringify(meta)); } catch (e) {}
+        if (firebaseOk && db) {
+          try { await db.ref(pathEmpresa(codigo, 'meta')).update({ adminLogin: login }); } catch (e) {}
+        }
+      } catch (e) {}
+      toast('Admin de emergência criado! Login: ' + login, 'success');
+      document.getElementById('dono-emerg-senha').value = '';
+      await abrirDetalheLojaDono(codigo);
     }
 
     async function gerarChaveLiberacao() {
@@ -3790,30 +4419,43 @@
     }
 
     function adicionarDiasDataISO(dataISO, dias) {
-      const base = dataISO ? new Date(String(dataISO).slice(0, 10) + 'T12:00:00') : new Date();
-      if (isNaN(base.getTime())) {
-        const d = new Date();
-        d.setDate(d.getDate() + Number(dias || 0));
-        return d.toISOString().slice(0, 10);
+      // Interpreta YYYY-MM-DD em horário local (meio-dia) e devolve data local
+      let base;
+      if (dataISO) {
+        const s = String(dataISO).slice(0, 10);
+        const p = s.split('-');
+        if (p.length === 3) {
+          base = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
+        } else {
+          base = new Date(s + 'T12:00:00');
+        }
+      } else {
+        base = new Date();
       }
+      if (isNaN(base.getTime())) base = new Date();
       base.setDate(base.getDate() + Number(dias || 0));
-      return base.toISOString().slice(0, 10);
+      return formatarDataISOLocal(base);
     }
 
     function hojeISOLocal() {
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return y + '-' + m + '-' + day;
+      return hoje();
     }
 
     function diasAteDataISO(dataISO) {
       if (!dataISO) return null;
-      const alvo = new Date(String(dataISO).slice(0, 10) + 'T12:00:00');
+      const s = String(dataISO).slice(0, 10);
+      const p = s.split('-');
+      let alvo;
+      if (p.length === 3) {
+        alvo = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
+      } else {
+        alvo = new Date(s + 'T12:00:00');
+      }
       if (isNaN(alvo.getTime())) return null;
-      const hoje = new Date(hojeISOLocal() + 'T12:00:00');
-      return Math.round((alvo - hoje) / 86400000);
+      const h = hoje();
+      const hp = h.split('-');
+      const hojeD = new Date(Number(hp[0]), Number(hp[1]) - 1, Number(hp[2]), 12, 0, 0);
+      return Math.round((alvo - hojeD) / 86400000);
     }
 
     function obterDataVencimentoAcesso(a) {
@@ -4054,6 +4696,45 @@
       const elCh = document.getElementById('dono-lista-chaves');
       const elEm = document.getElementById('dono-lista-empresas');
       const elPed = document.getElementById('dono-lista-pedidos');
+
+      // Cards do resumo
+      try {
+        const pedidos = Object.values(plat.pedidosPix || {});
+        const pendPix = pedidos.filter(p => p.status === 'pendente').length;
+        const pagosPix = pedidos.filter(p => p.status === 'pago').length;
+        const chaves = Object.values(plat.chaves || {});
+        const livres = chaves.filter(c => c.status === 'livre').length;
+        const acessos = Object.values(plat.acessos || {});
+        const liberadas = acessos.filter(a => a.status === 'liberado').length;
+        const bloqueadas = acessos.filter(a => a.status === 'bloqueado').length;
+        const naoPagas = acessos.filter(a => !a.pago).length;
+        let vencendo = 0;
+        acessos.forEach(a => {
+          const info = statusVencimentoPagamento(a);
+          if (info.tipo === 'bloqueio' || info.tipo === 'vencido' || info.tipo === 'hoje' || info.tipo === 'proximo') vencendo++;
+        });
+        const cards = document.getElementById('dono-resumo-cards');
+        if (cards) {
+          cards.innerHTML =
+            '<div class="stat-card warning"><div class="label">PIX pendentes</div><div class="value">' + pendPix + '</div></div>' +
+            '<div class="stat-card success"><div class="label">PIX confirmados</div><div class="value">' + pagosPix + '</div></div>' +
+            '<div class="stat-card info"><div class="label">Códigos livres</div><div class="value">' + livres + '</div></div>' +
+            '<div class="stat-card"><div class="label">Empresas liberadas</div><div class="value">' + liberadas + '</div></div>' +
+            '<div class="stat-card danger"><div class="label">Bloqueadas</div><div class="value">' + bloqueadas + '</div></div>' +
+            '<div class="stat-card warning"><div class="label">Vencendo / atraso</div><div class="value">' + vencendo + '</div></div>';
+        }
+        const txt = document.getElementById('dono-resumo-texto');
+        if (txt) {
+          txt.innerHTML =
+            '<p style="margin-bottom:0.35rem;">• <strong>' + acessos.length + '</strong> empresas na plataforma (' + naoPagas + ' não pagas)</p>' +
+            '<p style="margin-bottom:0.35rem;">• <strong>' + pendPix + '</strong> pedidos PIX aguardando confirmação</p>' +
+            '<p style="margin-bottom:0.35rem;">• <strong>' + livres + '</strong> códigos de liberação disponíveis</p>' +
+            '<p>• <strong>' + vencendo + '</strong> empresa(s) com pagamento vencendo, vencido ou bloqueio automático</p>';
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+
       if (!elCh || !elEm) return;
 
       // Pedidos PIX
@@ -4097,6 +4778,7 @@
                     <button type="button" class="btn btn-sm btn-secondary" onclick="cancelarPedidoPix('${idEsc}')">Cancelar</button>
                   ` : ''}
                   ${p.chaveGerada ? `<button type="button" class="btn btn-sm btn-secondary" onclick="navigator.clipboard&&navigator.clipboard.writeText('${String(p.chaveGerada).replace(/'/g, "\\'")}');toast('Código copiado!','success')">Copiar código</button>` : ''}
+                  <button type="button" class="btn btn-sm btn-danger" onclick="excluirPedidoPix('${idEsc}')" title="Excluir pedido">🗑️ Excluir</button>
                 </div>
               </div>
             </div>`;
@@ -4415,11 +5097,8 @@
         empresaCodigo: codigo,
         usadaEm: new Date().toISOString()
       };
-      const hojeCriacao = new Date();
-      const vencCriacao = new Date(hojeCriacao);
-      vencCriacao.setDate(vencCriacao.getDate() + 30);
-      const dataPagamentoCriacao = hojeCriacao.toISOString().slice(0, 10);
-      const dataVencimentoCriacao = vencCriacao.toISOString().slice(0, 10);
+      const dataPagamentoCriacao = hoje();
+      const dataVencimentoCriacao = adicionarDiasDataISO(dataPagamentoCriacao, 30);
       plat.acessos[codigo] = {
         codigo,
         status: 'liberado',
@@ -5601,17 +6280,27 @@
       if (gi) gi.style.display = isFiado ? 'flex' : 'none';
       if (gprev) gprev.style.display = isFiado ? 'block' : 'none';
       if (isFiado && !document.getElementById('venda-prazo').value) {
-        const d = new Date();
-        d.setDate(d.getDate() + 7);
-        document.getElementById('venda-prazo').value = d.toISOString().slice(0, 10);
+        document.getElementById('venda-prazo').value = adicionarDiasDataISO(hoje(), 7);
       }
       if (isFiado) atualizarPreviewParcelas();
     }
 
     function adicionarDiasISO(dataISO, dias) {
-      const d = new Date(dataISO + 'T12:00:00');
+      // Usa a mesma regra local (Brasil) de adicionarDiasDataISO
+      if (typeof adicionarDiasDataISO === 'function') {
+        return adicionarDiasDataISO(dataISO, dias);
+      }
+      const s = String(dataISO || '').slice(0, 10);
+      const p = s.split('-');
+      let d;
+      if (p.length === 3) {
+        d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12, 0, 0);
+      } else {
+        d = new Date(s + 'T12:00:00');
+      }
+      if (isNaN(d.getTime())) d = new Date();
       d.setDate(d.getDate() + Number(dias || 0));
-      return d.toISOString().slice(0, 10);
+      return formatarDataISOLocal(d);
     }
 
     function montarParcelasFiado(valorTotal, numParcelas, primeiroPrazo, intervaloDias) {
@@ -5653,9 +6342,7 @@
       const intervalo = parseInt(document.getElementById('venda-intervalo-parcela').value, 10) || 30;
       let prazo = document.getElementById('venda-prazo').value;
       if (!prazo) {
-        const d = new Date();
-        d.setDate(d.getDate() + 7);
-        prazo = d.toISOString().slice(0, 10);
+        prazo = adicionarDiasDataISO(hoje(), 7);
         document.getElementById('venda-prazo').value = prazo;
       }
       if (valorDevido <= 0) {
@@ -7435,10 +8122,8 @@
         document.getElementById('app').style.display = 'none';
         mostrarAbaLogin();
       }
-      const d = new Date();
-      d.setDate(d.getDate() + 7);
       const prazoEl = document.getElementById('venda-prazo');
-      if (prazoEl) prazoEl.value = d.toISOString().slice(0, 10);
+      if (prazoEl) prazoEl.value = adicionarDiasDataISO(hoje(), 7);
     }
 
     init();
