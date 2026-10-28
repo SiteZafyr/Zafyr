@@ -1804,7 +1804,7 @@
         <div class="panel">
           <div class="panel-header">
             <h3>Cadastro de Produtos</h3>
-            <button class="btn btn-primary" onclick="abrirModalProduto()">+ Novo Produto</button>
+            <button class="btn btn-primary" id="btn-novo-produto" onclick="abrirModalProduto()">+ Novo Produto</button>
           </div>
           <div class="search-box" style="margin-bottom:1rem;">
             <input type="text" id="busca-produto" placeholder="Pesquisar produto..." oninput="renderProdutos()" />
@@ -1866,7 +1866,7 @@
         <div class="panel">
           <div class="panel-header">
             <h3>Cadastro de Clientes</h3>
-            <button class="btn btn-primary" onclick="abrirModalCliente()">+ Novo Cliente</button>
+            <button class="btn btn-primary" id="btn-novo-cliente" onclick="abrirModalCliente()">+ Novo Cliente</button>
           </div>
           <div class="search-box" style="margin-bottom:1rem;">
             <input type="text" id="busca-cliente" placeholder="Pesquisar por nome, telefone..." oninput="renderClientes()" />
@@ -2312,7 +2312,7 @@
         <div class="panel">
           <div class="panel-header">
             <h3>Gerenciar Usuários</h3>
-            <button class="btn btn-primary" onclick="abrirModalUsuario()">+ Novo Usuário</button>
+            <button class="btn btn-primary" id="btn-novo-usuario" onclick="abrirModalUsuario()">+ Novo Usuário</button>
           </div>
           <div class="table-wrap">
             <table>
@@ -2327,7 +2327,7 @@
         <div class="panel">
           <div class="panel-header">
             <h3>Categorias (o que cada tipo de usuário pode fazer)</h3>
-            <button class="btn btn-primary" onclick="abrirModalCargo()">+ Nova categoria</button>
+            <button class="btn btn-primary" id="btn-nova-categoria" onclick="abrirModalCargo()">+ Nova categoria</button>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
             Crie categorias novas (ex.: Caixa, Gerente, Conferente) e marque as telas que cada uma pode usar.
@@ -2598,9 +2598,14 @@
           <input type="text" id="cargo-nome" placeholder="Ex: Caixa, Gerente, Conferente..." />
         </div>
         <p style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.5rem;">Telas que esta categoria pode acessar</p>
-        <div id="cargo-permissoes" style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.8rem;max-height:280px;overflow-y:auto;padding:0.35rem 0;"></div>
+        <div id="cargo-permissoes" style="display:grid;grid-template-columns:1fr;gap:0.15rem;max-height:min(52vh,420px);overflow-y:auto;padding:0.35rem 0;"></div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:0.55rem 0 0;line-height:1.45;">
+          Em cada tela marcada, escolha se o cargo pode <strong>editar</strong> e/ou <strong>excluir</strong> naquela área.
+          No <strong>Caixa</strong>: Editar = aprovar venda · Excluir = cancelar venda pendente.
+          Em <strong>Entregas</strong>: Editar = marcar como entregue.
+        </p>
         <p id="cargo-admin-aviso" class="hidden" style="font-size:0.8rem;color:var(--warning);margin-top:0.6rem;">
-          A categoria Administrador sempre tem acesso às telas ativas da loja (e ao gerenciamento de usuários).
+          A categoria Administrador sempre tem acesso às telas ativas da loja e pode editar/excluir em todas.
         </p>
       </div>
       <div class="modal-footer">
@@ -2874,13 +2879,55 @@
     }
 
 
+    /** Módulos que aceitam permissão de editar e/ou excluir */
+    const MODULOS_COM_ACOES = {
+      produtos: { editar: true, excluir: true },
+      estoque: { editar: true, excluir: false },
+      clientes: { editar: true, excluir: true },
+      fiado: { editar: true, excluir: true },
+      vendas: { editar: false, excluir: true },
+      usuarios: { editar: true, excluir: true },
+      caixa: { editar: true, excluir: true },
+      entregas: { editar: true, excluir: false }
+    };
+
+    function acoesPadraoParaPermissoes(perms, opts) {
+      opts = opts || {};
+      const out = {};
+      (perms || []).forEach(pid => {
+        const def = MODULOS_COM_ACOES[pid];
+        if (!def) return;
+        out[pid] = {
+          editar: opts.editar != null ? !!opts.editar : !!def.editar,
+          excluir: opts.excluir != null ? !!opts.excluir : false
+        };
+      });
+      return out;
+    }
+
     function cargosPadrao() {
       const todas = PERMISSOES_APP.map(p => p.id);
       return [
-        { id: 'admin', nome: 'Administrador', sistema: true, permissoes: todas.slice() },
-        { id: 'vendedor', nome: 'Vendedor', sistema: true, permissoes: ['venda', 'fiado'] },
-        { id: 'caixa', nome: 'Caixa', sistema: true, permissoes: ['caixa', 'venda', 'fiado'] },
-        { id: 'entregador', nome: 'Entregador', sistema: true, permissoes: ['entregas'] }
+        {
+          id: 'admin', nome: 'Administrador', sistema: true,
+          permissoes: todas.slice(),
+          acoes: acoesPadraoParaPermissoes(todas, { editar: true, excluir: true })
+        },
+        {
+          id: 'vendedor', nome: 'Vendedor', sistema: true,
+          permissoes: ['venda', 'fiado'],
+          acoes: acoesPadraoParaPermissoes(['venda', 'fiado'], { editar: true, excluir: false })
+        },
+        {
+          id: 'caixa', nome: 'Caixa', sistema: true,
+          permissoes: ['caixa', 'venda', 'fiado'],
+          acoes: acoesPadraoParaPermissoes(['caixa', 'venda', 'fiado'], { editar: true, excluir: false })
+        },
+        {
+          id: 'entregador', nome: 'Entregador', sistema: true,
+          permissoes: ['entregas'],
+          acoes: acoesPadraoParaPermissoes(['entregas'], { editar: true, excluir: false })
+        }
       ];
     }
 
@@ -3026,6 +3073,92 @@
         return false;
       }
       return Array.isArray(cargo.permissoes) && cargo.permissoes.includes(pagina);
+    }
+
+    /** Normaliza mapa de ações por módulo no cargo */
+    function normalizarAcoesCargo(cargo) {
+      const acoes = (cargo && cargo.acoes && typeof cargo.acoes === 'object') ? { ...cargo.acoes } : {};
+      // Compatibilidade com flags gerais antigas
+      const legadoEdit = cargo && cargo.podeEditar === false ? false : true;
+      const legadoExc = cargo && cargo.podeExcluir === true ? true : false;
+      const perms = (cargo && Array.isArray(cargo.permissoes)) ? cargo.permissoes : [];
+      perms.forEach(pid => {
+        if (!MODULOS_COM_ACOES[pid]) return;
+        if (!acoes[pid] || typeof acoes[pid] !== 'object') {
+          acoes[pid] = {
+            editar: legadoEdit && !!MODULOS_COM_ACOES[pid].editar,
+            excluir: legadoExc
+          };
+        } else {
+          acoes[pid] = {
+            editar: acoes[pid].editar !== false,
+            excluir: acoes[pid].excluir === true
+          };
+        }
+      });
+      return acoes;
+    }
+
+    /** Pode cadastrar/editar naquele módulo (ex.: 'produtos', 'clientes', 'fiado') */
+    function podeEditarModulo(modulo) {
+      if (!usuarioAtual) return false;
+      if (usuarioAtual.papel === 'admin') return true;
+      if (!modulo || !MODULOS_COM_ACOES[modulo]) return true;
+      const cargo = getCargo(usuarioAtual.papel);
+      if (!cargo) return true;
+      const acoes = normalizarAcoesCargo(cargo);
+      const a = acoes[modulo];
+      if (!a) return false; // tem acesso à tela mas sem ação definida → não edita
+      return a.editar !== false;
+    }
+
+    /** Pode excluir naquele módulo */
+    function podeExcluirModulo(modulo) {
+      if (!usuarioAtual) return false;
+      if (usuarioAtual.papel === 'admin') return true;
+      if (!modulo || !MODULOS_COM_ACOES[modulo]) return true;
+      const cargo = getCargo(usuarioAtual.papel);
+      if (!cargo) return true;
+      const acoes = normalizarAcoesCargo(cargo);
+      const a = acoes[modulo];
+      if (!a) return false;
+      return a.excluir === true;
+    }
+
+    // Atalhos legados (evitam quebrar chamadas sem módulo) — preferir podeEditarModulo/podeExcluirModulo
+    function podeEditarRegistros(modulo) {
+      if (modulo) return podeEditarModulo(modulo);
+      return true;
+    }
+    function podeExcluirRegistros(modulo) {
+      if (modulo) return podeExcluirModulo(modulo);
+      return true;
+    }
+
+    function exigirPodeEditar(moduloOuMsg, msg) {
+      let modulo = null;
+      let mensagem = msg;
+      if (typeof moduloOuMsg === 'string' && MODULOS_COM_ACOES[moduloOuMsg]) {
+        modulo = moduloOuMsg;
+      } else if (typeof moduloOuMsg === 'string') {
+        mensagem = moduloOuMsg;
+      }
+      if (!modulo || podeEditarModulo(modulo)) return true;
+      toast(mensagem || 'Seu cargo não pode cadastrar nem editar nesta área.', 'error');
+      return false;
+    }
+
+    function exigirPodeExcluir(moduloOuMsg, msg) {
+      let modulo = null;
+      let mensagem = msg;
+      if (typeof moduloOuMsg === 'string' && MODULOS_COM_ACOES[moduloOuMsg]) {
+        modulo = moduloOuMsg;
+      } else if (typeof moduloOuMsg === 'string') {
+        mensagem = moduloOuMsg;
+      }
+      if (!modulo || podeExcluirModulo(modulo)) return true;
+      toast(mensagem || 'Seu cargo não pode excluir nesta área.', 'error');
+      return false;
     }
 
     function permissoesDoUsuarioAtual() {
@@ -3632,9 +3765,19 @@
         e.cargos = e.cargos.map(c => {
           const perms = Array.isArray(c.permissoes) ? c.permissoes.filter(Boolean) : [];
           if (c.id === 'admin') {
-            return { ...c, nome: c.nome || 'Administrador', sistema: true, permissoes: PERMISSOES_APP.map(p => p.id) };
+            return {
+              ...c,
+              nome: c.nome || 'Administrador',
+              sistema: true,
+              permissoes: PERMISSOES_APP.map(p => p.id),
+              acoes: acoesPadraoParaPermissoes(PERMISSOES_APP.map(p => p.id), { editar: true, excluir: true })
+            };
           }
-          return { ...c, nome: c.nome || c.id, sistema: !!c.sistema, permissoes: perms };
+          const base = { ...c, nome: c.nome || c.id, sistema: !!c.sistema, permissoes: perms };
+          base.acoes = normalizarAcoesCargo(base);
+          delete base.podeEditar;
+          delete base.podeExcluir;
+          return base;
         });
       }
       // Módulos da loja: se não existir, todos ativos
@@ -5458,6 +5601,7 @@
 
     // ===================== USUÁRIOS E CARGOS (admin) =====================
     function abrirModalUsuario(id = null) {
+      if (!exigirPodeEditar('usuarios')) return;
       if (!temPermissao('usuarios') && !isAdmin()) return;
       document.getElementById('usuario-id').value = id || '';
       document.getElementById('modal-usuario-titulo').textContent = id ? 'Editar Usuário' : 'Novo Usuário';
@@ -5484,6 +5628,7 @@
     }
 
     function salvarUsuario() {
+      if (!exigirPodeEditar('usuarios')) return;
       if (!isAdmin() && !temPermissao('usuarios')) return;
       const id = document.getElementById('usuario-id').value;
       const nome = document.getElementById('usuario-nome').value.trim();
@@ -5529,6 +5674,7 @@
     }
 
     function excluirUsuario(id) {
+      if (!exigirPodeExcluir('usuarios')) return;
       if (!isAdmin() && !temPermissao('usuarios')) return;
       const u = estado.usuarios.find(x => x.id === id);
       if (!u) return;
@@ -5553,6 +5699,8 @@
 
     function renderUsuarios() {
       if (!temPermissao('usuarios') && !isAdmin()) return;
+      const btnNovo = document.getElementById('btn-novo-usuario');
+      if (btnNovo) btnNovo.style.display = podeEditarModulo('usuarios') ? '' : 'none';
       const tbody = document.getElementById('lista-usuarios');
       if (!tbody) return;
       tbody.innerHTML = estado.usuarios.map(u => `
@@ -5561,32 +5709,85 @@
           <td>${u.login}</td>
           <td><span class="status ${u.papel === 'admin' ? 'admin' : (u.papel === 'entregador' ? 'aberto' : 'vendedor')}">${papelLabel(u.papel)}</span></td>
           <td class="actions-cell">
-            <button class="btn btn-sm btn-secondary" onclick="abrirModalUsuario('${u.id}')">✏️</button>
-            ${u.id !== usuarioAtual.id ? `<button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.id}')">🗑️</button>` : ''}
+            ${podeEditarModulo('usuarios') ? `<button class="btn btn-sm btn-secondary" onclick="abrirModalUsuario('${u.id}')">✏️</button>` : ''}
+            ${podeExcluirModulo('usuarios') && u.id !== usuarioAtual.id ? `<button class="btn btn-sm btn-danger" onclick="excluirUsuario('${u.id}')">🗑️</button>` : ''}
           </td>
         </tr>
       `).join('');
     }
 
-    function montarCheckboxesPermissoes(selecionadas, somenteLeitura) {
+    function montarCheckboxesPermissoes(selecionadas, somenteLeitura, acoesMap) {
       const box = document.getElementById('cargo-permissoes');
       if (!box) return;
       const sel = new Set(selecionadas || []);
+      const acoes = acoesMap && typeof acoesMap === 'object' ? acoesMap : {};
       const lista = permissoesDisponiveisNaLoja();
       if (!lista.length) {
         box.innerHTML = '<p style="font-size:0.82rem;color:var(--text-muted);">Nenhum módulo ativo nesta loja.</p>';
         return;
       }
-      box.innerHTML = lista.map(p => `
-        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:${somenteLeitura ? 'default' : 'pointer'};">
-          <input type="checkbox" class="cargo-perm-check" value="${p.id}" ${sel.has(p.id) ? 'checked' : ''} ${somenteLeitura ? 'disabled' : ''} />
-          ${p.label}
-        </label>
-      `).join('');
+      box.innerHTML = lista.map(p => {
+        const checked = sel.has(p.id);
+        const def = MODULOS_COM_ACOES[p.id];
+        let sub = '';
+        if (def) {
+          const a = acoes[p.id] || {};
+          const ed = a.editar !== false;
+          const ex = a.excluir === true;
+          const dis = somenteLeitura || !checked ? 'disabled' : '';
+          sub = `<div class="cargo-acoes-mod" data-mod="${p.id}" style="margin:0.15rem 0 0.45rem 1.55rem;display:flex;flex-wrap:wrap;gap:0.55rem 0.9rem;font-size:0.78rem;color:var(--text-muted);">
+            ${def.editar ? `<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};">
+              <input type="checkbox" class="cargo-acao-editar" data-mod="${p.id}" ${ed && checked ? 'checked' : ''} ${dis} ${somenteLeitura ? 'disabled' : ''} />
+              ✏️ Editar
+            </label>` : ''}
+            ${def.excluir ? `<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};">
+              <input type="checkbox" class="cargo-acao-excluir" data-mod="${p.id}" ${ex && checked ? 'checked' : ''} ${dis} ${somenteLeitura ? 'disabled' : ''} />
+              🗑️ Excluir
+            </label>` : ''}
+          </div>`;
+        }
+        return `<div style="grid-column:1/-1;">
+          <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:${somenteLeitura ? 'default' : 'pointer'};">
+            <input type="checkbox" class="cargo-perm-check" value="${p.id}" ${checked ? 'checked' : ''} ${somenteLeitura ? 'disabled' : ''} onchange="onTogglePermissaoTela(this)" />
+            ${p.label}
+          </label>
+          ${sub}
+        </div>`;
+      }).join('');
+    }
+
+    function onTogglePermissaoTela(chk) {
+      const mod = chk.value;
+      const box = document.querySelector('.cargo-acoes-mod[data-mod="' + mod + '"]');
+      if (!box) return;
+      box.querySelectorAll('input[type="checkbox"]').forEach(inp => {
+        inp.disabled = !chk.checked;
+        if (!chk.checked) inp.checked = false;
+        else if (inp.classList.contains('cargo-acao-editar') && MODULOS_COM_ACOES[mod] && MODULOS_COM_ACOES[mod].editar) {
+          // ao liberar a tela, editar vem marcado por padrão
+          if (!inp.checked) inp.checked = true;
+        }
+      });
+    }
+
+    function coletarAcoesDoFormulario() {
+      const acoes = {};
+      document.querySelectorAll('.cargo-perm-check:checked').forEach(chk => {
+        const pid = chk.value;
+        if (!MODULOS_COM_ACOES[pid]) return;
+        const edEl = document.querySelector('.cargo-acao-editar[data-mod="' + pid + '"]');
+        const exEl = document.querySelector('.cargo-acao-excluir[data-mod="' + pid + '"]');
+        acoes[pid] = {
+          editar: edEl ? !!edEl.checked : false,
+          excluir: exEl ? !!exEl.checked : false
+        };
+      });
+      return acoes;
     }
 
     function abrirModalCargo(id = null) {
       if (!isAdmin() && !temPermissao('usuarios')) return;
+      if (!exigirPodeEditar('usuarios')) return;
       document.getElementById('cargo-id').value = id || '';
       document.getElementById('modal-cargo-titulo').textContent = id ? 'Editar categoria' : 'Nova categoria';
       const aviso = document.getElementById('cargo-admin-aviso');
@@ -5596,12 +5797,14 @@
         document.getElementById('cargo-nome').value = c.nome || '';
         const isAdm = c.id === 'admin';
         document.getElementById('cargo-nome').disabled = isAdm;
-        montarCheckboxesPermissoes(isAdm ? modulosAtivosLoja() : (c.permissoes || []), isAdm);
+        const acoes = normalizarAcoesCargo(c);
+        montarCheckboxesPermissoes(isAdm ? modulosAtivosLoja() : (c.permissoes || []), isAdm, acoes);
         if (aviso) aviso.classList.toggle('hidden', !isAdm);
       } else {
         document.getElementById('cargo-nome').value = '';
         document.getElementById('cargo-nome').disabled = false;
-        montarCheckboxesPermissoes(['venda'], false);
+        const perms = ['venda'];
+        montarCheckboxesPermissoes(perms, false, acoesPadraoParaPermissoes(perms, { editar: true, excluir: false }));
         if (aviso) aviso.classList.add('hidden');
       }
       document.getElementById('modal-cargo').classList.add('show');
@@ -5613,9 +5816,11 @@
 
     function salvarCargo() {
       if (!isAdmin() && !temPermissao('usuarios')) return;
+      if (!exigirPodeEditar('usuarios')) return;
       const id = document.getElementById('cargo-id').value;
       let nome = document.getElementById('cargo-nome').value.trim();
       const checks = Array.from(document.querySelectorAll('.cargo-perm-check:checked')).map(el => el.value);
+      const acoes = coletarAcoesDoFormulario();
 
       if (id === 'admin') {
         const c = getCargo('admin');
@@ -5623,6 +5828,9 @@
           c.permissoes = PERMISSOES_APP.map(p => p.id);
           c.nome = 'Administrador';
           c.sistema = true;
+          c.acoes = acoesPadraoParaPermissoes(c.permissoes, { editar: true, excluir: true });
+          delete c.podeEditar;
+          delete c.podeExcluir;
         }
         registrarLog('Editar categoria', 'Administrador', 'usuario');
         salvar();
@@ -5640,6 +5848,9 @@
         if (!c) return;
         c.nome = nome;
         c.permissoes = checks;
+        c.acoes = acoes;
+        delete c.podeEditar;
+        delete c.podeExcluir;
       } else {
         const novoId = normalizarCodigoEmpresa(nome) || ('cat-' + uid());
         if ((estado.cargos || []).some(c => c.id === novoId)) {
@@ -5651,10 +5862,15 @@
           id: novoId,
           nome,
           sistema: false,
-          permissoes: checks
+          permissoes: checks,
+          acoes
         });
       }
-      registrarLog(id ? 'Editar categoria' : 'Criar categoria', nome + ' · ' + checks.length + ' telas', 'usuario');
+      registrarLog(
+        id ? 'Editar categoria' : 'Criar categoria',
+        nome + ' · ' + checks.length + ' telas · ações por módulo',
+        'usuario'
+      );
       salvar();
       fecharModalCargo();
       renderCargos();
@@ -5663,6 +5879,7 @@
 
     function excluirCargo(id) {
       if (!isAdmin() && !temPermissao('usuarios')) return;
+      if (!exigirPodeExcluir('usuarios')) return;
       const c = getCargo(id);
       if (!c) return;
       if (c.id === 'admin' || c.sistema) {
@@ -5684,6 +5901,8 @@
 
     function renderCargos() {
       if (!temPermissao('usuarios') && !isAdmin()) return;
+      const btnCat = document.getElementById('btn-nova-categoria');
+      if (btnCat) btnCat.style.display = podeEditarModulo('usuarios') ? '' : 'none';
       const tbody = document.getElementById('lista-cargos');
       if (!tbody) return;
       const lista = (estado.cargos || []).slice().sort((a, b) => {
@@ -5709,13 +5928,31 @@
             });
         }
         const telas = labels.length ? labels.join(', ') : '—';
+        const isAdm = c.id === 'admin';
+        const acoes = isAdm ? {} : normalizarAcoesCargo(c);
+        let acoesTxt = isAdm ? 'Editar e excluir em todas as telas' : '';
+        if (!isAdm) {
+          const partes = Object.keys(acoes).map(pid => {
+            const p = PERMISSOES_APP.find(x => x.id === pid);
+            const nome = p ? p.label.replace(/^[^\s]+\s/, '') : pid;
+            const a = acoes[pid];
+            const bits = [];
+            if (a.editar) bits.push('editar');
+            if (a.excluir) bits.push('excluir');
+            if (!bits.length) return null;
+            return nome + ': ' + bits.join('/');
+          }).filter(Boolean);
+          acoesTxt = partes.length ? partes.join(' · ') : 'Somente visualizar nas telas liberadas';
+        }
         return `
           <tr>
-            <td><strong>${c.nome}</strong>${c.sistema ? ' <small style="color:var(--text-muted)">(padrão)</small>' : ' <small style="color:var(--primary);">(personalizada)</small>'}</td>
+            <td><strong>${c.nome}</strong>${c.sistema ? ' <small style="color:var(--text-muted)">(padrão)</small>' : ' <small style="color:var(--primary);">(personalizada)</small>'}
+              <br><small style="color:var(--text-muted);">${acoesTxt}</small>
+            </td>
             <td style="font-size:0.82rem;max-width:340px;">${telas}</td>
             <td class="actions-cell">
-              <button class="btn btn-sm btn-secondary" onclick="abrirModalCargo('${c.id}')">✏️</button>
-              ${!c.sistema && c.id !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="excluirCargo('${c.id}')">🗑️</button>` : ''}
+              ${podeEditarModulo('usuarios') ? `<button class="btn btn-sm btn-secondary" onclick="abrirModalCargo('${c.id}')">✏️</button>` : ''}
+              ${podeExcluirModulo('usuarios') && !c.sistema && c.id !== 'admin' ? `<button class="btn btn-sm btn-danger" onclick="excluirCargo('${c.id}')">🗑️</button>` : ''}
             </td>
           </tr>
         `;
@@ -5764,6 +6001,7 @@
 
     // ===================== PRODUTOS =====================
     function abrirModalProduto(id = null) {
+      if (!exigirPodeEditar('produtos')) return;
       if (!isAdmin()) { toast('Acesso restrito', 'error'); return; }
       document.getElementById('produto-id').value = id || '';
       document.getElementById('modal-produto-titulo').textContent = id ? 'Editar Produto' : 'Novo Produto';
@@ -5792,6 +6030,7 @@
     function fecharModalProduto() { document.getElementById('modal-produto').classList.remove('show'); }
 
     function salvarProduto() {
+      if (!exigirPodeEditar('produtos')) return;
       if (!isAdmin()) return;
       const id = document.getElementById('produto-id').value;
       const nome = document.getElementById('produto-nome').value.trim();
@@ -5826,6 +6065,7 @@
     }
 
     function excluirProduto(id) {
+      if (!exigirPodeExcluir('produtos')) return;
       if (!isAdmin()) return;
       const p = getProduto(id);
       if (!confirm('Excluir este produto?')) return;
@@ -5840,6 +6080,8 @@
     }
 
     function renderProdutos() {
+      const btnNovo = document.getElementById('btn-novo-produto');
+      if (btnNovo) btnNovo.style.display = podeEditarModulo('produtos') ? '' : 'none';
       const busca = (document.getElementById('busca-produto')?.value || '').toLowerCase();
       let lista = estado.produtos;
       if (busca) lista = lista.filter(p => p.nome.toLowerCase().includes(busca));
@@ -5862,8 +6104,8 @@
             <td>${p.minimo}</td>
             <td><span class="status ${baixo ? 'baixo' : 'ok'}">${baixo ? 'Baixo' : 'OK'}</span></td>
             <td class="actions-cell">
-              <button class="btn btn-sm btn-secondary" onclick="abrirModalProduto('${p.id}')">✏️</button>
-              <button class="btn btn-sm btn-danger" onclick="excluirProduto('${p.id}')">🗑️</button>
+              ${podeEditarModulo('produtos') ? `<button class="btn btn-sm btn-secondary" onclick="abrirModalProduto('${p.id}')">✏️</button>` : ''}
+              ${podeExcluirModulo('produtos') ? `<button class="btn btn-sm btn-danger" onclick="excluirProduto('${p.id}')">🗑️</button>` : ''}
             </td>
           </tr>
         `;
@@ -5883,6 +6125,7 @@
 
     // ===================== MOVIMENTAÇÃO =====================
     function registrarMovimentacao() {
+      if (!exigirPodeEditar('estoque', 'Seu cargo não pode movimentar estoque.')) return;
       const produtoId = document.getElementById('mov-produto').value;
       const tipo = document.getElementById('mov-tipo').value;
       const qtd = parseInt(document.getElementById('mov-qtd').value, 10);
@@ -5948,6 +6191,7 @@
 
     // ===================== CLIENTES =====================
     function abrirModalCliente(id = null) {
+      if (!exigirPodeEditar('clientes')) return;
       document.getElementById('cliente-id').value = id || '';
       document.getElementById('modal-cliente-titulo').textContent = id ? 'Editar Cliente' : 'Novo Cliente';
       if (id) {
@@ -5979,6 +6223,7 @@
     function fecharModalCliente() { document.getElementById('modal-cliente').classList.remove('show'); }
 
     function salvarCliente() {
+      if (!exigirPodeEditar('clientes')) return;
       const id = document.getElementById('cliente-id').value;
       const nome = document.getElementById('cliente-nome').value.trim();
       const telefone = document.getElementById('cliente-telefone').value.trim();
@@ -6018,6 +6263,7 @@
     }
 
     function excluirCliente(id) {
+      if (!exigirPodeExcluir('clientes')) return;
       const c = getCliente(id);
       if (!confirm('Excluir este cliente?')) return;
       estado.clientes = estado.clientes.filter(x => x.id !== id);
@@ -6029,6 +6275,8 @@
     }
 
     function renderClientes() {
+      const btnNovo = document.getElementById('btn-novo-cliente');
+      if (btnNovo) btnNovo.style.display = podeEditarModulo('clientes') ? '' : 'none';
       const busca = (document.getElementById('busca-cliente')?.value || '').toLowerCase();
       let lista = estado.clientes;
       if (busca) {
@@ -6053,8 +6301,8 @@
           <td style="font-size:0.84rem;">${formatarEnderecoCliente(c) || '—'}</td>
           <td style="font-size:0.84rem;">${c.referencia || '—'}</td>
           <td class="actions-cell">
-            <button class="btn btn-sm btn-secondary" onclick="abrirModalCliente('${c.id}')">✏️</button>
-            <button class="btn btn-sm btn-danger" onclick="excluirCliente('${c.id}')">🗑️</button>
+            ${podeEditarModulo('clientes') ? `<button class="btn btn-sm btn-secondary" onclick="abrirModalCliente('${c.id}')">✏️</button>` : ''}
+            ${podeExcluirModulo('clientes') ? `<button class="btn btn-sm btn-danger" onclick="excluirCliente('${c.id}')">🗑️</button>` : ''}
           </td>
         </tr>
       `).join('');
@@ -6565,6 +6813,10 @@
 
     /** Vendedor envia ao caixa — NÃO contabiliza ainda */
     function enviarVendaAoCaixa() {
+      if (!temPermissao('venda') && !isAdmin()) {
+        toast('Sem permissão para registrar venda', 'error');
+        return;
+      }
       const dados = montarDadosVendaDoFormulario();
       if (!dados) return;
 
@@ -6688,9 +6940,9 @@
         <p style="margin-bottom:0.35rem;"><strong>Pagamento:</strong> ${v.forma === 'fiado' ? 'Fiado' : 'À vista'}${v.pago > 0 ? ' · pago ' + formatarMoeda(v.pago) : ''}</p>
         <div style="margin:0.5rem 0;">${itens}</div>
         <div style="display:flex;flex-wrap:wrap;gap:0.45rem;margin-top:0.75rem;">
-          <button class="btn btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅ Aprovar e contabilizar</button>
+          ${podeEditarModulo('caixa') ? `<button class="btn btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅ Aprovar e contabilizar</button>` : ''}
           <button class="btn btn-secondary" onclick="imprimirComprovanteCaixaId('${v.id}')">🖨️ Comprovante</button>
-          <button class="btn btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️ Cancelar</button>
+          ${podeExcluirModulo('caixa') ? `<button class="btn btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️ Cancelar</button>` : ''}
         </div>
       `;
       const cod = document.getElementById('caixa-codigo');
@@ -6702,6 +6954,7 @@
         toast('Sem permissão de caixa', 'error');
         return;
       }
+      if (!exigirPodeEditar('caixa', 'Seu cargo não pode aprovar vendas no caixa.')) return;
       const pend = (estado.vendasPendentes || []).find(x => x.id === id);
       if (!pend || pend.statusCaixa !== 'pendente') {
         toast('Venda pendente não encontrada', 'error');
@@ -6734,7 +6987,11 @@
     }
 
     function cancelarVendaPendente(id) {
-      if (!temPermissao('caixa') && !isAdmin()) return;
+      if (!temPermissao('caixa') && !isAdmin()) {
+        toast('Sem permissão de caixa', 'error');
+        return;
+      }
+      if (!exigirPodeExcluir('caixa', 'Seu cargo não pode cancelar vendas no caixa.')) return;
       const pend = (estado.vendasPendentes || []).find(x => x.id === id);
       if (!pend) return;
       if (!confirm('Cancelar a venda pendente ' + (pend.codigo || '') + '?\nNada foi contabilizado ainda.')) return;
@@ -6793,8 +7050,8 @@
             <td class="actions-cell">
               ${st === 'pendente' ? `
                 <button class="btn btn-sm btn-primary" onclick="mostrarDetalheCaixa((estado.vendasPendentes||[]).find(x=>x.id==='${v.id}'))">👁️</button>
-                <button class="btn btn-sm btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅</button>
-                <button class="btn btn-sm btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️</button>
+                ${podeEditarModulo('caixa') ? `<button class="btn btn-sm btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅</button>` : ''}
+                ${podeExcluirModulo('caixa') ? `<button class="btn btn-sm btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️</button>` : ''}
               ` : `
                 <button class="btn btn-sm btn-secondary" onclick="imprimirVendaLog('${v.id}')">🖨️</button>
               `}
@@ -7090,7 +7347,7 @@
             <td>${v.vendedor || '—'}</td>
             <td class="actions-cell">
               <button class="btn btn-sm btn-secondary" onclick="imprimirVendaLog('${v.id}')" title="Imprimir">🖨️</button>
-              ${isAdmin() ? `<button class="btn btn-sm btn-danger" onclick="excluirVendaLog('${v.id}')" title="Excluir log">🗑️</button>` : ''}
+              ${podeExcluirModulo('vendas') ? `<button class="btn btn-sm btn-danger" onclick="excluirVendaLog('${v.id}')" title="Excluir log">🗑️</button>` : ''}
             </td>
           </tr>
         `;
@@ -7104,7 +7361,7 @@
     }
 
     function excluirVendaLog(id) {
-      if (!isAdmin()) return;
+      if (!exigirPodeExcluir('vendas')) return;
       const v = (estado.vendas || []).find(x => x.id === id);
       if (!v) return;
 
@@ -7308,7 +7565,7 @@
             </td>
             <td class="actions-cell">
               <button class="btn btn-sm btn-secondary" onclick="imprimirNotaEntrega('${v.id}')" title="Nota de entrega">🖨️ Nota</button>
-              ${status === 'pendente' ? `<button class="btn btn-sm btn-success" onclick="marcarEntregue('${v.id}')" title="Marcar entregue">✅ Entregue</button>` : ''}
+              ${status === 'pendente' && podeEditarModulo('entregas') ? `<button class="btn btn-sm btn-success" onclick="marcarEntregue('${v.id}')" title="Marcar entregue">✅ Entregue</button>` : ''}
             </td>
           </tr>
         `;
@@ -7316,6 +7573,11 @@
     }
 
     function marcarEntregue(id) {
+      if (!temPermissao('entregas') && !isAdmin()) {
+        toast('Sem permissão de entregas', 'error');
+        return;
+      }
+      if (!exigirPodeEditar('entregas', 'Seu cargo não pode marcar entregas.')) return;
       const v = (estado.vendas || []).find(x => x.id === id);
       if (!v) return;
       if (!confirm('Confirmar que esta entrega foi realizada?')) return;
@@ -7474,6 +7736,7 @@
     }
 
     function marcarPago(id) {
+      if (!exigirPodeEditar('fiado', 'Seu cargo não pode marcar fiado como pago.')) return;
       const d = estado.dividas.find(x => x.id === id);
       if (!d) return;
       d.status = 'pago';
@@ -7493,6 +7756,7 @@
     }
 
     function excluirDivida(id) {
+      if (!exigirPodeExcluir('fiado')) return;
       const d = estado.dividas.find(x => x.id === id);
       if (!confirm('Excluir esta parcela/dívida?')) return;
       const cli = d ? getCliente(d.clienteId) : null;
@@ -7513,6 +7777,7 @@
     }
 
     function excluirGrupoFiado(key) {
+      if (!exigirPodeExcluir('fiado')) return;
       try { key = decodeURIComponent(key); } catch (e) {}
       const grupo = montarGruposFiado().find(g => g.key === key);
       if (!grupo) return;
@@ -7531,6 +7796,7 @@
     }
 
     function abrirModalDivida(id) {
+      if (!exigirPodeEditar('fiado')) return;
       const d = estado.dividas.find(x => x.id === id);
       if (!d) return;
       document.getElementById('divida-id').value = id;
@@ -7544,6 +7810,7 @@
     function fecharModalDivida() { document.getElementById('modal-divida').classList.remove('show'); }
 
     function salvarDivida() {
+      if (!exigirPodeEditar('fiado')) return;
       const id = document.getElementById('divida-id').value;
       const d = estado.dividas.find(x => x.id === id);
       if (!d) return;
@@ -7595,10 +7862,10 @@
             <td>${formatarData(d.prazo)}</td>
             <td><span class="status ${st}">${statusLabel}</span></td>
             <td class="actions-cell">
-              ${st !== 'pago' ? `<button class="btn btn-sm btn-success" onclick="marcarPago('${d.id}')" title="Marcar pago">✅ Pagar</button>` : ''}
-              <button class="btn btn-sm btn-secondary" onclick="abrirModalDivida('${d.id}')">✏️</button>
+              ${st !== 'pago' && podeEditarModulo('fiado') ? `<button class="btn btn-sm btn-success" onclick="marcarPago('${d.id}')" title="Marcar pago">✅ Pagar</button>` : ''}
+              ${podeEditarModulo('fiado') ? `<button class="btn btn-sm btn-secondary" onclick="abrirModalDivida('${d.id}')">✏️</button>` : ''}
               <button class="btn btn-sm btn-secondary" onclick="imprimirDivida('${d.id}')">🖨️</button>
-              <button class="btn btn-sm btn-danger" onclick="excluirDivida('${d.id}')">🗑️</button>
+              ${podeExcluirModulo('fiado') ? `<button class="btn btn-sm btn-danger" onclick="excluirDivida('${d.id}')">🗑️</button>` : ''}
             </td>
           </tr>`;
       }).join('');
@@ -7656,7 +7923,7 @@
             <td><span class="status ${g.statusGrupo}">${statusLabel}</span></td>
             <td class="actions-cell" onclick="event.stopPropagation()">
               <button class="btn btn-sm btn-primary" onclick="abrirModalFiadoGrupo('${keyEnc}')" title="Ver parcelas">👁️ Ver</button>
-              <button class="btn btn-sm btn-danger" onclick="excluirGrupoFiado('${keyEnc}')" title="Excluir fiado">🗑️</button>
+              ${podeExcluirModulo('fiado') ? `<button class="btn btn-sm btn-danger" onclick="excluirGrupoFiado('${keyEnc}')" title="Excluir fiado">🗑️</button>` : ''}
             </td>
           </tr>
         `;
