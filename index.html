@@ -1827,6 +1827,19 @@
                 <label>Observação</label>
                 <input type="text" id="dono-pago-obs" placeholder="Ex: PIX, mensalidade março..." />
               </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Código de liberação vinculado</label>
+                <div style="display:flex;gap:0.45rem;flex-wrap:wrap;align-items:center;">
+                  <input type="text" id="dono-empresa-chave" placeholder="Ex: LIB-XXXX ou cole um código" style="flex:1;min-width:160px;font-family:ui-monospace,monospace;letter-spacing:0.02em;" />
+                  <select id="dono-empresa-chave-livres" style="min-width:160px;max-width:220px;" onchange="aoEscolherChaveLivreDono()">
+                    <option value="">— Códigos livres —</option>
+                  </select>
+                  <button type="button" class="btn btn-primary" onclick="vincularCodigoEmpresaDono()">🔗 Vincular código</button>
+                </div>
+                <small style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;display:block;line-height:1.4;">
+                  Ao vincular, o código <strong>deixa de ficar livre</strong> e fica ligado a esta empresa. Você pode trocar o código depois (o antigo volta a ficar livre, se não estiver em outra conta).
+                </small>
+              </div>
             </div>
             <div class="btn-group" style="margin-top:0.9rem;margin-bottom:0.55rem;">
               <button type="button" class="btn btn-success" onclick="marcarPagamentoEmpresaDono(true)">✅ Está pago</button>
@@ -5122,6 +5135,109 @@
       }, 350);
     }
 
+    function preencherSelectChavesLivresDono(plat, chaveAtual) {
+      const sel = document.getElementById('dono-empresa-chave-livres');
+      if (!sel) return;
+      const livres = Object.values(plat.chaves || {})
+        .filter(c => c && c.status === 'livre')
+        .sort((a, b) => String(a.chave).localeCompare(String(b.chave)));
+      const atual = (chaveAtual || '').toUpperCase();
+      sel.innerHTML = '<option value="">— Códigos livres (' + livres.length + ') —</option>' +
+        livres.map(c => {
+          const lab = c.chave + (c.obs ? ' · ' + String(c.obs).slice(0, 28) : '');
+          return '<option value="' + c.chave + '">' + lab + '</option>';
+        }).join('');
+      // se o atual está livre, não deve estar na lista (já usado conceitualmente)
+      sel.value = '';
+    }
+
+    function aoEscolherChaveLivreDono() {
+      const sel = document.getElementById('dono-empresa-chave-livres');
+      const inp = document.getElementById('dono-empresa-chave');
+      if (sel && inp && sel.value) inp.value = sel.value;
+    }
+
+    /**
+     * Vincula (ou troca) o código de liberação da empresa.
+     * O código passa a status "usada" e some da lista de livres.
+     * Se trocar, o código antigo volta a "livre" (se era desta empresa).
+     */
+    async function vincularCodigoEmpresaDono() {
+      if (!donoLogado) return;
+      const codigo = normalizarCodigoEmpresa((document.getElementById('dono-empresa-codigo') || {}).value || '');
+      let novaChave = ((document.getElementById('dono-empresa-chave') || {}).value || '').trim().toUpperCase();
+      if (!codigo) { toast('Informe o código da empresa e clique em Carregar', 'error'); return; }
+      if (!novaChave) { toast('Informe o código de liberação para vincular', 'error'); return; }
+
+      const plat = await lerPlataforma();
+      if (!plat.chaves) plat.chaves = {};
+      const a = garantirAcesso(plat, codigo);
+      const antiga = (a.chaveUsada || '').toUpperCase();
+
+      if (antiga && antiga === novaChave) {
+        // Garante status usada
+        if (!plat.chaves[novaChave]) {
+          plat.chaves[novaChave] = {
+            chave: novaChave,
+            status: 'usada',
+            empresaCodigo: codigo,
+            obs: 'Vinculado pelo dono',
+            criadaEm: new Date().toISOString(),
+            usadaEm: new Date().toISOString()
+          };
+        } else {
+          plat.chaves[novaChave].status = 'usada';
+          plat.chaves[novaChave].empresaCodigo = codigo;
+          plat.chaves[novaChave].usadaEm = plat.chaves[novaChave].usadaEm || new Date().toISOString();
+        }
+        await salvarPlataforma(plat);
+        toast('Código já estava vinculado a esta empresa', 'success');
+        carregarEmpresaNoFormDono();
+        renderPainelDono();
+        return;
+      }
+
+      const regNovo = plat.chaves[novaChave];
+      if (regNovo && regNovo.status === 'usada' && regNovo.empresaCodigo && regNovo.empresaCodigo !== codigo) {
+        toast('Este código já está em uso pela empresa "' + regNovo.empresaCodigo + '"', 'error');
+        return;
+      }
+
+      // Libera o código antigo (se era desta empresa)
+      if (antiga && plat.chaves[antiga]) {
+        const regAnt = plat.chaves[antiga];
+        if (!regAnt.empresaCodigo || regAnt.empresaCodigo === codigo) {
+          regAnt.status = 'livre';
+          regAnt.empresaCodigo = null;
+          regAnt.usadaEm = null;
+          regAnt.obs = (regAnt.obs || '') + (regAnt.obs ? ' · ' : '') + 'Desvinculado de ' + codigo;
+        }
+      }
+
+      // Cria ou marca o novo como usado
+      if (!plat.chaves[novaChave]) {
+        plat.chaves[novaChave] = {
+          chave: novaChave,
+          status: 'usada',
+          empresaCodigo: codigo,
+          obs: 'Vinculado manualmente pelo dono',
+          criadaEm: new Date().toISOString(),
+          usadaEm: new Date().toISOString()
+        };
+      } else {
+        plat.chaves[novaChave].status = 'usada';
+        plat.chaves[novaChave].empresaCodigo = codigo;
+        plat.chaves[novaChave].usadaEm = new Date().toISOString();
+      }
+
+      a.chaveUsada = novaChave;
+      a.atualizadoEm = new Date().toISOString();
+      await salvarPlataforma(plat);
+      toast('Código ' + novaChave + ' vinculado a ' + codigo + ' (não está mais livre)', 'success');
+      carregarEmpresaNoFormDono();
+      renderPainelDono();
+    }
+
     async function carregarEmpresaNoFormDono() {
       const codigo = normalizarCodigoEmpresa((document.getElementById('dono-empresa-codigo') || {}).value || '');
       const box = document.getElementById('dono-empresa-status-box');
@@ -5131,11 +5247,14 @@
       }
       const plat = await lerPlataforma();
       const a = plat.acessos[codigo];
+      preencherSelectChavesLivresDono(plat, a && a.chaveUsada);
       if (!a) {
         if (box) {
           box.classList.remove('hidden');
           box.innerHTML = '<span style="color:var(--warning);">Empresa <strong>' + codigo + '</strong> ainda não registrada. Salvar cria o registro.</span>';
         }
+        const elCh = document.getElementById('dono-empresa-chave');
+        if (elCh) elCh.value = '';
         return;
       }
       document.getElementById('dono-pago-status').value = a.pago ? 'sim' : 'nao';
@@ -5143,6 +5262,8 @@
       const elV = document.getElementById('dono-pago-vencimento');
       if (elV) elV.value = obterDataVencimentoAcesso(a) || '';
       document.getElementById('dono-pago-obs').value = a.obsPagamento || '';
+      const elChave = document.getElementById('dono-empresa-chave');
+      if (elChave) elChave.value = a.chaveUsada || '';
       if (box) {
         const stAcesso = a.status === 'liberado' ? '✅ Acesso liberado' : '🚫 Acesso bloqueado';
         const stPago = a.pago
@@ -5157,12 +5278,15 @@
         } else if (vencInfo.venc) {
           vencHtml = '<div style="margin-top:0.35rem;color:var(--text-muted);">Próximo vencimento: ' + formatarDataCurta(vencInfo.venc) + '</div>';
         }
+        const chaveHtml = a.chaveUsada
+          ? '<div style="margin-top:0.35rem;">🔑 Código vinculado: <code style="font-weight:700;">' + a.chaveUsada + '</code></div>'
+          : '<div style="margin-top:0.35rem;color:var(--text-muted);">🔑 Nenhum código de liberação vinculado</div>';
         box.classList.remove('hidden');
         box.innerHTML =
           '<strong>' + (a.nome || a.codigo) + '</strong> <span style="color:var(--text-muted);">(' + a.codigo + ')</span><br>' +
           stAcesso + ' · ' + stPago +
           (a.dataPagamento ? '<br>Pago em: ' + formatarDataCurta(a.dataPagamento) : '') +
-          vencHtml;
+          vencHtml + chaveHtml;
       }
     }
 
