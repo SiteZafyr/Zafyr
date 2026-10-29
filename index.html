@@ -1102,12 +1102,89 @@
         z-index: 99999 !important;
       }
       #tela-login, .sidebar, .topbar, .sidebar-overlay, .modal-overlay,
-      .toast-container, .sync-status, .demo-banner, #tela-demo-cta {
+      .toast-container, .sync-status, .demo-banner, #tela-demo-cta,
+      #print-preview-overlay, .print-preview-toolbar {
         display: none !important;
         visibility: hidden !important;
       }
     }
-    #print-area { display: none; }
+    /* Área só para impressão real — fora da tela no uso normal */
+    #print-area {
+      position: fixed !important;
+      left: -99999px !important;
+      top: 0 !important;
+      width: 80mm;
+      background: #fff;
+      z-index: -1 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      display: block !important;
+      overflow: hidden;
+    }
+
+    /* Pré-visualização fechável (celular e PC) */
+    #print-preview-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10050;
+      background: rgba(15, 20, 36, 0.72);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      padding: 0.65rem;
+      box-sizing: border-box;
+      align-items: stretch;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #print-preview-overlay.show {
+      display: flex;
+    }
+    .print-preview-box {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      max-height: min(96vh, 96dvh);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      overflow: hidden;
+      margin: auto;
+    }
+    .print-preview-toolbar {
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      padding: 0.75rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      background: #f8f9fc;
+      align-items: center;
+    }
+    .print-preview-toolbar .titulo-prev {
+      flex: 1;
+      font-weight: 750;
+      font-size: 0.92rem;
+      color: var(--primary-dark);
+      min-width: 120px;
+    }
+    .print-preview-toolbar .btn {
+      min-height: 40px;
+    }
+    #print-preview-content {
+      flex: 1;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.85rem 1rem 1.25rem;
+      background: #fff;
+    }
+    @media (max-width: 480px) {
+      #print-preview-overlay { padding: 0.35rem; }
+      .print-preview-box { max-height: 98dvh; border-radius: 12px; }
+      .print-preview-toolbar { padding: 0.65rem 0.7rem; }
+      .print-preview-toolbar .btn { flex: 1; min-width: 0; }
+    }
 
     @media (max-width: 768px) {
       .sidebar {
@@ -2782,7 +2859,17 @@
   </div>
 
   <div class="toast-container" id="toasts"></div>
-  <div id="print-area"></div>
+  <div id="print-area" aria-hidden="true"></div>
+  <div id="print-preview-overlay" onclick="if(event.target===this)fecharPreviewImpressao()">
+    <div class="print-preview-box" role="dialog" aria-modal="true" aria-label="Comprovante">
+      <div class="print-preview-toolbar">
+        <span class="titulo-prev">📄 Comprovante</span>
+        <button type="button" class="btn btn-primary" onclick="confirmarImpressaoPreview()">🖨️ Imprimir</button>
+        <button type="button" class="btn btn-secondary" onclick="fecharPreviewImpressao()">✕ Fechar</button>
+      </div>
+      <div id="print-preview-content"></div>
+    </div>
+  </div>
 
   <script>
     // ===================== ESTADO =====================
@@ -7226,15 +7313,134 @@
       }).join('');
     }
 
+    // ===================== IMPRESSÃO / PRÉ-VISUALIZAÇÃO =====================
+    let _printCleanupTimer = null;
+    let _printMediaHandler = null;
+
+    function fecharPreviewImpressao() {
+      const overlay = document.getElementById('print-preview-overlay');
+      if (overlay) overlay.classList.remove('show');
+      const prev = document.getElementById('print-preview-content');
+      if (prev) prev.innerHTML = '';
+      limparAreaImpressaoSilencioso();
+      document.body.style.overflow = '';
+    }
+
+    function limparAreaImpressaoSilencioso() {
+      const area = document.getElementById('print-area');
+      if (area) {
+        area.innerHTML = '';
+        area.style.removeProperty('display');
+        area.style.removeProperty('visibility');
+        area.style.removeProperty('left');
+        area.style.removeProperty('position');
+        area.style.removeProperty('z-index');
+        area.style.removeProperty('pointer-events');
+      }
+      if (_printCleanupTimer) {
+        clearTimeout(_printCleanupTimer);
+        _printCleanupTimer = null;
+      }
+      if (_printMediaHandler) {
+        try {
+          const mql = window.matchMedia('print');
+          if (mql.removeEventListener) mql.removeEventListener('change', _printMediaHandler);
+          else if (mql.removeListener) mql.removeListener(_printMediaHandler);
+        } catch (e) {}
+        _printMediaHandler = null;
+      }
+      window.removeEventListener('afterprint', limparAreaImpressaoSilencioso);
+    }
+
+    /** Mostra comprovante em overlay fechável e prepara área de impressão */
+    function mostrarComprovanteParaImpressao(html, opts) {
+      opts = opts || {};
+      const area = document.getElementById('print-area');
+      const overlay = document.getElementById('print-preview-overlay');
+      const prev = document.getElementById('print-preview-content');
+      if (!area || !overlay || !prev) return;
+
+      limparAreaImpressaoSilencioso();
+      area.innerHTML = html;
+      prev.innerHTML = html;
+
+      // Callback opcional (ex.: gerar código de barras) após o HTML estar no DOM
+      if (typeof opts.afterRender === 'function') {
+        try { opts.afterRender(area, prev); } catch (e) { console.warn(e); }
+      }
+
+      const titulo = document.querySelector('#print-preview-overlay .titulo-prev');
+      if (titulo) titulo.textContent = opts.titulo || '📄 Comprovante';
+
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';
+
+      // Escape fecha
+      const onKey = (ev) => {
+        if (ev.key === 'Escape') {
+          fecharPreviewImpressao();
+          document.removeEventListener('keydown', onKey);
+        }
+      };
+      document.addEventListener('keydown', onKey);
+    }
+
+    function confirmarImpressaoPreview() {
+      const area = document.getElementById('print-area');
+      const prev = document.getElementById('print-preview-content');
+      if (area && prev && prev.innerHTML) {
+        area.innerHTML = prev.innerHTML;
+        // reaplicar barcode se existir
+        try {
+          const svg = area.querySelector('#barcode-print');
+          const codigo = (svg && svg.getAttribute('data-codigo')) || '';
+          if (typeof JsBarcode !== 'undefined' && codigo) {
+            JsBarcode(svg, codigo, {
+              format: 'CODE128', width: 2, height: 48, displayValue: false, margin: 0
+            });
+          }
+        } catch (e) {}
+      }
+
+      const limparApos = () => {
+        // Mantém o preview aberto; só limpa listeners de print
+        if (_printCleanupTimer) {
+          clearTimeout(_printCleanupTimer);
+          _printCleanupTimer = null;
+        }
+        window.removeEventListener('afterprint', limparApos);
+        if (_printMediaHandler) {
+          try {
+            const mql = window.matchMedia('print');
+            if (mql.removeEventListener) mql.removeEventListener('change', _printMediaHandler);
+            else if (mql.removeListener) mql.removeListener(_printMediaHandler);
+          } catch (e) {}
+          _printMediaHandler = null;
+        }
+      };
+
+      window.addEventListener('afterprint', limparApos);
+      try {
+        const mql = window.matchMedia('print');
+        _printMediaHandler = (e) => { if (!e.matches) limparApos(); };
+        if (mql.addEventListener) mql.addEventListener('change', _printMediaHandler);
+        else if (mql.addListener) mql.addListener(_printMediaHandler);
+      } catch (e) {}
+
+      setTimeout(() => {
+        try { window.print(); } catch (e) { console.warn(e); }
+      }, 60);
+      _printCleanupTimer = setTimeout(limparApos, 8000);
+    }
+
     function imprimirComprovanteCaixaId(id) {
+
       const v = (estado.vendasPendentes || []).find(x => x.id === id);
       if (!v) { toast('Não encontrado', 'error'); return; }
       imprimirComprovanteCaixa(v);
     }
 
     function imprimirComprovanteCaixa(v) {
-      const area = document.getElementById('print-area');
-      if (!area) return;
       const empresa = nomeEmpresaExibicao();
       const itensHtml = (v.itens || []).map(i => `
         <tr>
@@ -7244,7 +7450,7 @@
           <td style="text-align:right;padding:4px 3px;">${formatarMoeda(i.total)}</td>
         </tr>`).join('');
 
-      area.innerHTML = `
+      const htmlComprovante = `
         <div style="max-width:420px;margin:0 auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.4;color:#000;">
           <div style="text-align:center;margin-bottom:10px;border-bottom:2px solid #000;padding-bottom:8px;">
             <strong style="font-size:16px;">${empresa}</strong><br>
@@ -7287,27 +7493,22 @@
           </div>
         </div>
       `;
-      area.style.display = 'block';
-      try {
-        if (typeof JsBarcode !== 'undefined' && v.codigo) {
-          JsBarcode('#barcode-print', v.codigo, {
-            format: 'CODE128',
-            width: 2,
-            height: 48,
-            displayValue: false,
-            margin: 0
-          });
+      mostrarComprovanteParaImpressao(htmlComprovante, {
+        titulo: '📄 Comprovante do caixa',
+        afterRender: (areaEl, prevEl) => {
+          try {
+            if (typeof JsBarcode === 'undefined' || !v.codigo) return;
+            [areaEl, prevEl].forEach(root => {
+              if (!root) return;
+              root.querySelectorAll('svg.barcode-print').forEach(svg => {
+                JsBarcode(svg, v.codigo, {
+                  format: 'CODE128', width: 2, height: 48, displayValue: false, margin: 0
+                });
+              });
+            });
+          } catch (e) { console.warn(e); }
         }
-      } catch (e) { console.warn(e); }
-
-      const limpar = () => {
-        area.style.display = 'none';
-        area.innerHTML = '';
-        window.removeEventListener('afterprint', limpar);
-      };
-      window.addEventListener('afterprint', limpar);
-      setTimeout(() => { try { window.print(); } catch (e) {} }, 80);
-      setTimeout(limpar, 120000);
+      });
     }
 
     // ===================== RESUMO MENSAL (admin) =====================
@@ -7768,7 +7969,6 @@
     }
 
     function gerarNotaEntrega(v) {
-      const area = document.getElementById('print-area');
       const itensHtml = (v.itens || []).map(i => `
         <tr>
           <td style="padding:4px 3px;">${i.nome}</td>
@@ -7778,7 +7978,7 @@
         </tr>
       `).join('');
 
-      area.innerHTML = `
+      const htmlNota = `
         <div style="max-width:420px;margin:0 auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.4;">
           <div style="text-align:center;margin-bottom:12px;">
             <strong style="font-size:16px;">${nomeEmpresaExibicao()}</strong><br>
@@ -7833,9 +8033,7 @@
           </div>
         </div>
       `;
-      area.style.display = 'block';
-      window.print();
-      setTimeout(() => { area.style.display = 'none'; }, 500);
+      mostrarComprovanteParaImpressao(htmlNota, { titulo: '🚚 Nota de entrega' });
     }
 
     // ===================== FIADO =====================
@@ -8386,12 +8584,6 @@
     }
 
     function gerarImpressao(v) {
-      const area = document.getElementById('print-area');
-      if (!area) {
-        toast('Área de impressão não encontrada', 'error');
-        return;
-      }
-
       const formaLabel = v.forma === 'fiado' ? 'FIADO' : 'À VISTA';
       const nomeEntregador = v.entregador || v.vendedor || (usuarioAtual ? usuarioAtual.nome : '________________');
       const empresa = nomeEmpresaExibicao();
@@ -8470,7 +8662,7 @@
             </div>
           </div>`;
 
-      area.innerHTML = `
+      const htmlVia = `
         <div style="max-width:480px;margin:0 auto;font-family:'Courier New',Courier,monospace;font-size:13px;line-height:1.4;color:#000;">
           <div style="text-align:center;margin-bottom:14px;border-bottom:2px solid #000;padding-bottom:10px;">
             <strong style="font-size:17px;">${empresa}</strong><br>
@@ -8529,19 +8721,9 @@
         </div>
       `;
 
-      // Garante visibilidade e só esconde depois da impressão
-      area.style.display = 'block';
-      const limpar = () => {
-        area.style.display = 'none';
-        area.innerHTML = '';
-        window.removeEventListener('afterprint', limpar);
-      };
-      window.addEventListener('afterprint', limpar);
-      // Fallback se o navegador não disparar afterprint
-      setTimeout(() => {
-        try { window.print(); } catch (e) { console.warn(e); }
-      }, 50);
-      setTimeout(limpar, 120000);
+      mostrarComprovanteParaImpressao(htmlVia, {
+        titulo: v.forma === 'fiado' ? '📄 Comprovante de fiado' : '📄 Comprovante de venda'
+      });
     }
 
 
