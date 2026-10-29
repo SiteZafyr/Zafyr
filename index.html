@@ -1523,7 +1523,7 @@
       <div class="login-tabs">
         <button type="button" class="btn btn-primary" id="tab-login" onclick="mostrarAbaLogin()">Entrar</button>
         <button type="button" class="btn btn-secondary" id="tab-criar" onclick="mostrarAbaCriar()">Criar</button>
-        <button type="button" class="btn btn-secondary" id="tab-assinar" onclick="mostrarAbaAssinar()">Assinar</button>
+        <button type="button" class="btn btn-secondary hidden" id="tab-assinar" onclick="mostrarAbaAssinar()" style="display:none;">Assinar</button>
       </div>
 
       <div class="login-erro" id="login-erro"></div>
@@ -1554,12 +1554,12 @@
 
       <!-- FORMULÁRIO CRIAR EMPRESA -->
       <div id="form-criar-empresa" class="hidden">
-        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.9rem;line-height:1.45;">
-          Para criar uma empresa é obrigatório o <strong>código de liberação</strong> fornecido pelo dono do sistema. Sem esse código a conta não é criada.
+        <p id="criar-empresa-ajuda" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.9rem;line-height:1.45;">
+          Em modo teste você pode criar a empresa <strong>sem código</strong>. Quando a cobrança estiver ativa, será exigido o código de liberação do dono.
         </p>
         <div class="form-group">
-          <label>Código de liberação *</label>
-          <input type="text" id="nova-chave-liberacao" placeholder="Cole o código que você recebeu" autocomplete="off" />
+          <label id="label-chave-liberacao">Código de liberação <span id="chave-lib-obrigatorio">(opcional no teste)</span></label>
+          <input type="text" id="nova-chave-liberacao" placeholder="Deixe em branco no modo teste" autocomplete="off" />
         </div>
         <div class="form-group">
           <label>Nome da empresa *</label>
@@ -1664,7 +1664,7 @@
       </div>
 
       <div class="login-hint">
-        <strong>Licença:</strong> só cria empresa com código que o dono liberou.<br>
+        <span id="login-licenca-msg"><strong>Licença:</strong> modo teste — cadastro livre por enquanto.</span><br>
         Contas bloqueadas não entram até serem liberadas de novo.
         <br><br>
         <span id="login-sync-msg" style="opacity:0.9;">☁️ Verificando sincronização…</span>
@@ -1714,6 +1714,23 @@
         <section id="dono-page-resumo" class="dono-page">
           <div id="dono-alertas-vencimento" style="margin-bottom:1rem;"></div>
           <div class="cards-grid" id="dono-resumo-cards" style="margin-bottom:1.25rem;"></div>
+          <div class="panel" id="dono-painel-modo-teste" style="border:2px solid #fde68a;background:#fffbeb;">
+            <div class="panel-header">
+              <h3>🧪 Modo teste / cobrança</h3>
+              <span id="dono-badge-modo-teste" class="status aberto">Carregando…</span>
+            </div>
+            <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.55;margin-bottom:0.85rem;">
+              Enquanto o <strong>modo teste gratuito</strong> estiver ligado, clientes criam empresa <strong>sem código de liberação</strong>,
+              a aba <strong>Assinar</strong> fica oculta e não há bloqueio por vencimento. Quando for cobrar, use o botão abaixo para
+              <strong>bloquear todas as contas</strong> — a aba Assinar (PIX) passa a aparecer na tela de login.
+            </p>
+            <div class="btn-group" style="flex-wrap:wrap;gap:0.5rem;">
+              <button type="button" class="btn btn-danger" onclick="bloquearTodasEmpresasCobranca()">🔒 Encerrar teste e bloquear TODAS as contas</button>
+              <button type="button" class="btn btn-success" onclick="reativarModoTesteGratis()">🧪 Reativar modo teste gratuito</button>
+              <button type="button" class="btn btn-secondary" onclick="liberarTodasEmpresasDono()">✅ Liberar todas as contas</button>
+            </div>
+            <p id="dono-modo-teste-msg" style="font-size:0.82rem;color:var(--text-muted);margin-top:0.75rem;line-height:1.45;"></p>
+          </div>
           <div class="panel">
             <div class="panel-header"><h3>📌 Visão geral</h3></div>
             <p style="font-size:0.88rem;color:var(--text-muted);line-height:1.55;margin-bottom:0.75rem;">
@@ -3543,6 +3560,8 @@
         chaves: {},
         acessos: {},
         pedidosPix: {},
+        /** true = clientes criam conta sem código e sem cobrança (fase de testes) */
+        modoTesteGratis: true,
         configPix: {
           chave: '',
           copiaCola: '',
@@ -3556,15 +3575,23 @@
     function normalizarPlat(v) {
       const base = platPadrao();
       if (!v || typeof v !== 'object') return base;
+      // Se a flag nunca existiu, assume modo teste (fase atual de testes com clientes)
+      const modoTeste = (typeof v.modoTesteGratis === 'boolean') ? v.modoTesteGratis : true;
       return {
         chaves: v.chaves && typeof v.chaves === 'object' ? v.chaves : {},
         acessos: v.acessos && typeof v.acessos === 'object' ? v.acessos : {},
         pedidosPix: v.pedidosPix && typeof v.pedidosPix === 'object' ? v.pedidosPix : {},
+        modoTesteGratis: modoTeste,
         configPix: {
           ...base.configPix,
           ...(v.configPix && typeof v.configPix === 'object' ? v.configPix : {})
         }
       };
+    }
+
+    function plataformaEmModoTeste(plat) {
+      if (!plat) return true;
+      return plat.modoTesteGratis !== false;
     }
 
     async function lerPlataforma() {
@@ -3651,6 +3678,7 @@
 
     async function aplicarBloqueioAutomaticoPorVencimento(plat, codigo) {
       if (!plat || !codigo || !plat.acessos) return false;
+      if (plataformaEmModoTeste(plat)) return false; // modo teste: não bloqueia por vencimento
       const a = plat.acessos[codigo];
       if (!a) return false;
       const mudou = marcarBloqueioAutomaticoSeVencido(a);
@@ -4309,6 +4337,7 @@
       document.getElementById('form-login').classList.remove('hidden');
       document.getElementById('tab-login').classList.add('btn-primary');
       document.getElementById('tab-login').classList.remove('btn-secondary');
+      try { atualizarUiModoTeste(); } catch (e) {}
     }
 
     function mostrarAbaCriar() {
@@ -4316,9 +4345,18 @@
       document.getElementById('form-criar-empresa').classList.remove('hidden');
       document.getElementById('tab-criar').classList.add('btn-primary');
       document.getElementById('tab-criar').classList.remove('btn-secondary');
+      try { atualizarUiModoTeste(); } catch (e) {}
     }
 
-    function mostrarAbaAssinar() {
+    async function mostrarAbaAssinar() {
+      try {
+        const plat = await lerPlataforma();
+        if (plataformaEmModoTeste(plat)) {
+          toast('A aba Assinar só fica disponível quando a cobrança estiver ativa.', 'error');
+          mostrarAbaLogin();
+          return;
+        }
+      } catch (e) {}
       resetAbasLogin();
       const formAssinar = document.getElementById('form-assinar');
       if (formAssinar) formAssinar.classList.remove('hidden');
@@ -4814,6 +4852,134 @@
       renderPainelDono();
     }
 
+    /** Atualiza badge/textos do modo teste no painel do dono e no login */
+    async function atualizarUiModoTeste(platOpcional) {
+      const plat = platOpcional || await lerPlataforma();
+      const teste = plataformaEmModoTeste(plat);
+      const badge = document.getElementById('dono-badge-modo-teste');
+      if (badge) {
+        badge.textContent = teste ? '🧪 Teste gratuito ON' : '💰 Cobrança ativa';
+        badge.className = 'status ' + (teste ? 'aberto' : 'pago');
+      }
+      const msg = document.getElementById('dono-modo-teste-msg');
+      if (msg) {
+        const n = Object.keys(plat.acessos || {}).length;
+        const bloqueadas = Object.values(plat.acessos || {}).filter(a => a && a.status === 'bloqueado').length;
+        msg.textContent = teste
+          ? ('Modo teste ativo · ' + n + ' empresa(s) cadastrada(s). Cadastro sem código liberado.')
+          : ('Cobrança ativa · ' + bloqueadas + ' conta(s) bloqueada(s) de ' + n + '. Só entra quem você liberar após o pagamento.');
+      }
+      const ajuda = document.getElementById('criar-empresa-ajuda');
+      if (ajuda) {
+        ajuda.innerHTML = teste
+          ? 'Em <strong>modo teste</strong> você pode criar a empresa <strong>sem código</strong>. Quando a cobrança estiver ativa, será exigido o código de liberação do dono.'
+          : 'Para criar uma empresa é obrigatório o <strong>código de liberação</strong> fornecido pelo dono do sistema. Sem esse código a conta não é criada.';
+      }
+      const obrig = document.getElementById('chave-lib-obrigatorio');
+      if (obrig) obrig.textContent = teste ? '(opcional no teste)' : '*';
+      const inp = document.getElementById('nova-chave-liberacao');
+      if (inp) inp.placeholder = teste ? 'Deixe em branco no modo teste' : 'Cole o código que você recebeu';
+      const lic = document.getElementById('login-licenca-msg');
+      if (lic) {
+        lic.innerHTML = teste
+          ? '<strong>Licença:</strong> modo teste — cadastro livre por enquanto.'
+          : '<strong>Licença:</strong> só cria empresa com código que o dono liberou.';
+      }
+
+      // Aba "Assinar" só aparece quando a cobrança está ativa (modo teste OFF)
+      const tabAssinar = document.getElementById('tab-assinar');
+      const formAssinar = document.getElementById('form-assinar');
+      if (tabAssinar) {
+        if (teste) {
+          tabAssinar.classList.add('hidden');
+          tabAssinar.style.display = 'none';
+          if (formAssinar && !formAssinar.classList.contains('hidden')) {
+            formAssinar.classList.add('hidden');
+            // Se estava na aba Assinar, volta para Entrar
+            try { mostrarAbaLogin(); } catch (e) {}
+          }
+        } else {
+          tabAssinar.classList.remove('hidden');
+          tabAssinar.style.display = '';
+        }
+      }
+    }
+
+    /**
+     * Encerra a fase de testes: desliga modo gratuito e bloqueia TODAS as empresas.
+     * Depois o dono libera uma a uma conforme o pagamento.
+     */
+    async function bloquearTodasEmpresasCobranca() {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      const lista = Object.keys(plat.acessos || {});
+      if (!confirm(
+        'Encerrar o modo teste e BLOQUEAR todas as ' + lista.length + ' conta(s)?\n\n' +
+        '• Clientes não entram até você liberar\n' +
+        '• Criar empresa voltará a exigir código de liberação\n' +
+        '• Use isso quando for começar a cobrar\n\n' +
+        'Confirma?'
+      )) return;
+
+      plat.modoTesteGratis = false;
+      const agora = new Date().toISOString();
+      lista.forEach(cod => {
+        const a = plat.acessos[cod];
+        if (!a) return;
+        a.status = 'bloqueado';
+        a.pago = false;
+        a.bloqueadoAutomatico = false;
+        a.bloqueadoEm = agora;
+        a.bloqueadoMotivo = 'Cobrança iniciada: acesso bloqueado até confirmação do pagamento';
+        a.atualizadoEm = agora;
+      });
+      await salvarPlataforma(plat);
+      await atualizarUiModoTeste(plat);
+      toast('Modo teste encerrado. ' + lista.length + ' conta(s) bloqueada(s).', 'success');
+      renderPainelDono();
+    }
+
+    /** Volta ao modo teste: cadastro livre e sem bloqueio automático por vencimento */
+    async function reativarModoTesteGratis() {
+      if (!donoLogado) return;
+      if (!confirm(
+        'Reativar o MODO TESTE GRATUITO?\n\n' +
+        '• Novas empresas sem código de liberação\n' +
+        '• Não bloqueia automaticamente por vencimento\n' +
+        '• As contas já bloqueadas continuam bloqueadas até você liberar\n\n' +
+        'Confirma?'
+      )) return;
+      const plat = await lerPlataforma();
+      plat.modoTesteGratis = true;
+      await salvarPlataforma(plat);
+      await atualizarUiModoTeste(plat);
+      toast('Modo teste gratuito reativado.', 'success');
+      renderPainelDono();
+    }
+
+    /** Libera acesso de todas as empresas (não muda o modo teste/cobrança) */
+    async function liberarTodasEmpresasDono() {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      const lista = Object.keys(plat.acessos || {});
+      if (!lista.length) { toast('Nenhuma empresa cadastrada', 'error'); return; }
+      if (!confirm('Liberar acesso de TODAS as ' + lista.length + ' empresa(s)?')) return;
+      const agora = new Date().toISOString();
+      lista.forEach(cod => {
+        const a = plat.acessos[cod];
+        if (!a) return;
+        a.status = 'liberado';
+        a.bloqueadoAutomatico = false;
+        a.bloqueadoMotivo = '';
+        a.bloqueadoEm = null;
+        a.atualizadoEm = agora;
+      });
+      await salvarPlataforma(plat);
+      await atualizarUiModoTeste(plat);
+      toast(lista.length + ' conta(s) liberada(s).', 'success');
+      renderPainelDono();
+    }
+
     function adicionarDiasDataISO(dataISO, dias) {
       // Interpreta YYYY-MM-DD em horário local (meio-dia) e devolve data local
       let base;
@@ -5078,13 +5244,16 @@
     async function renderPainelDono() {
       if (!donoLogado) return;
       const plat = await lerPlataforma();
-      // Atualiza bloqueios automáticos de todas as empresas (5 dias após vencimento)
+      try { await atualizarUiModoTeste(plat); } catch (e) {}
+      // Atualiza bloqueios automáticos (desligado no modo teste gratuito)
       try {
-        let mudouLote = false;
-        Object.keys(plat.acessos || {}).forEach(cod => {
-          if (marcarBloqueioAutomaticoSeVencido(plat.acessos[cod])) mudouLote = true;
-        });
-        if (mudouLote) await salvarPlataforma(plat);
+        if (!plataformaEmModoTeste(plat)) {
+          let mudouLote = false;
+          Object.keys(plat.acessos || {}).forEach(cod => {
+            if (marcarBloqueioAutomaticoSeVencido(plat.acessos[cod])) mudouLote = true;
+          });
+          if (mudouLote) await salvarPlataforma(plat);
+        }
       } catch (e) {
         console.warn('Bloqueio automático em lote:', e);
       }
@@ -5421,7 +5590,7 @@
     }
 
     async function criarEmpresa() {
-      const chaveLib = (document.getElementById('nova-chave-liberacao').value || '').trim().toUpperCase();
+      let chaveLib = (document.getElementById('nova-chave-liberacao').value || '').trim().toUpperCase();
       const nome = document.getElementById('nova-empresa-nome').value.trim();
       const codigo = normalizarCodigoEmpresa(document.getElementById('nova-empresa-codigo').value);
       const adminNome = document.getElementById('nova-admin-nome').value.trim();
@@ -5429,11 +5598,6 @@
       const adminSenha = document.getElementById('nova-admin-senha').value;
       const erroEl = document.getElementById('login-erro');
 
-      if (!chaveLib) {
-        erroEl.textContent = 'Informe o código de liberação fornecido pelo dono do sistema.';
-        erroEl.classList.add('show');
-        return;
-      }
       if (!nome || !codigo) {
         erroEl.textContent = 'Nome e código da empresa são obrigatórios.';
         erroEl.classList.add('show');
@@ -5455,15 +5619,53 @@
         return;
       }
 
-      // Valida código de liberação
       const plat = await lerPlataforma();
-      const regChave = plat.chaves[chaveLib];
-      if (!regChave || regChave.status !== 'livre') {
-        erroEl.textContent = !regChave
-          ? 'Código de liberação inválido. Peça um código novo ao dono do sistema.'
-          : 'Este código de liberação já foi usado. Peça outro ao dono do sistema.';
-        erroEl.classList.add('show');
-        return;
+      const modoGratis = plataformaEmModoTeste(plat);
+      let regChave = null;
+
+      if (modoGratis) {
+        // Fase de testes: código de liberação opcional
+        if (chaveLib) {
+          regChave = plat.chaves[chaveLib];
+          if (regChave && regChave.status !== 'livre') {
+            erroEl.textContent = 'Este código de liberação já foi usado. Deixe em branco ou peça outro.';
+            erroEl.classList.add('show');
+            return;
+          }
+          if (!regChave) {
+            // aceita texto livre no modo teste (não precisa existir na lista do dono)
+            regChave = {
+              chave: chaveLib,
+              status: 'livre',
+              obs: 'Modo teste gratuito',
+              criadaEm: new Date().toISOString(),
+              testeGratis: true
+            };
+          }
+        } else {
+          chaveLib = 'GRATIS-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+          regChave = {
+            chave: chaveLib,
+            status: 'livre',
+            obs: 'Criado automaticamente (modo teste gratuito)',
+            criadaEm: new Date().toISOString(),
+            testeGratis: true
+          };
+        }
+      } else {
+        if (!chaveLib) {
+          erroEl.textContent = 'Informe o código de liberação fornecido pelo dono do sistema.';
+          erroEl.classList.add('show');
+          return;
+        }
+        regChave = plat.chaves[chaveLib];
+        if (!regChave || regChave.status !== 'livre') {
+          erroEl.textContent = !regChave
+            ? 'Código de liberação inválido. Peça um código novo ao dono do sistema.'
+            : 'Este código de liberação já foi usado. Peça outro ao dono do sistema.';
+          erroEl.classList.add('show');
+          return;
+        }
       }
 
       // Verifica se código já existe
@@ -5489,21 +5691,28 @@
       // Marca chave como usada e libera acesso da empresa
       plat.chaves[chaveLib] = {
         ...regChave,
+        chave: chaveLib,
         status: 'usada',
         empresaCodigo: codigo,
         usadaEm: new Date().toISOString()
       };
       const dataPagamentoCriacao = hoje();
-      const dataVencimentoCriacao = adicionarDiasDataISO(dataPagamentoCriacao, 30);
+      // Modo teste: vencimento longe no futuro; cobrança real: 30 dias
+      const dataVencimentoCriacao = modoGratis
+        ? adicionarDiasDataISO(dataPagamentoCriacao, 3650)
+        : adicionarDiasDataISO(dataPagamentoCriacao, 30);
       plat.acessos[codigo] = {
         codigo,
         status: 'liberado',
         nome,
         chaveUsada: chaveLib,
-        pago: true,
+        pago: !modoGratis,
         dataPagamento: dataPagamentoCriacao,
         dataVencimento: dataVencimentoCriacao,
-        obsPagamento: 'Pago na criação (código de liberação ' + chaveLib + ')',
+        obsPagamento: modoGratis
+          ? 'Modo teste gratuito (sem cobrança por enquanto)'
+          : ('Pago na criação (código de liberação ' + chaveLib + ')'),
+        testeGratis: !!modoGratis,
         atualizadoEm: new Date().toISOString()
       };
       await salvarPlataforma(plat);
@@ -5789,10 +5998,7 @@
       btn.addEventListener('click', () => {
         const page = btn.dataset.page;
 
-        if (!temPermissao(page)) {
-          toast('Acesso restrito para o seu cargo.', 'error');
-          return;
-        }
+
 
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
@@ -8736,6 +8942,7 @@
         document.getElementById('app').classList.add('hidden');
         document.getElementById('app').style.display = 'none';
         mostrarAbaLogin();
+        try { atualizarUiModoTeste(); } catch (e) {}
       }
       const prazoEl = document.getElementById('venda-prazo');
       if (prazoEl) prazoEl.value = adicionarDiasDataISO(hoje(), 7);
