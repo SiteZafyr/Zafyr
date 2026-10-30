@@ -2905,6 +2905,33 @@
     // ===================== ESTADO =====================
     const STORAGE_PREFIX = 'casaDosOvos_v4_';
     const SESSION_KEY = 'casaDosOvos_session_v4';
+    /** Sessão persistente (app/celular): fica logado até clicar em Sair */
+    function salvarSessaoLocal(obj) {
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify(obj));
+        try { sessionStorage.removeItem(SESSION_KEY); } catch (e2) {}
+      } catch (e) { console.warn(e); }
+    }
+    function lerSessaoLocal() {
+      try {
+        let raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) {
+          // migração: se ainda tinha na sessionStorage desta aba
+          raw = lerSessaoLocal();
+          if (raw) {
+            localStorage.setItem(SESSION_KEY, raw);
+            limparSessaoLocal();
+          }
+        }
+        return raw;
+      } catch (e) { return null; }
+    }
+    function limparSessaoLocal() {
+      try {
+        localStorage.removeItem(SESSION_KEY);
+        limparSessaoLocal();
+      } catch (e) {}
+    }
 
     function storageKey(codigo) {
       return STORAGE_PREFIX + (codigo || 'local');
@@ -5703,10 +5730,10 @@
       }
 
       usuarioAtual = { id: user.id, nome: user.nome, login: user.login, papel: user.papel };
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      salvarSessaoLocal({
         usuario: usuarioAtual,
         empresa: empresaAtual
-      }));
+      });
       document.getElementById('login-senha').value = '';
       registrarLog('Login', 'Entrou no sistema · empresa ' + codigo, 'usuario');
       salvar();
@@ -5888,10 +5915,10 @@
         login: adminLogin,
         papel: 'admin'
       };
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      salvarSessaoLocal({
         usuario: usuarioAtual,
         empresa: empresaAtual
-      }));
+      });
 
       registrarLog('Criar empresa', nome + ' (' + codigo + ')', 'usuario');
       await salvar(true);
@@ -5913,7 +5940,7 @@
       document.body.classList.remove('modo-demo');
       const banner = document.getElementById('demo-banner');
       if (banner) banner.classList.remove('show');
-      sessionStorage.removeItem(SESSION_KEY);
+      limparSessaoLocal();
       document.getElementById('tela-login').classList.remove('hidden');
       document.getElementById('app').classList.add('hidden');
       document.getElementById('app').style.display = 'none';
@@ -5990,7 +6017,7 @@
       carrinho = [];
       vendaParaImprimir = null;
       // Não grava sessão real
-      sessionStorage.removeItem(SESSION_KEY);
+      limparSessaoLocal();
       document.body.classList.add('modo-demo');
       const banner = document.getElementById('demo-banner');
       if (banner) banner.classList.add('show');
@@ -6024,14 +6051,14 @@
 
     async function verificarSessao() {
       try {
-        const raw = sessionStorage.getItem(SESSION_KEY);
+        const raw = lerSessaoLocal();
         if (!raw) return false;
         const s = JSON.parse(raw);
         if (!s.empresa || !s.empresa.codigo || !s.usuario) return false;
 
         const acessoInfo = await obterStatusAcessoEmpresa(s.empresa.codigo);
         if (acessoInfo.status === 'bloqueado') {
-          sessionStorage.removeItem(SESSION_KEY);
+          limparSessaoLocal();
           return false;
         }
 
@@ -6121,7 +6148,6 @@
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const page = btn.dataset.page;
-
 
 
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -8627,7 +8653,7 @@
     function getNotificacoes() {
       const hojeStr = hoje();
       const itens = [];
-      estado.dividas.forEach(d => {
+      (estado.dividas || []).forEach(d => {
         if (d.status === 'pago') return;
         const cli = getCliente(d.clienteId);
         const nome = cli ? cli.nome : 'Cliente removido';
@@ -8817,15 +8843,13 @@
 
     function atualizarBadges() {
       const notifs = getNotificacoes();
-      const abertos = estado.dividas.filter(d => statusDivida(d) !== 'pago').length;
       const pendEntregas = getEntregasPendentes().length;
       const badgeFiado = document.getElementById('badge-fiado');
       const badgeNotif = document.getElementById('badge-notif');
       const badgeEntregas = document.getElementById('badge-entregas');
-      if (badgeFiado) {
-        if (abertos > 0) { badgeFiado.textContent = abertos; badgeFiado.classList.remove('hidden'); }
-        else badgeFiado.classList.add('hidden');
-      }
+      // Badge do menu Fiado desativado (não mostra quantidade)
+      if (badgeFiado) badgeFiado.classList.add('hidden');
+      // Badge de Notificações (vencimentos de fiado) ativo
       if (badgeNotif) {
         if (notifs.length > 0) { badgeNotif.textContent = notifs.length; badgeNotif.classList.remove('hidden'); }
         else badgeNotif.classList.add('hidden');
