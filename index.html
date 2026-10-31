@@ -9,6 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <style>
     :root {
       --primary: #2f3e6b;
@@ -3224,48 +3225,167 @@
       const p = obterPersonalizacao();
       return {
         chave: (p.pixChave || '').trim(),
-        copiaCola: (p.pixCopiaCola || '').trim(),
+        copiaCola: sanitizarPixCopiaCola(p.pixCopiaCola || ''),
         beneficiario: (p.pixBeneficiario || '').trim()
       };
     }
 
+    function sanitizarPixCopiaCola(texto) {
+      // Remove quebras de linha; NÃO remove espaços internos (fazem parte do payload EMV/CRC)
+      return String(texto || '').replace(/[\r\n\t]+/g, '').trim();
+    }
+
+    function _getQrLibNpm() {
+      if (typeof QRCode !== 'undefined' && QRCode && typeof QRCode.toDataURL === 'function') return QRCode;
+      if (typeof window !== 'undefined' && window.QRCode && typeof window.QRCode.toDataURL === 'function') return window.QRCode;
+      return null;
+    }
+
+    /** Biblioteca qrcode-generator (global qrcode como função) */
+    function _desenharComQrcodeGenerator(canvas, texto, size) {
+      try {
+        if (typeof qrcode !== 'function') return false;
+        // typeNumber 0 = automático
+        const qr = qrcode(0, 'M');
+        qr.addData(texto);
+        qr.make();
+        const n = qr.getModuleCount();
+        const s = size || 180;
+        canvas.width = s;
+        canvas.height = s;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, s, s);
+        const cell = s / n;
+        ctx.fillStyle = '#000000';
+        for (let row = 0; row < n; row++) {
+          for (let col = 0; col < n; col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(Math.floor(col * cell), Math.floor(row * cell), Math.ceil(cell), Math.ceil(cell));
+            }
+          }
+        }
+        canvas.style.display = '';
+        // remove img fallback anterior se existir
+        const parent = canvas.parentNode;
+        if (parent) {
+          parent.querySelectorAll('img.qr-pix-img').forEach(el => el.remove());
+        }
+        return true;
+      } catch (e) {
+        console.warn('qrcode-generator', e);
+        return false;
+      }
+    }
+
+    function _urlQrExterno(texto, size) {
+      const s = size || 180;
+      return 'https://api.qrserver.com/v1/create-qr-code/?size=' + s + 'x' + s + '&margin=10&ecc=M&data=' + encodeURIComponent(texto);
+    }
+
+    function _mostrarQrComoImg(canvas, texto, size) {
+      if (!canvas || !canvas.parentNode) return;
+      const s = size || 180;
+      const parent = canvas.parentNode;
+      canvas.style.display = 'none';
+      let img = parent.querySelector('img.qr-pix-img');
+      if (!img) {
+        img = document.createElement('img');
+        img.className = 'qr-pix-img';
+        img.alt = 'QR Code PIX';
+        img.style.cssText = 'display:block;width:' + s + 'px;height:' + s + 'px;max-width:100%;border:1px solid #ddd;border-radius:12px;background:#fff;object-fit:contain;';
+        parent.insertBefore(img, canvas.nextSibling);
+      }
+      img.width = s;
+      img.height = s;
+      img.onerror = function () {
+        if (img.dataset.tried2) return;
+        img.dataset.tried2 = '1';
+        img.src = 'https://quickchart.io/qr?size=' + s + '&text=' + encodeURIComponent(texto);
+      };
+      delete img.dataset.tried2;
+      img.src = _urlQrExterno(texto, s);
+    }
+
+    /** Desenha QR Code do PIX no canvas (vários métodos) */
     function desenharQrCodeEmCanvas(canvas, texto, size) {
       if (!canvas || !texto) return;
-      const opts = {
-        errorCorrectionLevel: 'M',
-        margin: 2,
-        width: size || 180,
-        color: { dark: '#000000', light: '#ffffff' }
-      };
-      try {
-        if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-          QRCode.toCanvas(canvas, texto, opts, function (err) {
-            if (err) console.warn('QR', err);
+      const s = size || 180;
+      const str = sanitizarPixCopiaCola(texto);
+      if (!str) return;
+
+      // 1) qrcode-generator (função global qrcode) — funciona bem offline após carregar o script
+      if (_desenharComQrcodeGenerator(canvas, str, s)) return;
+
+      // 2) npm "qrcode" (QRCode.toDataURL)
+      const lib = _getQrLibNpm();
+      if (lib && typeof lib.toDataURL === 'function') {
+        try {
+          lib.toDataURL(str, { errorCorrectionLevel: 'M', margin: 2, width: s }, function (err, url) {
+            if (err || !url) {
+              if (!_desenharComQrcodeGenerator(canvas, str, s)) _mostrarQrComoImg(canvas, str, s);
+              return;
+            }
+            try {
+              canvas.width = s;
+              canvas.height = s;
+              canvas.style.display = '';
+              const ctx = canvas.getContext('2d');
+              const image = new Image();
+              image.onload = function () {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, s, s);
+                ctx.drawImage(image, 0, 0, s, s);
+              };
+              image.onerror = function () {
+                if (!_desenharComQrcodeGenerator(canvas, str, s)) _mostrarQrComoImg(canvas, str, s);
+              };
+              image.src = url;
+            } catch (e) {
+              if (!_desenharComQrcodeGenerator(canvas, str, s)) _mostrarQrComoImg(canvas, str, s);
+            }
           });
           return;
-        }
-      } catch (e) { console.warn(e); }
-      // fallback texto
-      const ctx = canvas.getContext && canvas.getContext('2d');
-      if (ctx) {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#333';
-        ctx.font = '11px sans-serif';
-        ctx.fillText('QR indisponível', 20, canvas.height / 2);
+        } catch (e) {}
       }
+
+      // 3) Carrega qrcode-generator se ainda não estiver disponível
+      if (typeof qrcode !== 'function' && !window._qrGenLoading) {
+        window._qrGenLoading = true;
+        const sc = document.createElement('script');
+        sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+        sc.onload = function () {
+          window._qrGenLoading = false;
+          if (!_desenharComQrcodeGenerator(canvas, str, s)) _mostrarQrComoImg(canvas, str, s);
+        };
+        sc.onerror = function () {
+          window._qrGenLoading = false;
+          _mostrarQrComoImg(canvas, str, s);
+        };
+        document.head.appendChild(sc);
+        // enquanto carrega, tenta imagem
+        _mostrarQrComoImg(canvas, str, s);
+        return;
+      }
+
+      // 4) Imagem externa
+      _mostrarQrComoImg(canvas, str, s);
     }
 
     function atualizarPreviewQrPixLoja() {
       const el = document.getElementById('pers-pix-copia-cola');
       const canvas = document.getElementById('pers-pix-qr-preview');
       if (!canvas) return;
-      const texto = el ? (el.value || '').trim() : obterPixLoja().copiaCola;
+      const texto = sanitizarPixCopiaCola(el ? el.value : obterPixLoja().copiaCola);
       if (!texto) {
         toast('Cole o PIX Copia e Cola para gerar o QR', 'error');
         return;
       }
+      if (!texto.startsWith('000201')) {
+        toast('O código PIX deve começar com 000201 (Copia e Cola completo do banco)', 'error');
+      }
       desenharQrCodeEmCanvas(canvas, texto, 180);
+      toast('QR gerado!', 'success');
     }
 
     function carregarPixLojaNoForm() {
@@ -3295,7 +3415,7 @@
         estado.personalizacao = personalizacaoPadrao();
       }
       estado.personalizacao.pixChave = String(chave).trim();
-      estado.personalizacao.pixCopiaCola = String(copiaCola).trim();
+      estado.personalizacao.pixCopiaCola = sanitizarPixCopiaCola(copiaCola);
       estado.personalizacao.pixBeneficiario = String(beneficiario).trim();
       registrarLog('Configurou PIX da loja', (estado.personalizacao.pixBeneficiario || estado.personalizacao.pixChave || 'PIX'), 'usuario');
       salvar();
