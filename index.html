@@ -1875,6 +1875,7 @@
           <div class="panel hidden" id="dono-loja-detalhe" style="display:none;">
             <div class="panel-header">
               <h3 id="dono-loja-detalhe-titulo">Acesso da loja</h3>
+              <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja (admin)</button>
             </div>
             <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;"></div>
             <div class="table-wrap" style="margin-bottom:1rem;">
@@ -2003,6 +2004,7 @@
       <button class="nav-btn admin-menu" data-page="clientes">👥 Clientes</button>
       <button class="nav-btn fiado-menu" data-page="fiado">💰 Fiado <span class="badge hidden" id="badge-fiado">0</span></button>
       <button class="nav-btn admin-menu" data-page="vendas">📋 Histórico de Vendas</button>
+      <button class="nav-btn admin-menu" data-page="caixas-fechados">📁 Caixas fechados</button>
       <button class="nav-btn admin-menu" data-page="notificacoes">🔔 Notificações <span class="badge hidden" id="badge-notif">0</span></button>
       <button class="nav-btn venda-menu" data-page="venda">🛒 Nova Venda</button>
       <button class="nav-btn caixa-menu" data-page="caixa">🧾 Caixa <span class="badge hidden" id="badge-caixa">0</span></button>
@@ -2292,11 +2294,38 @@
           </div>
 
           <div class="form-grid" style="margin-bottom:1.1rem;">
-            <div class="form-group">
+            <!-- Forma de pagamento / valor pago: visível só se o cargo tiver a ação liberada (Categorias) -->
+            <div class="form-group" id="grupo-forma-pagamento">
               <label>Forma de Pagamento *</label>
               <select id="venda-pagamento" onchange="togglePrazo()">
                 <option value="avista">À vista</option>
+                <option value="pix">PIX</option>
+                <option value="cartao">Cartão</option>
                 <option value="fiado">Fiado</option>
+              </select>
+            </div>
+            <div class="form-group" id="grupo-cartao-tipo" style="display:none;">
+              <label>Tipo do cartão *</label>
+              <select id="venda-cartao-tipo" onchange="togglePrazo()">
+                <option value="debito">Débito</option>
+                <option value="credito">Crédito</option>
+              </select>
+            </div>
+            <div class="form-group" id="grupo-cartao-parcelas" style="display:none;">
+              <label>Parcelas no cartão *</label>
+              <select id="venda-cartao-parcelas">
+                <option value="1">1x</option>
+                <option value="2">2x</option>
+                <option value="3">3x</option>
+                <option value="4">4x</option>
+                <option value="5">5x</option>
+                <option value="6">6x</option>
+                <option value="7">7x</option>
+                <option value="8">8x</option>
+                <option value="9">9x</option>
+                <option value="10">10x</option>
+                <option value="11">11x</option>
+                <option value="12">12x</option>
               </select>
             </div>
             <div class="form-group" id="grupo-prazo" style="display:none;">
@@ -2333,7 +2362,7 @@
               <label>Resumo das parcelas</label>
               <div id="preview-parcelas" style="font-size:0.84rem;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.8rem;color:var(--text);"></div>
             </div>
-            <div class="form-group">
+            <div class="form-group" id="grupo-valor-pago">
               <label>Valor já pago (R$)</label>
               <input type="number" id="venda-pago" min="0" step="0.01" value="0" oninput="atualizarPreviewParcelas()" />
             </div>
@@ -2427,12 +2456,14 @@
               <button class="btn btn-sm btn-warning" onclick="filtrarCaixa('pendente')">Pendentes</button>
               <button class="btn btn-sm btn-success" onclick="filtrarCaixa('aprovada')">Aprovadas hoje</button>
               <button class="btn btn-sm btn-secondary" onclick="filtrarCaixa('todos')">Todas pendentes+</button>
+              <button class="btn btn-sm btn-primary" onclick="abrirFechamentoCaixa()" title="Resumo do dia e fechar caixa">🔒 Fechar caixa</button>
             </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.9rem;">
-            Digite ou leia o <strong>código de barras</strong> do comprovante do vendedor e aprove o pagamento para contabilizar a venda.
+            Digite ou leia o <strong>código de barras</strong> do comprovante do vendedor e escolha a <strong>forma de pagamento</strong> antes de aprovar.
+            O vendedor envia a venda como <strong>pagamento pendente</strong>.
           </p>
-          <div class="form-grid" style="margin-bottom:1rem;">
+                    <div class="form-grid" style="margin-bottom:1rem;">
             <div class="form-group" style="grid-column:1/-1;">
               <label>Código do comprovante (código de barras)</label>
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
@@ -2463,7 +2494,36 @@
         </div>
       </section>
 
-      <!-- ENTREGAS -->
+      
+      <!-- CAIXAS FECHADOS -->
+      <section id="page-caixas-fechados" class="page hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>📁 Caixas fechados</h3>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="renderCaixasFechados()">🔄 Atualizar</button>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.9rem;">
+            Histórico dos fechamentos de caixa. Cada registro guarda o total do dia e os valores por forma de pagamento.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data / Hora</th>
+                  <th>Operador</th>
+                  <th>Qtd. vendas</th>
+                  <th>Por forma de pagamento</th>
+                  <th>Total</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="lista-caixas-fechados"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+<!-- ENTREGAS -->
       <section id="page-entregas" class="page hidden">
         <div class="panel">
           <div class="panel-header">
@@ -2960,6 +3020,7 @@
       { id: 'clientes', label: '👥 Clientes' },
       { id: 'fiado', label: '💰 Fiado / Contas a receber' },
       { id: 'vendas', label: '📋 Histórico de vendas' },
+      { id: 'caixas-fechados', label: '📁 Caixas fechados' },
       { id: 'notificacoes', label: '🔔 Notificações' },
       { id: 'venda', label: '🛒 Nova venda' },
       { id: 'caixa', label: '🧾 Caixa (aprovar vendas)' },
@@ -2981,6 +3042,7 @@
         'clientes',
         'fiado',
         'vendas',
+        'caixas-fechados',
         'notificacoes',
         'entregas',
         'mensal',
@@ -3196,8 +3258,9 @@
       clientes: { editar: true, excluir: true },
       fiado: { editar: true, excluir: true },
       vendas: { editar: false, excluir: true },
+      venda: { pagamento: true },
       usuarios: { editar: true, excluir: true },
-      caixa: { editar: true, excluir: true },
+      caixa: { editar: true, excluir: true, pagamento: true },
       entregas: { editar: true, excluir: false }
     };
 
@@ -3207,10 +3270,13 @@
       (perms || []).forEach(pid => {
         const def = MODULOS_COM_ACOES[pid];
         if (!def) return;
-        out[pid] = {
-          editar: opts.editar != null ? !!opts.editar : !!def.editar,
-          excluir: opts.excluir != null ? !!opts.excluir : false
-        };
+        const row = {};
+        if ('editar' in def) row.editar = opts.editar != null ? !!opts.editar : !!def.editar;
+        if ('excluir' in def) row.excluir = opts.excluir != null ? !!opts.excluir : false;
+        if (def.pagamento) {
+          row.pagamento = opts.pagamento != null ? !!opts.pagamento : false;
+        }
+        out[pid] = row;
       });
       return out;
     }
@@ -3226,12 +3292,12 @@
         {
           id: 'vendedor', nome: 'Vendedor', sistema: true,
           permissoes: ['venda', 'fiado'],
-          acoes: acoesPadraoParaPermissoes(['venda', 'fiado'], { editar: true, excluir: false })
+          acoes: acoesPadraoParaPermissoes(['venda', 'fiado'], { editar: true, excluir: false, pagamento: false })
         },
         {
           id: 'caixa', nome: 'Caixa', sistema: true,
-          permissoes: ['caixa', 'venda', 'fiado'],
-          acoes: acoesPadraoParaPermissoes(['caixa', 'venda', 'fiado'], { editar: true, excluir: false })
+          permissoes: ['caixa', 'caixas-fechados', 'venda', 'fiado'],
+          acoes: acoesPadraoParaPermissoes(['caixa', 'caixas-fechados', 'venda', 'fiado'], { editar: true, excluir: false, pagamento: true })
         },
         {
           id: 'entregador', nome: 'Entregador', sistema: true,
@@ -3378,7 +3444,7 @@
       const cargo = getCargo(usuarioAtual.papel);
       if (!cargo) {
         if (usuarioAtual.papel === 'vendedor') return ['venda', 'fiado'].includes(pagina);
-        if (usuarioAtual.papel === 'caixa') return ['caixa', 'venda', 'fiado'].includes(pagina);
+        if (usuarioAtual.papel === 'caixa') return ['caixa', 'caixas-fechados', 'venda', 'fiado'].includes(pagina);
         if (usuarioAtual.papel === 'entregador') return pagina === 'entregas';
         return false;
       }
@@ -3392,19 +3458,27 @@
       const legadoEdit = cargo && cargo.podeEditar === false ? false : true;
       const legadoExc = cargo && cargo.podeExcluir === true ? true : false;
       const perms = (cargo && Array.isArray(cargo.permissoes)) ? cargo.permissoes : [];
+      const cargoId = cargo && cargo.id ? cargo.id : '';
       perms.forEach(pid => {
         if (!MODULOS_COM_ACOES[pid]) return;
-        if (!acoes[pid] || typeof acoes[pid] !== 'object') {
-          acoes[pid] = {
-            editar: legadoEdit && !!MODULOS_COM_ACOES[pid].editar,
-            excluir: legadoExc
-          };
-        } else {
-          acoes[pid] = {
-            editar: acoes[pid].editar !== false,
-            excluir: acoes[pid].excluir === true
-          };
+        const def = MODULOS_COM_ACOES[pid];
+        const prev = (acoes[pid] && typeof acoes[pid] === 'object') ? acoes[pid] : null;
+        const row = {};
+        if ('editar' in def) {
+          row.editar = prev ? (prev.editar !== false) : (legadoEdit && !!def.editar);
         }
+        if ('excluir' in def) {
+          row.excluir = prev ? (prev.excluir === true) : legadoExc;
+        }
+        if (def.pagamento) {
+          // Padrão: Caixa liberado; Vendedor e demais bloqueados (admin libera na categoria)
+          let defPag = false;
+          if (cargoId === 'caixa' || cargoId === 'admin') defPag = true;
+          if (prev && typeof prev.pagamento === 'boolean') defPag = prev.pagamento;
+          else if (prev && prev.pagamento === true) defPag = true;
+          row.pagamento = !!defPag;
+        }
+        acoes[pid] = row;
       });
       return acoes;
     }
@@ -3414,6 +3488,8 @@
       if (!usuarioAtual) return false;
       if (usuarioAtual.papel === 'admin') return true;
       if (!modulo || !MODULOS_COM_ACOES[modulo]) return true;
+      // Módulos só com ações especiais (ex.: pagamento na venda) — não usam "editar"
+      if (!('editar' in MODULOS_COM_ACOES[modulo])) return true;
       const cargo = getCargo(usuarioAtual.papel);
       if (!cargo) return true;
       const acoes = normalizarAcoesCargo(cargo);
@@ -3427,6 +3503,7 @@
       if (!usuarioAtual) return false;
       if (usuarioAtual.papel === 'admin') return true;
       if (!modulo || !MODULOS_COM_ACOES[modulo]) return true;
+      if (!('excluir' in MODULOS_COM_ACOES[modulo])) return false;
       const cargo = getCargo(usuarioAtual.papel);
       if (!cargo) return true;
       const acoes = normalizarAcoesCargo(cargo);
@@ -3435,7 +3512,80 @@
       return a.excluir === true;
     }
 
-    // Atalhos legados (evitam quebrar chamadas sem módulo) — preferir podeEditarModulo/podeExcluirModulo
+    
+    /** Pode definir forma de pagamento e valor já pago na Nova Venda */
+    function podeDefinirPagamento() {
+      if (!usuarioAtual) return false;
+      if (usuarioAtual.papel === 'admin') return true;
+      const cargo = getCargo(usuarioAtual.papel);
+      if (!cargo) {
+        // fallback legados sem cargo customizado
+        if (usuarioAtual.papel === 'caixa') return true;
+        return false;
+      }
+      const acoes = normalizarAcoesCargo(cargo);
+      if (acoes.venda && acoes.venda.pagamento) return true;
+      if (acoes.caixa && acoes.caixa.pagamento) return true;
+      return false;
+    }
+
+    function rotuloFormaPagamento(forma, cartaoParcelas) {
+      const f = String(forma || '').toLowerCase();
+      if (f === 'pendente' || f === '') return 'Pendente';
+      if (f === 'fiado') return 'Fiado';
+      if (f === 'pix') return 'PIX';
+      if (f === 'cartao' || f === 'cartao_debito') return 'Cartão (débito)';
+      if (f === 'cartao_credito') {
+        const n = parseInt(cartaoParcelas, 10);
+        if (n > 1) return 'Cartão (crédito ' + n + 'x)';
+        return 'Cartão (crédito)';
+      }
+      if (f === 'avista') return 'À vista';
+      return forma || '—';
+    }
+
+    function rotuloFormaPagamentoVenda(v) {
+      if (!v) return '—';
+      return rotuloFormaPagamento(v.forma, v.cartaoParcelas);
+    }
+
+    function formaPagamentoEhFiado(forma) {
+      return String(forma || '').toLowerCase() === 'fiado';
+    }
+
+    function aplicarVisibilidadePagamentoVenda() {
+      const pode = podeDefinirPagamento();
+      const ids = ['grupo-forma-pagamento', 'grupo-valor-pago', 'grupo-cartao-tipo', 'grupo-cartao-parcelas', 'grupo-prazo', 'grupo-parcelas', 'grupo-intervalo-parcela', 'grupo-preview-parcelas'];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (!pode) {
+          el.style.display = 'none';
+          el.dataset.pagBloqueado = '1';
+        } else {
+          el.dataset.pagBloqueado = '0';
+          if (id === 'grupo-forma-pagamento' || id === 'grupo-valor-pago') {
+            el.style.display = '';
+          }
+        }
+      });
+      const sel = document.getElementById('venda-pagamento');
+      const pago = document.getElementById('venda-pago');
+      if (!pode) {
+        if (sel) { sel.value = 'avista'; sel.disabled = true; }
+        if (pago) { pago.value = '0'; pago.disabled = true; }
+        const ct = document.getElementById('venda-cartao-tipo');
+        if (ct) ct.disabled = true;
+      } else {
+        if (sel) sel.disabled = false;
+        if (pago) pago.disabled = false;
+        const ct = document.getElementById('venda-cartao-tipo');
+        if (ct) ct.disabled = false;
+        if (typeof togglePrazo === 'function') togglePrazo();
+      }
+    }
+
+// Atalhos legados (evitam quebrar chamadas sem módulo) — preferir podeEditarModulo/podeExcluirModulo
     function podeEditarRegistros(modulo) {
       if (modulo) return podeEditarModulo(modulo);
       return true;
@@ -3529,7 +3679,12 @@
     }
 
     /** Registra ação no log (visível só para admin) */
+    /** true = dono entrou na loja em modo suporte (admin, sem logs de acesso) */
+    let sessaoDonoSuporte = false;
+
     function registrarLog(acao, detalhes, categoria = 'geral') {
+      // Modo suporte do dono: não grava nada nos logs da loja
+      if (sessaoDonoSuporte) return;
       if (!Array.isArray(estado.logs)) estado.logs = [];
       const agora = new Date();
       estado.logs.unshift({
@@ -4140,25 +4295,46 @@
       if (!usuarioAtual) return;
       try {
         aplicarOrdemMenu();
-        if (isAdmin()) {
-          const page = document.querySelector('.nav-btn.active');
-          const p = page ? page.dataset.page : 'dashboard';
-          if (p === 'dashboard') renderDashboard();
-          if (p === 'produtos') renderProdutos();
-          if (p === 'clientes') renderClientes();
-          if (p === 'fiado') renderFiado();
-          if (p === 'vendas') renderVendasLog();
-          if (p === 'entregas') renderEntregas();
-          if (p === 'logs') renderLogs();
-          if (p === 'notificacoes') renderNotificacoes();
-          if (p === 'estoque') renderHistoricoEstoque();
-          if (p === 'mensal') renderResumoMensal();
+        const pageBtn = document.querySelector('.nav-btn.active');
+        const p = pageBtn ? pageBtn.dataset.page : '';
+
+        // Atualiza a tela aberta automaticamente (Firebase / outro PC)
+        if (p === 'caixa' && (temPermissao('caixa') || isAdmin())) {
+          renderCaixa();
+        } else if (p === 'caixas-fechados' && (temPermissao('caixas-fechados') || temPermissao('caixa') || isAdmin())) {
+          renderCaixasFechados();
+        } else if (p === 'dashboard' && (temPermissao('dashboard') || isAdmin())) {
+          renderDashboard();
+        } else if (p === 'produtos' && (temPermissao('produtos') || isAdmin())) {
+          renderProdutos();
+        } else if (p === 'clientes' && (temPermissao('clientes') || isAdmin())) {
+          renderClientes();
+        } else if (p === 'fiado' && (temPermissao('fiado') || isAdmin())) {
+          renderFiado();
+        } else if (p === 'vendas' && (temPermissao('vendas') || isAdmin())) {
+          renderVendasLog();
+        } else if (p === 'entregas' && (temPermissao('entregas') || isAdmin())) {
+          renderEntregas();
+        } else if (p === 'logs' && isAdmin()) {
+          renderLogs();
+        } else if (p === 'notificacoes' && (temPermissao('notificacoes') || isAdmin())) {
+          renderNotificacoes();
+        } else if (p === 'estoque' && (temPermissao('estoque') || isAdmin())) {
+          renderHistoricoEstoque();
+        } else if (p === 'mensal' && isAdmin()) {
+          renderResumoMensal();
+        } else if (p === 'venda' && (temPermissao('venda') || isAdmin())) {
+          preencherSelectProdutos('cart-produto');
+          preencherSelectClientes();
         } else if (isEntregador()) {
           renderEntregas();
         } else if (isVendedor()) {
           preencherSelectProdutos('cart-produto');
           preencherSelectClientes();
-          renderFiado();
+          if (typeof renderFiado === 'function') renderFiado();
+        } else if (isCaixa() || temPermissao('caixa')) {
+          // Mesmo fora da aba, mantém badges; se estiver no app, atualiza caixa se possível
+          if (p === 'caixa' || !p) renderCaixa();
         }
         atualizarBadges();
       } catch (err) {
@@ -4614,7 +4790,10 @@
             <span style="font-size:0.82rem;">${st}${pago ? ' · ' + pago : ''}</span>
             ${it.meta.adminLogin ? '<br><span style="font-size:0.8rem;color:var(--text-muted);">Admin inicial: <code>' + it.meta.adminLogin + '</code></span>' : ''}
           </div>
-          <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">🔑 Acessos</button>
+          <div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">
+            <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra na loja como administrador, sem registrar nos logs">🚪 Entrar na loja</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">🔑 Acessos</button>
+          </div>
         </div>`;
       }).join('');
     }
@@ -4676,6 +4855,157 @@
         painel.style.display = 'none';
         painel.classList.add('hidden');
       }
+    }
+
+    /**
+     * Dono entra na loja com poderes de administrador.
+     * Não grava login/logout nem outras ações nos logs da loja (sessaoDonoSuporte).
+     */
+    async function entrarComoAdminLojaDono(codigo) {
+      if (!donoLogado) {
+        toast('Faça login no painel do dono primeiro', 'error');
+        return;
+      }
+      codigo = normalizarCodigoEmpresa(codigo || '');
+      if (!codigo) {
+        toast('Informe o código da loja', 'error');
+        return;
+      }
+
+      toast('Abrindo loja ' + codigo + '…', 'success');
+      setSyncStatus('pendente', 'Carregando loja…');
+
+      let meta = null;
+      try {
+        meta = await lerMetaLoja(codigo);
+      } catch (e) { console.warn(e); }
+      if (!meta) {
+        try {
+          const raw = localStorage.getItem(storageKey(codigo) + '_meta');
+          if (raw) meta = JSON.parse(raw);
+        } catch (e) {}
+      }
+      if (!meta) {
+        toast('Loja não encontrada: ' + codigo, 'error');
+        setSyncStatus(firebaseOk ? 'ok' : 'local', firebaseOk ? 'Nuvem' : 'Local');
+        return;
+      }
+
+      try {
+        await carregarEstadoEmpresa(codigo);
+      } catch (e) {
+        console.warn(e);
+        toast('Falha ao carregar dados da loja', 'error');
+        return;
+      }
+
+      if (!Array.isArray(estado.usuarios)) estado.usuarios = [];
+
+      // Preferir um admin real (só para exibir nome); sessão é virtual e não loga
+      const adminReal = estado.usuarios.find(u => u.papel === 'admin') || estado.usuarios[0] || null;
+
+      empresaAtual = {
+        codigo,
+        nome: meta.nome || (platNomeAcesso(codigo)) || codigo
+      };
+      // nome da plataforma acesso se existir
+      try {
+        const plat = await lerPlataforma();
+        if (plat.acessos && plat.acessos[codigo] && plat.acessos[codigo].nome) {
+          empresaAtual.nome = plat.acessos[codigo].nome;
+        }
+      } catch (e) {}
+
+      sessaoDonoSuporte = true;
+      usuarioAtual = {
+        id: 'dono-suporte',
+        nome: 'Administrador',
+        login: (adminReal && adminReal.login) ? adminReal.login : 'admin',
+        papel: 'admin',
+        suporteDono: true
+      };
+
+      // Sessão persistente marcada como suporte (ao reabrir, volta suporte se necessário)
+      salvarSessaoLocal({
+        usuario: usuarioAtual,
+        empresa: empresaAtual,
+        donoSuporte: true
+      });
+
+      // Esconde painel do dono, mostra app da loja
+      const appDono = document.getElementById('app-dono');
+      if (appDono) {
+        appDono.classList.add('hidden');
+        appDono.style.display = 'none';
+      }
+      const telaLogin = document.getElementById('tela-login');
+      if (telaLogin) telaLogin.classList.add('hidden');
+
+      // Banner discreto de suporte
+      let ban = document.getElementById('banner-dono-suporte');
+      if (!ban) {
+        ban = document.createElement('div');
+        ban.id = 'banner-dono-suporte';
+        ban.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:600;background:linear-gradient(90deg,#1a2544,#2f3e6b);color:#fff;padding:0.45rem 1rem;font-size:0.8rem;font-weight:600;text-align:center;display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap;';
+        ban.innerHTML = '<span>👑 Modo suporte do dono — você está como <strong>administrador</strong> nesta loja (sem registrar entrada nos logs)</span>' +
+          '<button type="button" class="btn btn-sm" style="background:#fff;color:#1a2544;font-weight:700;" onclick="voltarAoPainelDonoDoSuporte()">← Voltar ao painel do dono</button>';
+        document.body.appendChild(ban);
+      } else {
+        ban.style.display = 'flex';
+      }
+      document.body.classList.add('modo-dono-suporte');
+      // Empurra conteúdo um pouco para baixo
+      const mainEl = document.querySelector('#app .main');
+      if (mainEl) mainEl.style.paddingTop = '2.4rem';
+      const side = document.getElementById('sidebar');
+      if (side) { side.style.top = '2.4rem'; side.style.height = 'auto'; }
+
+      // NÃO chama registrarLog
+      entrarNoApp();
+      setSyncStatus(firebaseOk ? 'ok' : 'local', firebaseOk ? 'Sincronizado' : 'Local');
+      toast('Entrou em ' + (empresaAtual.nome || codigo) + ' como admin', 'success');
+    }
+
+    function platNomeAcesso(codigo) {
+      return codigo;
+    }
+
+    /** Sai da loja e volta ao painel do dono (sem log de logout na loja) */
+    async function voltarAoPainelDonoDoSuporte() {
+      if (!sessaoDonoSuporte) {
+        fazerLogout();
+        return;
+      }
+      // Não registra logout
+      try { await salvar(true); } catch (e) { console.warn(e); }
+      desligarListenerEmpresa();
+      usuarioAtual = null;
+      empresaAtual = null;
+      estado = normalizarEstado({});
+      sessaoDonoSuporte = false;
+      limparSessaoLocal();
+      document.body.classList.remove('modo-dono-suporte');
+      const ban = document.getElementById('banner-dono-suporte');
+      if (ban) ban.style.display = 'none';
+      const mainEl = document.querySelector('#app .main');
+      if (mainEl) mainEl.style.paddingTop = '';
+      const side = document.getElementById('sidebar');
+      if (side) { side.style.top = ''; side.style.height = ''; }
+
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('tela-login').classList.add('hidden');
+      donoLogado = true;
+      const appDono = document.getElementById('app-dono');
+      if (appDono) {
+        appDono.classList.remove('hidden');
+        appDono.style.display = 'contents';
+      }
+      try { setModoDonoUI(true); } catch (e) {}
+      try { mostrarPaginaDono('lojas'); } catch (e) {
+        try { renderListaLojasDono(); } catch (e2) {}
+      }
+      toast('Voltou ao painel do dono', 'success');
     }
 
     function selecionarUsuarioRecuperacaoDono(codigo, userId) {
@@ -5927,6 +6257,11 @@
     }
 
     async function fazerLogout() {
+      // Se era suporte do dono, volta ao painel (sem log na loja)
+      if (sessaoDonoSuporte) {
+        await voltarAoPainelDonoDoSuporte();
+        return;
+      }
       const eraDemo = modoDemo;
       if (!modoDemo && usuarioAtual && empresaAtual) {
         registrarLog('Logout', 'Saiu do sistema', 'usuario');
@@ -5937,7 +6272,11 @@
       empresaAtual = null;
       estado = normalizarEstado({});
       modoDemo = false;
+      sessaoDonoSuporte = false;
       document.body.classList.remove('modo-demo');
+      document.body.classList.remove('modo-dono-suporte');
+      const banSup = document.getElementById('banner-dono-suporte');
+      if (banSup) banSup.style.display = 'none';
       const banner = document.getElementById('demo-banner');
       if (banner) banner.classList.remove('show');
       limparSessaoLocal();
@@ -6056,6 +6395,38 @@
         const s = JSON.parse(raw);
         if (!s.empresa || !s.empresa.codigo || !s.usuario) return false;
 
+        // Sessão de suporte do dono: admin sem precisar bater com usuário real; sem logs
+        if (s.donoSuporte || (s.usuario && s.usuario.suporteDono)) {
+          empresaAtual = { codigo: s.empresa.codigo, nome: s.empresa.nome || s.empresa.codigo };
+          await carregarEstadoEmpresa(empresaAtual.codigo);
+          sessaoDonoSuporte = true;
+          donoLogado = true;
+          usuarioAtual = {
+            id: 'dono-suporte',
+            nome: 'Administrador',
+            login: (s.usuario && s.usuario.login) || 'admin',
+            papel: 'admin',
+            suporteDono: true
+          };
+          // banner suporte
+          setTimeout(() => {
+            let ban = document.getElementById('banner-dono-suporte');
+            if (!ban) {
+              ban = document.createElement('div');
+              ban.id = 'banner-dono-suporte';
+              ban.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:600;background:linear-gradient(90deg,#1a2544,#2f3e6b);color:#fff;padding:0.45rem 1rem;font-size:0.8rem;font-weight:600;text-align:center;display:flex;align-items:center;justify-content:center;gap:0.75rem;flex-wrap:wrap;';
+              ban.innerHTML = '<span>👑 Modo suporte do dono — administrador (sem logs de entrada)</span>' +
+                '<button type="button" class="btn btn-sm" style="background:#fff;color:#1a2544;font-weight:700;" onclick="voltarAoPainelDonoDoSuporte()">← Voltar ao painel do dono</button>';
+              document.body.appendChild(ban);
+            } else ban.style.display = 'flex';
+            document.body.classList.add('modo-dono-suporte');
+            const mainEl = document.querySelector('#app .main');
+            if (mainEl) mainEl.style.paddingTop = '2.4rem';
+          }, 50);
+          entrarNoApp();
+          return true;
+        }
+
         const acessoInfo = await obterStatusAcessoEmpresa(s.empresa.codigo);
         if (acessoInfo.status === 'bloqueado') {
           limparSessaoLocal();
@@ -6072,6 +6443,7 @@
           return false;
         }
         usuarioAtual = { id: user.id, nome: user.nome, login: user.login, papel: user.papel };
+        sessaoDonoSuporte = false;
         entrarNoApp();
         return true;
       } catch (e) {
@@ -6091,6 +6463,7 @@
 
       // Ordem do menu + permissões do cargo
       aplicarOrdemMenu();
+      if (typeof aplicarVisibilidadePagamentoVenda === 'function') aplicarVisibilidadePagamentoVenda();
 
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -6104,7 +6477,7 @@
       const titles = {
         dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Movimentação de Estoque',
         clientes: 'Clientes', fiado: 'Fiado / Contas a Receber', vendas: 'Histórico de Vendas',
-        notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa', entregas: 'Entregas',
+        notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa', 'caixas-fechados': 'Caixas fechados', entregas: 'Entregas',
         mensal: 'Resumo Mensal', logs: 'Logs de Atividades', usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
       };
       document.getElementById('page-title').textContent = titles[paginaIni] || paginaIni;
@@ -6130,6 +6503,7 @@
         const btnDir = document.getElementById('btn-finalizar-direto');
         if (btnDir) btnDir.style.display = isAdmin() ? '' : 'none';
       } else if (paginaIni === 'caixa') { renderCaixa(); }
+      else if (paginaIni === 'caixas-fechados') { renderCaixasFechados(); }
       atualizarBadges();
     }
 
@@ -6150,6 +6524,7 @@
         const page = btn.dataset.page;
 
 
+
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
@@ -6164,6 +6539,8 @@
           vendas: 'Histórico de Vendas',
           notificacoes: 'Notificações',
           venda: 'Nova Venda',
+          caixa: 'Caixa',
+          'caixas-fechados': 'Caixas fechados',
           entregas: 'Entregas',
           mensal: 'Resumo Mensal',
           logs: 'Logs de Atividades',
@@ -6192,8 +6569,10 @@
           resetClienteVenda();
           const btnDir = document.getElementById('btn-finalizar-direto');
           if (btnDir) btnDir.style.display = isAdmin() ? '' : 'none';
+          if (typeof aplicarVisibilidadePagamentoVenda === 'function') aplicarVisibilidadePagamentoVenda();
         }
         if (page === 'caixa') { renderCaixa(); document.getElementById('caixa-codigo') && document.getElementById('caixa-codigo').focus(); }
+        if (page === 'caixas-fechados') { renderCaixasFechados(); }
         if (page === 'usuarios') { renderUsuarios(); renderCargos(); }
         if (page === 'personalizacao') { renderPersonalizacao(); }
       });
@@ -6343,19 +6722,34 @@
           const a = acoes[p.id] || {};
           const ed = a.editar !== false;
           const ex = a.excluir === true;
+          const pag = a.pagamento === true;
           const dis = somenteLeitura || !checked ? 'disabled' : '';
-          sub = `<div class="cargo-acoes-mod" data-mod="${p.id}" style="margin:0.15rem 0 0.45rem 1.55rem;display:flex;flex-wrap:wrap;gap:0.55rem 0.9rem;font-size:0.78rem;color:var(--text-muted);">
-            ${def.editar ? `<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};">
-              <input type="checkbox" class="cargo-acao-editar" data-mod="${p.id}" ${ed && checked ? 'checked' : ''} ${dis} ${somenteLeitura ? 'disabled' : ''} />
-              ✏️ Editar
-            </label>` : ''}
-            ${def.excluir ? `<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};">
-              <input type="checkbox" class="cargo-acao-excluir" data-mod="${p.id}" ${ex && checked ? 'checked' : ''} ${dis} ${somenteLeitura ? 'disabled' : ''} />
-              🗑️ Excluir
-            </label>` : ''}
+          const partes = [];
+          if (def.editar) {
+            partes.push(`<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};">
+              <input type="checkbox" class="cargo-acao-editar" data-mod="${p.id}" ${ed ? 'checked' : ''} ${dis} />
+              Pode cadastrar / editar
+            </label>`);
+          }
+          if (def.excluir) {
+            partes.push(`<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};">
+              <input type="checkbox" class="cargo-acao-excluir" data-mod="${p.id}" ${ex ? 'checked' : ''} ${dis} />
+              Pode excluir
+            </label>`);
+          }
+          if (def.pagamento) {
+            partes.push(`<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};" title="Forma de pagamento e valor já pago na Nova Venda">
+              <input type="checkbox" class="cargo-acao-pagamento" data-mod="${p.id}" ${pag ? 'checked' : ''} ${dis} />
+              Forma de pagamento e valor pago
+            </label>`);
+          }
+          if (partes.length) {
+            sub = `<div class="cargo-acoes-mod" data-mod="${p.id}" style="margin:0.15rem 0 0.45rem 1.55rem;display:flex;flex-wrap:wrap;gap:0.55rem 0.9rem;font-size:0.78rem;color:var(--text-muted);">
+            ${partes.join('\n            ')}
           </div>`;
+          }
         }
-        return `<div style="grid-column:1/-1;">
+        return `<div>
           <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.84rem;cursor:${somenteLeitura ? 'default' : 'pointer'};">
             <input type="checkbox" class="cargo-perm-check" value="${p.id}" ${checked ? 'checked' : ''} ${somenteLeitura ? 'disabled' : ''} onchange="onTogglePermissaoTela(this)" />
             ${p.label}
@@ -6376,6 +6770,7 @@
           // ao liberar a tela, editar vem marcado por padrão
           if (!inp.checked) inp.checked = true;
         }
+        // pagamento não marca sozinho — admin decide (exceto caixa, onde já vem no padrão do cargo)
       });
     }
 
@@ -6384,12 +6779,15 @@
       document.querySelectorAll('.cargo-perm-check:checked').forEach(chk => {
         const pid = chk.value;
         if (!MODULOS_COM_ACOES[pid]) return;
+        const def = MODULOS_COM_ACOES[pid];
         const edEl = document.querySelector('.cargo-acao-editar[data-mod="' + pid + '"]');
         const exEl = document.querySelector('.cargo-acao-excluir[data-mod="' + pid + '"]');
-        acoes[pid] = {
-          editar: edEl ? !!edEl.checked : false,
-          excluir: exEl ? !!exEl.checked : false
-        };
+        const pagEl = document.querySelector('.cargo-acao-pagamento[data-mod="' + pid + '"]');
+        const row = {};
+        if ('editar' in def) row.editar = edEl ? !!edEl.checked : false;
+        if ('excluir' in def) row.excluir = exEl ? !!exEl.checked : false;
+        if (def.pagamento) row.pagamento = pagEl ? !!pagEl.checked : false;
+        acoes[pid] = row;
       });
       return acoes;
     }
@@ -6548,6 +6946,7 @@
             const bits = [];
             if (a.editar) bits.push('editar');
             if (a.excluir) bits.push('excluir');
+            if (a.pagamento) bits.push('pagamento');
             if (!bits.length) return null;
             return nome + ': ' + bits.join('/');
           }).filter(Boolean);
@@ -7128,18 +7527,36 @@
     }
 
     function togglePrazo() {
-      const isFiado = document.getElementById('venda-pagamento').value === 'fiado';
-      document.getElementById('grupo-prazo').style.display = isFiado ? 'flex' : 'none';
+      const pode = (typeof podeDefinirPagamento === 'function') ? podeDefinirPagamento() : true;
+      const sel = document.getElementById('venda-pagamento');
+      const forma = sel ? sel.value : 'avista';
+      const isFiado = forma === 'fiado';
+      const isCartao = forma === 'cartao';
+
+      const gCartao = document.getElementById('grupo-cartao-tipo');
+      const gCartParc = document.getElementById('grupo-cartao-parcelas');
+      const tipoCart = (document.getElementById('venda-cartao-tipo') || {}).value || 'debito';
+      if (gCartao) {
+        if (!pode) gCartao.style.display = 'none';
+        else gCartao.style.display = isCartao ? 'flex' : 'none';
+      }
+      if (gCartParc) {
+        if (!pode || !isCartao || tipoCart !== 'credito') gCartParc.style.display = 'none';
+        else gCartParc.style.display = 'flex';
+      }
+
+      const gPrazo = document.getElementById('grupo-prazo');
+      if (gPrazo) gPrazo.style.display = (pode && isFiado) ? 'flex' : 'none';
       const gp = document.getElementById('grupo-parcelas');
       const gi = document.getElementById('grupo-intervalo-parcela');
       const gprev = document.getElementById('grupo-preview-parcelas');
-      if (gp) gp.style.display = isFiado ? 'flex' : 'none';
-      if (gi) gi.style.display = isFiado ? 'flex' : 'none';
-      if (gprev) gprev.style.display = isFiado ? 'block' : 'none';
-      if (isFiado && !document.getElementById('venda-prazo').value) {
+      if (gp) gp.style.display = (pode && isFiado) ? 'flex' : 'none';
+      if (gi) gi.style.display = (pode && isFiado) ? 'flex' : 'none';
+      if (gprev) gprev.style.display = (pode && isFiado) ? 'block' : 'none';
+      if (isFiado && pode && !document.getElementById('venda-prazo').value) {
         document.getElementById('venda-prazo').value = adicionarDiasDataISO(hoje(), 7);
       }
-      if (isFiado) atualizarPreviewParcelas();
+      if (isFiado && pode) atualizarPreviewParcelas();
     }
 
     function adicionarDiasISO(dataISO, dias) {
@@ -7223,9 +7640,21 @@
     /** Monta objeto da venda a partir do formulário (sem gravar estoque) */
     function montarDadosVendaDoFormulario() {
       const clienteIdRaw = document.getElementById('venda-cliente').value;
-      const forma = document.getElementById('venda-pagamento').value;
+      let forma = document.getElementById('venda-pagamento').value;
       const prazo = document.getElementById('venda-prazo').value;
-      const pago = parseFloat(document.getElementById('venda-pago').value) || 0;
+      let pago = parseFloat(document.getElementById('venda-pago').value) || 0;
+      // Vendedor sem permissão: força à vista e valor pago 0
+      if (typeof podeDefinirPagamento === 'function' && !podeDefinirPagamento()) {
+        forma = 'avista';
+        pago = 0;
+      } else if (forma === 'cartao') {
+        const tipo = (document.getElementById('venda-cartao-tipo') || {}).value || 'debito';
+        forma = tipo === 'credito' ? 'cartao_credito' : 'cartao_debito';
+      }
+      let cartaoParcelas = null;
+      if (forma === 'cartao_credito') {
+        cartaoParcelas = parseInt((document.getElementById('venda-cartao-parcelas') || {}).value, 10) || 1;
+      }
       const isAvulso = clienteIdRaw === '__avulso__';
 
       let clienteId = clienteIdRaw;
@@ -7326,6 +7755,7 @@
         prazo: forma === 'fiado' ? prazo : null,
         parcelas: numParcelas,
         intervaloParcela,
+        cartaoParcelas: forma === 'cartao_credito' ? (cartaoParcelas || 1) : null,
         data: hoje(),
         hora: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
         timestamp: Date.now(),
@@ -7410,7 +7840,7 @@
       registrarLog(
         'Venda aprovada no caixa',
         (codigo ? codigo + ' · ' : '') + (venda.clienteNome || '') + ' · ' + formatarMoeda(venda.total) +
-          ' · ' + (venda.forma === 'fiado' ? 'Fiado' : 'À vista') +
+          ' · ' + rotuloFormaPagamento(venda.forma) +
           ' · Vend: ' + (venda.vendedor || '—') +
           ' · Caixa: ' + (venda.aprovadoPor || '—') +
           ' · ' + itensResumo,
@@ -7439,6 +7869,13 @@
         ...dados,
         id: uid(),
         codigo,
+        // Forma de pagamento fica pendente até o caixa definir na aprovação
+        forma: 'pendente',
+        pago: 0,
+        valorDevido: Number(dados.total) || 0,
+        prazo: null,
+        parcelas: 1,
+        intervaloParcela: null,
         statusCaixa: 'pendente',
         criadoEm: Date.now()
       };
@@ -7448,7 +7885,7 @@
 
       registrarLog(
         'Enviou venda ao caixa',
-        codigo + ' · ' + dados.clienteNome + ' · ' + formatarMoeda(dados.total) + ' · ' + (dados.forma === 'fiado' ? 'Fiado' : 'À vista'),
+        codigo + ' · ' + dados.clienteNome + ' · ' + formatarMoeda(dados.total) + ' · Pagamento pendente',
         'venda'
       );
       salvar();
@@ -7532,6 +7969,88 @@
       const itens = (v.itens || []).map(i =>
         `<div style="font-size:0.84rem;">${i.nome} — <strong>${i.qtd}</strong> × ${formatarMoeda(i.precoUnit)} = ${formatarMoeda(i.total)}</div>`
       ).join('');
+
+      // Forma salva pode ser cartao_debito / cartao_credito; "pendente" = ainda não definida pelo caixa
+      let formaSel = v.forma || 'pendente';
+      let cartaoTipo = 'debito';
+      if (formaSel === 'pendente') formaSel = ''; // obriga escolher no select
+      if (formaSel === 'cartao_credito') { formaSel = 'cartao'; cartaoTipo = 'credito'; }
+      else if (formaSel === 'cartao_debito' || formaSel === 'cartao') { formaSel = 'cartao'; cartaoTipo = 'debito'; }
+      const cartaoParcSel = Number(v.cartaoParcelas) || 1;
+
+      const podePag = podeEditarModulo('caixa') || isAdmin() || (typeof podeDefinirPagamento === 'function' && podeDefinirPagamento());
+      const prazoPadrao = v.prazo || (typeof adicionarDiasDataISO === 'function' ? adicionarDiasDataISO(hoje(), 7) : hoje());
+      const nParc = v.parcelas || 3;
+      const interv = v.intervaloParcela || 30;
+      const pagoVal = (v.pago != null && !isNaN(v.pago)) ? Number(v.pago) : 0;
+
+      const blocoPagamento = podePag ? `
+        <div style="background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:0.85rem 0.9rem;margin:0.75rem 0 0.5rem;">
+          <p style="font-weight:750;color:var(--primary-dark);margin-bottom:0.65rem;font-size:0.9rem;">💳 Como será o pagamento?</p>
+          <div class="form-grid" style="margin-bottom:0;">
+            <div class="form-group">
+              <label>Forma de pagamento *</label>
+              <select id="caixa-forma" onchange="onCaixaFormaChange()">
+                <option value="" ${!formaSel ? 'selected' : ''}>— Selecione a forma —</option>
+                <option value="avista" ${formaSel === 'avista' ? 'selected' : ''}>À vista</option>
+                <option value="pix" ${formaSel === 'pix' ? 'selected' : ''}>PIX</option>
+                <option value="cartao" ${formaSel === 'cartao' ? 'selected' : ''}>Cartão</option>
+                <option value="fiado" ${formaSel === 'fiado' ? 'selected' : ''}>Fiado</option>
+              </select>
+            </div>
+            <div class="form-group" id="caixa-grupo-cartao" style="display:${formaSel === 'cartao' ? 'flex' : 'none'};">
+              <label>Tipo do cartão *</label>
+              <select id="caixa-cartao-tipo" onchange="onCaixaFormaChange()">
+                <option value="debito" ${cartaoTipo === 'debito' ? 'selected' : ''}>Débito</option>
+                <option value="credito" ${cartaoTipo === 'credito' ? 'selected' : ''}>Crédito</option>
+              </select>
+            </div>
+            <div class="form-group" id="caixa-grupo-cartao-parcelas" style="display:${formaSel === 'cartao' && cartaoTipo === 'credito' ? 'flex' : 'none'};">
+              <label>Parcelas no cartão *</label>
+              <select id="caixa-cartao-parcelas">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12].map(n =>
+                  `<option value="${n}" ${cartaoParcSel === n ? 'selected' : ''}>${n}x</option>`
+                ).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Valor já pago (R$)</label>
+              <input type="number" id="caixa-pago" min="0" step="0.01" value="${pagoVal}" oninput="onCaixaFormaChange()" />
+            </div>
+            <div class="form-group" id="caixa-grupo-prazo" style="display:${formaSel === 'fiado' ? 'flex' : 'none'};">
+              <label>1º vencimento *</label>
+              <input type="date" id="caixa-prazo" value="${prazoPadrao}" onchange="atualizarPreviewParcelasCaixa()" />
+            </div>
+            <div class="form-group" id="caixa-grupo-parcelas" style="display:${formaSel === 'fiado' ? 'flex' : 'none'};">
+              <label>Parcelas</label>
+              <select id="caixa-parcelas" onchange="atualizarPreviewParcelasCaixa()">
+                ${[1,2,3,4,5,6,7,8,9,10,11,12].map(n =>
+                  `<option value="${n}" ${Number(nParc) === n ? 'selected' : ''}>${n}x</option>`
+                ).join('')}
+              </select>
+            </div>
+            <div class="form-group" id="caixa-grupo-intervalo" style="display:${formaSel === 'fiado' ? 'flex' : 'none'};">
+              <label>Intervalo</label>
+              <select id="caixa-intervalo" onchange="atualizarPreviewParcelasCaixa()">
+                <option value="7" ${Number(interv) === 7 ? 'selected' : ''}>A cada 7 dias</option>
+                <option value="15" ${Number(interv) === 15 ? 'selected' : ''}>A cada 15 dias</option>
+                <option value="30" ${Number(interv) === 30 ? 'selected' : ''}>A cada 30 dias</option>
+                <option value="45" ${Number(interv) === 45 ? 'selected' : ''}>A cada 45 dias</option>
+              </select>
+            </div>
+            <div class="form-group" id="caixa-grupo-preview" style="display:${formaSel === 'fiado' ? 'block' : 'none'};grid-column:1/-1;">
+              <label>Resumo das parcelas</label>
+              <div id="caixa-preview-parcelas" style="font-size:0.84rem;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:0.55rem 0.7rem;"></div>
+            </div>
+          </div>
+          <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.4;">
+            Defina a forma de pagamento antes de aprovar. O vendedor envia a venda; o caixa confirma como o cliente pagou.
+          </p>
+        </div>
+      ` : `
+        <p style="margin-bottom:0.35rem;"><strong>Pagamento:</strong> ${rotuloFormaPagamento(v.forma)}${v.pago > 0 ? ' · pago ' + formatarMoeda(v.pago) : ''}</p>
+      `;
+
       box.classList.remove('hidden');
       box.innerHTML = `
         <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:0.5rem;margin-bottom:0.65rem;">
@@ -7546,8 +8065,8 @@
         </div>
         <p style="margin-bottom:0.35rem;"><strong>Cliente:</strong> ${v.clienteNome || '—'}${v.clienteTelefone ? ' · ' + v.clienteTelefone : ''}</p>
         <p style="margin-bottom:0.35rem;"><strong>Vendedor:</strong> ${v.vendedor || '—'}</p>
-        <p style="margin-bottom:0.35rem;"><strong>Pagamento:</strong> ${v.forma === 'fiado' ? 'Fiado' : 'À vista'}${v.pago > 0 ? ' · pago ' + formatarMoeda(v.pago) : ''}</p>
         <div style="margin:0.5rem 0;">${itens}</div>
+        ${blocoPagamento}
         <div style="display:flex;flex-wrap:wrap;gap:0.45rem;margin-top:0.75rem;">
           ${podeEditarModulo('caixa') ? `<button class="btn btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅ Aprovar e contabilizar</button>` : ''}
           <button class="btn btn-secondary" onclick="imprimirComprovanteCaixaId('${v.id}')">🖨️ Comprovante</button>
@@ -7556,6 +8075,92 @@
       `;
       const cod = document.getElementById('caixa-codigo');
       if (cod) cod.value = v.codigo || '';
+      window._caixaVendaId = v.id;
+      window._caixaVendaTotal = Number(v.total) || 0;
+      if (podePag && typeof onCaixaFormaChange === 'function') onCaixaFormaChange();
+    }
+
+    function onCaixaFormaChange() {
+      const forma = (document.getElementById('caixa-forma') || {}).value || 'avista';
+      const isFiado = forma === 'fiado';
+      const isCartao = forma === 'cartao';
+      const gCartao = document.getElementById('caixa-grupo-cartao');
+      const gCartParc = document.getElementById('caixa-grupo-cartao-parcelas');
+      const gPrazo = document.getElementById('caixa-grupo-prazo');
+      const gParc = document.getElementById('caixa-grupo-parcelas');
+      const gInt = document.getElementById('caixa-grupo-intervalo');
+      const gPrev = document.getElementById('caixa-grupo-preview');
+      const tipoCart = (document.getElementById('caixa-cartao-tipo') || {}).value || 'debito';
+      if (gCartao) gCartao.style.display = isCartao ? 'flex' : 'none';
+      if (gCartParc) gCartParc.style.display = (isCartao && tipoCart === 'credito') ? 'flex' : 'none';
+      if (gPrazo) gPrazo.style.display = isFiado ? 'flex' : 'none';
+      if (gParc) gParc.style.display = isFiado ? 'flex' : 'none';
+      if (gInt) gInt.style.display = isFiado ? 'flex' : 'none';
+      if (gPrev) gPrev.style.display = isFiado ? 'block' : 'none';
+      if (isFiado) atualizarPreviewParcelasCaixa();
+    }
+
+    function atualizarPreviewParcelasCaixa() {
+      const preview = document.getElementById('caixa-preview-parcelas');
+      if (!preview) return;
+      const total = Number(window._caixaVendaTotal) || 0;
+      const pago = parseFloat((document.getElementById('caixa-pago') || {}).value) || 0;
+      const valorDevido = Math.max(0, total - pago);
+      const n = parseInt((document.getElementById('caixa-parcelas') || {}).value, 10) || 1;
+      const intervalo = parseInt((document.getElementById('caixa-intervalo') || {}).value, 10) || 30;
+      let prazo = (document.getElementById('caixa-prazo') || {}).value;
+      if (!prazo) {
+        prazo = typeof adicionarDiasDataISO === 'function' ? adicionarDiasDataISO(hoje(), 7) : hoje();
+        const el = document.getElementById('caixa-prazo');
+        if (el) el.value = prazo;
+      }
+      if (valorDevido <= 0) {
+        preview.innerHTML = '<span style="color:var(--text-muted);">Nada a parcelar (valor já coberto).</span>';
+        return;
+      }
+      const parcelas = montarParcelasFiado(valorDevido, n, prazo, intervalo);
+      preview.innerHTML = parcelas.map(p =>
+        `<div style="display:flex;justify-content:space-between;gap:0.5rem;padding:0.15rem 0;border-bottom:1px dashed var(--border);">
+          <span><strong>${p.numero}/${p.total}</strong> — vence ${formatarData(p.prazo)}</span>
+          <strong>${formatarMoeda(p.valor)}</strong>
+        </div>`
+      ).join('') + `<div style="margin-top:0.35rem;text-align:right;font-weight:700;">Total a receber: ${formatarMoeda(valorDevido)}</div>`;
+    }
+
+    /** Lê forma/pago/fiado preenchidos no detalhe do caixa */
+    function lerPagamentoDoCaixa(pend) {
+      const sel = document.getElementById('caixa-forma');
+      if (!sel) {
+        return {
+          forma: pend.forma || 'avista',
+          pago: Number(pend.pago) || 0,
+          prazo: pend.prazo || null,
+          parcelas: pend.parcelas || 1,
+          intervaloParcela: pend.intervaloParcela || null
+        };
+      }
+      let forma = (sel.value || '').trim();
+      if (!forma) {
+        return { forma: '', pago: 0, prazo: null, parcelas: 1, intervaloParcela: null, erro: 'Selecione a forma de pagamento' };
+      }
+      let cartaoParcelas = null;
+      if (forma === 'cartao') {
+        const tipo = (document.getElementById('caixa-cartao-tipo') || {}).value || 'debito';
+        forma = tipo === 'credito' ? 'cartao_credito' : 'cartao_debito';
+        if (forma === 'cartao_credito') {
+          cartaoParcelas = parseInt((document.getElementById('caixa-cartao-parcelas') || {}).value, 10) || 1;
+        }
+      }
+      const pago = parseFloat((document.getElementById('caixa-pago') || {}).value) || 0;
+      let prazo = null;
+      let parcelas = 1;
+      let intervaloParcela = null;
+      if (forma === 'fiado') {
+        prazo = (document.getElementById('caixa-prazo') || {}).value || null;
+        parcelas = parseInt((document.getElementById('caixa-parcelas') || {}).value, 10) || 1;
+        intervaloParcela = parseInt((document.getElementById('caixa-intervalo') || {}).value, 10) || 30;
+      }
+      return { forma, pago, prazo, parcelas, intervaloParcela, cartaoParcelas };
     }
 
     function aprovarVendaCaixa(id) {
@@ -7569,7 +8174,47 @@
         toast('Venda pendente não encontrada', 'error');
         return;
       }
-      if (!confirm('Confirmar pagamento e contabilizar a venda ' + pend.codigo + '?\nTotal: ' + formatarMoeda(pend.total))) return;
+
+      const pag = lerPagamentoDoCaixa(pend);
+      if (pag.erro) { toast(pag.erro, 'error'); return; }
+      if (!pag.forma || pag.forma === 'pendente') {
+        toast('Selecione a forma de pagamento antes de aprovar', 'error');
+        return;
+      }
+      if (pag.forma === 'fiado') {
+        if (!pag.prazo) {
+          toast('Informe o 1º vencimento do fiado', 'error');
+          return;
+        }
+        if (!pend.clienteId) {
+          toast('Fiado só é permitido para cliente cadastrado', 'error');
+          return;
+        }
+        if (pag.parcelas < 1 || pag.parcelas > 12) {
+          toast('Parcelas inválidas (1 a 12)', 'error');
+          return;
+        }
+      }
+
+      const total = Number(pend.total) || 0;
+      const valorDevido = Math.max(0, total - (pag.pago || 0));
+      const rotulo = rotuloFormaPagamento(pag.forma, pag.cartaoParcelas);
+      if (!confirm(
+        'Confirmar pagamento e contabilizar a venda ' + pend.codigo + '?\n' +
+        'Total: ' + formatarMoeda(total) + '\n' +
+        'Forma: ' + rotulo +
+        (pag.pago > 0 ? '\nValor pago: ' + formatarMoeda(pag.pago) : '') +
+        (pag.forma === 'fiado' ? '\nA receber (fiado): ' + formatarMoeda(valorDevido) : '')
+      )) return;
+
+      // Aplica pagamento escolhido no caixa antes de contabilizar
+      pend.forma = pag.forma;
+      pend.pago = pag.pago;
+      pend.valorDevido = valorDevido;
+      pend.prazo = pag.forma === 'fiado' ? pag.prazo : null;
+      pend.parcelas = pag.forma === 'fiado' ? pag.parcelas : 1;
+      pend.intervaloParcela = pag.forma === 'fiado' ? pag.intervaloParcela : null;
+      pend.cartaoParcelas = pag.forma === 'cartao_credito' ? (pag.cartaoParcelas || 1) : null;
 
       const res = contabilizarVendaAprovada(pend, {
         codigo: pend.codigo,
@@ -7580,7 +8225,6 @@
       pend.statusCaixa = 'aprovada';
       pend.aprovadoEm = hoje();
       pend.aprovadoPor = usuarioAtual ? usuarioAtual.nome : 'Caixa';
-      // remove da fila ativa (mantém só pendentes na lista operacional)
       estado.vendasPendentes = (estado.vendasPendentes || []).filter(x => x.id !== id);
 
       salvar();
@@ -7591,11 +8235,11 @@
       if (isAdmin()) {
         try { renderDashboard(); renderFiado(); renderNotificacoes(); } catch (e) {}
       }
-      toast('Venda ' + pend.codigo + ' aprovada e contabilizada!', 'success');
+      toast('Venda ' + pend.codigo + ' aprovada (' + rotulo + ')!', 'success');
       vendaParaImprimir = res.venda;
     }
 
-    function cancelarVendaPendente(id) {
+function cancelarVendaPendente(id) {
       if (!temPermissao('caixa') && !isAdmin()) {
         toast('Sem permissão de caixa', 'error');
         return;
@@ -7611,6 +8255,209 @@
       renderCaixa();
       atualizarBadges();
       toast('Venda pendente cancelada');
+    }
+
+
+    // ===================== FECHAMENTO DE CAIXA =====================
+    function chaveFormaResumo(forma) {
+      const f = String(forma || 'pendente').toLowerCase();
+      if (f === 'cartao_debito' || f === 'cartao') return 'cartao_debito';
+      if (f === 'cartao_credito') return 'cartao_credito';
+      if (f === 'pix') return 'pix';
+      if (f === 'fiado') return 'fiado';
+      if (f === 'avista') return 'avista';
+      if (f === 'pendente') return 'pendente';
+      return f || 'outros';
+    }
+
+    function ordemFormasResumo() {
+      return ['avista', 'pix', 'cartao_debito', 'cartao_credito', 'fiado', 'pendente', 'outros'];
+    }
+
+    /** Vendas aprovadas hoje ainda não incluídas em um fechamento */
+    function getVendasParaFechamentoCaixa() {
+      const hojeStr = hoje();
+      return (estado.vendas || []).filter(v => {
+        if (v.fechamentoId) return false;
+        const dataRef = v.aprovadoEm || v.data;
+        return dataRef === hojeStr;
+      });
+    }
+
+    function montarResumoFechamentoCaixa(vendas) {
+      const porForma = {};
+      let totalGeral = 0;
+      let totalPago = 0;
+      let totalFiado = 0;
+      (vendas || []).forEach(v => {
+        const k = chaveFormaResumo(v.forma);
+        if (!porForma[k]) porForma[k] = { forma: k, qtd: 0, total: 0, pago: 0, devido: 0 };
+        const t = Number(v.total) || 0;
+        const p = Number(v.pago) || 0;
+        const d = v.valorDevido != null ? Number(v.valorDevido) : Math.max(0, t - p);
+        porForma[k].qtd += 1;
+        porForma[k].total += t;
+        porForma[k].pago += p;
+        porForma[k].devido += d;
+        totalGeral += t;
+        totalPago += (k === 'fiado' ? p : t);
+        if (k === 'fiado') totalFiado += d;
+      });
+      const linhas = ordemFormasResumo()
+        .filter(k => porForma[k])
+        .map(k => porForma[k]);
+      Object.keys(porForma).forEach(k => {
+        if (!ordemFormasResumo().includes(k)) linhas.push(porForma[k]);
+      });
+      return { linhas, totalGeral, totalPago, totalFiado, qtd: (vendas || []).length };
+    }
+
+    function renderResumoCaixaDia() {
+      // Painel de movimento do dia removido — use Fechar caixa
+      return;
+    }
+
+        function abrirFechamentoCaixa() {
+      if (!temPermissao('caixa') && !isAdmin()) {
+        toast('Sem permissão de caixa', 'error');
+        return;
+      }
+      const pend = getPendentesCaixa().length;
+      const vendas = getVendasParaFechamentoCaixa();
+      if (!vendas.length) {
+        toast(pend ? 'Aprove as vendas pendentes antes de fechar, ou não há vendas aprovadas hoje.' : 'Não há vendas aprovadas hoje para fechar.', 'error');
+        return;
+      }
+      const r = montarResumoFechamentoCaixa(vendas);
+      const linhasTxt = r.linhas.map(l =>
+        '• ' + rotuloFormaPagamento(l.forma) + ': ' + formatarMoeda(l.total) + ' (' + l.qtd + ' venda' + (l.qtd > 1 ? 's' : '') + ')'
+      ).join('\n');
+      let msg =
+        'FECHAR CAIXA — ' + formatarData(hoje()) + '\n\n' +
+        'Vendas neste fechamento: ' + r.qtd + '\n' +
+        linhasTxt + '\n\n' +
+        'TOTAL: ' + formatarMoeda(r.totalGeral);
+      if (r.totalFiado > 0) msg += '\nFiado a receber: ' + formatarMoeda(r.totalFiado);
+      if (pend > 0) msg += '\n\n⚠️ Ainda há ' + pend + ' venda(s) PENDENTE(s) de aprovação.';
+      msg += '\n\nConfirmar fechamento?';
+      if (!confirm(msg)) return;
+
+      const fechamentoId = uid();
+      const agora = new Date();
+      if (!Array.isArray(estado.fechamentosCaixa)) estado.fechamentosCaixa = [];
+      const registro = {
+        id: fechamentoId,
+        data: hoje(),
+        hora: agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        por: usuarioAtual ? usuarioAtual.nome : 'Caixa',
+        qtdVendas: r.qtd,
+        totalGeral: r.totalGeral,
+        totalPago: r.totalPago,
+        totalFiado: r.totalFiado,
+        porForma: r.linhas.map(l => ({
+          forma: l.forma,
+          label: rotuloFormaPagamento(l.forma),
+          qtd: l.qtd,
+          total: l.total,
+          pago: l.pago,
+          devido: l.devido
+        })),
+        vendaIds: vendas.map(v => v.id)
+      };
+      estado.fechamentosCaixa.unshift(registro);
+      if (estado.fechamentosCaixa.length > 365) estado.fechamentosCaixa = estado.fechamentosCaixa.slice(0, 365);
+
+      vendas.forEach(v => {
+        v.fechamentoId = fechamentoId;
+        v.fechadoEm = hoje();
+      });
+
+      registrarLog(
+        'Fechou o caixa',
+        formatarData(hoje()) + ' · ' + r.qtd + ' vendas · Total ' + formatarMoeda(r.totalGeral) +
+          ' · ' + r.linhas.map(l => rotuloFormaPagamento(l.forma) + ' ' + formatarMoeda(l.total)).join(' | '),
+        'venda'
+      );
+      salvar();
+      renderCaixa();
+      imprimirResumoFechamentoCaixa(registro);
+      toast('Caixa fechado! Total: ' + formatarMoeda(r.totalGeral), 'success');
+    }
+
+    function imprimirResumoFechamentoCaixa(reg) {
+      if (!reg) return;
+      const linhas = (reg.porForma || []).map(l => `
+        <tr>
+          <td style="padding:5px 4px;border-bottom:1px dotted #333;">${l.label || rotuloFormaPagamento(l.forma)}</td>
+          <td style="padding:5px 4px;border-bottom:1px dotted #333;text-align:center;">${l.qtd}</td>
+          <td style="padding:5px 4px;border-bottom:1px dotted #333;text-align:right;">${formatarMoeda(l.total)}</td>
+        </tr>`).join('');
+      const html = `
+        <div style="max-width:420px;margin:0 auto;font-family:'Courier New',monospace;font-size:13px;line-height:1.4;color:#000;">
+          <div style="text-align:center;margin-bottom:12px;border-bottom:2px solid #000;padding-bottom:8px;">
+            <strong style="font-size:16px;">${nomeEmpresaExibicao()}</strong><br>
+            <span style="font-size:13px;">FECHAMENTO DE CAIXA</span>
+          </div>
+          <div style="margin-bottom:10px;">
+            Data: ${formatarData(reg.data)} &nbsp; ${reg.hora || ''}<br>
+            Operador: ${reg.por || '—'}<br>
+            Vendas: ${reg.qtdVendas || 0}
+          </div>
+          <table style="width:100%;border-collapse:collapse;margin-bottom:12px;font-size:12px;">
+            <thead>
+              <tr>
+                <th style="border-bottom:1px solid #000;text-align:left;">Forma</th>
+                <th style="border-bottom:1px solid #000;text-align:center;">Qtd</th>
+                <th style="border-bottom:1px solid #000;text-align:right;">Valor</th>
+              </tr>
+            </thead>
+            <tbody>${linhas}</tbody>
+          </table>
+          <div style="border-top:2px solid #000;padding-top:8px;margin-bottom:8px;">
+            <strong>TOTAL GERAL: ${formatarMoeda(reg.totalGeral)}</strong>
+            ${reg.totalFiado > 0 ? '<br>Fiado a receber: ' + formatarMoeda(reg.totalFiado) : ''}
+          </div>
+          <div style="text-align:center;font-size:11px;margin-top:16px;">
+            Resumo do fechamento de caixa
+          </div>
+        </div>`;
+      mostrarComprovanteParaImpressao(html, { titulo: '🔒 Fechamento de caixa' });
+    }
+
+
+    function renderCaixasFechados() {
+      if (!temPermissao('caixas-fechados') && !temPermissao('caixa') && !isAdmin()) {
+        const tbody0 = document.getElementById('lista-caixas-fechados');
+        if (tbody0) tbody0.innerHTML = '<tr><td colspan="6" class="empty">Sem permissão.</td></tr>';
+        return;
+      }
+      if (!Array.isArray(estado.fechamentosCaixa)) estado.fechamentosCaixa = [];
+      const lista = estado.fechamentosCaixa.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const tbody = document.getElementById('lista-caixas-fechados');
+      if (!tbody) return;
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">📁</div>Nenhum caixa fechado ainda.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = lista.map(reg => {
+        const formas = (reg.porForma || []).map(l =>
+          `<div style="font-size:0.8rem;">${l.label || rotuloFormaPagamento(l.forma)}: <strong>${formatarMoeda(l.total)}</strong> <small style="color:var(--text-muted)">(${l.qtd})</small></div>`
+        ).join('') || '—';
+        return `
+          <tr>
+            <td style="white-space:nowrap;">${formatarData(reg.data)}<br><small style="color:var(--text-muted)">${reg.hora || ''}</small></td>
+            <td>${reg.por || '—'}</td>
+            <td>${reg.qtdVendas != null ? reg.qtdVendas : '—'}</td>
+            <td>${formas}</td>
+            <td><strong>${formatarMoeda(reg.totalGeral)}</strong>
+              ${reg.totalFiado > 0 ? `<br><small style="color:var(--warning)">Fiado: ${formatarMoeda(reg.totalFiado)}</small>` : ''}
+            </td>
+            <td class="actions-cell">
+              <button class="btn btn-sm btn-secondary" onclick="imprimirResumoFechamentoCaixa((estado.fechamentosCaixa||[]).find(x=>x.id==='${reg.id}'))" title="Imprimir">🖨️ Imprimir</button>
+            </td>
+          </tr>`;
+      }).join('');
     }
 
     function renderCaixa() {
@@ -7639,6 +8486,7 @@
       if (!tbody) return;
       if (!lista.length) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty"><div class="icon">🧾</div>Nenhum registro.</td></tr>';
+        if (typeof renderResumoCaixaDia === 'function') renderResumoCaixaDia();
         return;
       }
 
@@ -7654,12 +8502,11 @@
             <td>${v.clienteNome || '—'}</td>
             <td>${v.vendedor || '—'}</td>
             <td><strong>${formatarMoeda(v.total)}</strong></td>
-            <td><span class="status ${v.forma === 'fiado' ? 'aberto' : 'pago'}">${v.forma === 'fiado' ? 'Fiado' : 'À vista'}</span></td>
+            <td><span class="status ${(v.forma === 'fiado' || v.forma === 'pendente' || !v.forma) ? 'aberto' : 'pago'}">${rotuloFormaPagamentoVenda(v)}</span></td>
             <td><span class="status ${stClass}">${stLabel}</span></td>
             <td class="actions-cell">
               ${st === 'pendente' ? `
-                <button class="btn btn-sm btn-primary" onclick="mostrarDetalheCaixa((estado.vendasPendentes||[]).find(x=>x.id==='${v.id}'))">👁️</button>
-                ${podeEditarModulo('caixa') ? `<button class="btn btn-sm btn-success" onclick="aprovarVendaCaixa('${v.id}')">✅</button>` : ''}
+                <button class="btn btn-sm btn-primary" onclick="mostrarDetalheCaixa((estado.vendasPendentes||[]).find(x=>x.id==='${v.id}'))" title="Ver e definir pagamento">👁️ Pagar</button>
                 ${podeExcluirModulo('caixa') ? `<button class="btn btn-sm btn-danger" onclick="cancelarVendaPendente('${v.id}')">🗑️</button>` : ''}
               ` : `
                 <button class="btn btn-sm btn-secondary" onclick="imprimirVendaLog('${v.id}')">🖨️</button>
@@ -7667,6 +8514,7 @@
             </td>
           </tr>`;
       }).join('');
+      if (typeof renderResumoCaixaDia === 'function') renderResumoCaixaDia();
     }
 
     // ===================== IMPRESSÃO / PRÉ-VISUALIZAÇÃO =====================
@@ -7678,6 +8526,8 @@
       if (overlay) overlay.classList.remove('show');
       const prev = document.getElementById('print-preview-content');
       if (prev) prev.innerHTML = '';
+      const area = document.getElementById('print-area');
+      if (area) area.innerHTML = '';
       limparAreaImpressaoSilencioso();
       document.body.style.overflow = '';
     }
@@ -7685,14 +8535,21 @@
     function limparAreaImpressaoSilencioso() {
       const area = document.getElementById('print-area');
       if (area) {
-        area.innerHTML = '';
+        // não apaga o HTML aqui se ainda for imprimir — só limpa estilos
         area.style.removeProperty('display');
         area.style.removeProperty('visibility');
         area.style.removeProperty('left');
+        area.style.removeProperty('top');
         area.style.removeProperty('position');
         area.style.removeProperty('z-index');
         area.style.removeProperty('pointer-events');
+        area.style.removeProperty('width');
+        area.style.removeProperty('height');
+        area.style.removeProperty('overflow');
+        area.style.removeProperty('background');
+        area.style.removeProperty('padding');
       }
+      document.body.classList.remove('is-printing');
       if (_printCleanupTimer) {
         clearTimeout(_printCleanupTimer);
         _printCleanupTimer = null;
@@ -7708,21 +8565,68 @@
       window.removeEventListener('afterprint', limparAreaImpressaoSilencioso);
     }
 
+    function limparConteudoImpressao() {
+      const area = document.getElementById('print-area');
+      if (area) area.innerHTML = '';
+      limparAreaImpressaoSilencioso();
+    }
+
+    function reaplicarBarcodesNo(root) {
+      if (!root || typeof JsBarcode === 'undefined') return;
+      root.querySelectorAll('#barcode-print, svg.barcode-print').forEach(svg => {
+        const codigo = (svg.getAttribute('data-codigo') || '').trim();
+        if (!codigo) return;
+        try {
+          while (svg.firstChild) svg.removeChild(svg.firstChild);
+          JsBarcode(svg, codigo, {
+            format: 'CODE128',
+            width: 2,
+            height: 52,
+            displayValue: true,
+            fontSize: 14,
+            margin: 4,
+            textMargin: 2
+          });
+        } catch (e) { console.warn(e); }
+      });
+    }
+
     /** Mostra comprovante em overlay fechável e prepara área de impressão */
     function mostrarComprovanteParaImpressao(html, opts) {
       opts = opts || {};
       const area = document.getElementById('print-area');
       const overlay = document.getElementById('print-preview-overlay');
       const prev = document.getElementById('print-preview-content');
-      if (!area || !overlay || !prev) return;
+      if (!area || !overlay || !prev) {
+        console.warn('Área de impressão não encontrada no DOM');
+        // fallback: imprime em nova janela
+        try {
+          const w = window.open('', '_blank', 'noopener,noreferrer,width=480,height=720');
+          if (w) {
+            w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprovante</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
+            w.document.close();
+            setTimeout(() => { try { w.print(); } catch (e) {} }, 300);
+          }
+        } catch (e) {}
+        return;
+      }
 
       limparAreaImpressaoSilencioso();
-      area.innerHTML = html;
-      prev.innerHTML = html;
+      area.innerHTML = html || '';
+      prev.innerHTML = html || '';
 
-      // Callback opcional (ex.: gerar código de barras) após o HTML estar no DOM
-      if (typeof opts.afterRender === 'function') {
-        try { opts.afterRender(area, prev); } catch (e) { console.warn(e); }
+      const runAfter = () => {
+        if (typeof opts.afterRender === 'function') {
+          try { opts.afterRender(area, prev); } catch (e) { console.warn(e); }
+        } else {
+          reaplicarBarcodesNo(area);
+          reaplicarBarcodesNo(prev);
+        }
+      };
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => setTimeout(runAfter, 40));
+      } else {
+        setTimeout(runAfter, 60);
       }
 
       const titulo = document.querySelector('#print-preview-overlay .titulo-prev');
@@ -7731,7 +8635,6 @@
       overlay.classList.add('show');
       document.body.style.overflow = 'hidden';
 
-      // Escape fecha
       const onKey = (ev) => {
         if (ev.key === 'Escape') {
           fecharPreviewImpressao();
@@ -7742,51 +8645,98 @@
     }
 
     function confirmarImpressaoPreview() {
-      const area = document.getElementById('print-area');
       const prev = document.getElementById('print-preview-content');
-      if (area && prev && prev.innerHTML) {
-        area.innerHTML = prev.innerHTML;
-        // reaplicar barcode se existir
-        try {
-          const svg = area.querySelector('#barcode-print');
-          const codigo = (svg && svg.getAttribute('data-codigo')) || '';
-          if (typeof JsBarcode !== 'undefined' && codigo) {
-            JsBarcode(svg, codigo, {
-              format: 'CODE128', width: 2, height: 48, displayValue: false, margin: 0
-            });
-          }
-        } catch (e) {}
+      const area = document.getElementById('print-area');
+      let html = '';
+      if (prev && prev.innerHTML && prev.innerHTML.trim()) html = prev.innerHTML;
+      else if (area && area.innerHTML && area.innerHTML.trim()) html = area.innerHTML;
+      if (!html) {
+        toast('Nada para imprimir — abra o comprovante novamente.', 'error');
+        return;
       }
 
-      const limparApos = () => {
-        // Mantém o preview aberto; só limpa listeners de print
-        if (_printCleanupTimer) {
-          clearTimeout(_printCleanupTimer);
-          _printCleanupTimer = null;
-        }
-        window.removeEventListener('afterprint', limparApos);
-        if (_printMediaHandler) {
-          try {
-            const mql = window.matchMedia('print');
-            if (mql.removeEventListener) mql.removeEventListener('change', _printMediaHandler);
-            else if (mql.removeListener) mql.removeListener(_printMediaHandler);
-          } catch (e) {}
-          _printMediaHandler = null;
-        }
-      };
-
-      window.addEventListener('afterprint', limparApos);
+      // Impressão via iframe isolado (evita página em branco no Chrome/Edge)
       try {
-        const mql = window.matchMedia('print');
-        _printMediaHandler = (e) => { if (!e.matches) limparApos(); };
-        if (mql.addEventListener) mql.addEventListener('change', _printMediaHandler);
-        else if (mql.addListener) mql.addListener(_printMediaHandler);
-      } catch (e) {}
+        const antigo = document.getElementById('print-iframe-temp');
+        if (antigo) antigo.remove();
 
-      setTimeout(() => {
-        try { window.print(); } catch (e) { console.warn(e); }
-      }, 60);
-      _printCleanupTimer = setTimeout(limparApos, 8000);
+        const iframe = document.createElement('iframe');
+        iframe.id = 'print-iframe-temp';
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(
+          '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+          '<meta name="viewport" content="width=device-width, initial-scale=1">' +
+          '<title>Impressão</title>' +
+          '<style>' +
+          'html,body{margin:0;padding:0;background:#fff;color:#000;}' +
+          'body{font-family:"Courier New",Courier,monospace;font-size:13px;line-height:1.4;padding:14px 16px;}' +
+          'table{width:100%;border-collapse:collapse;}' +
+          'th,td{font-size:12px;}' +
+          'svg,canvas,img{max-width:100%;height:auto;}' +
+          '@media print{body{padding:8px 10px;} @page{margin:10mm;}}' +
+          '</style></head><body>' + html + '</body></html>'
+        );
+        doc.close();
+
+        const rodar = () => {
+          try {
+            // redesenha barcode dentro do iframe, se houver
+            const win = iframe.contentWindow;
+            if (win && typeof JsBarcode !== 'undefined') {
+              const svgs = doc.querySelectorAll('#barcode-print, svg.barcode-print');
+              svgs.forEach(svg => {
+                const codigo = (svg.getAttribute('data-codigo') || '').trim();
+                if (!codigo) return;
+                try {
+                  while (svg.firstChild) svg.removeChild(svg.firstChild);
+                  JsBarcode(svg, codigo, {
+                    format: 'CODE128', width: 2, height: 52,
+                    displayValue: true, fontSize: 14, margin: 4, textMargin: 2
+                  });
+                } catch (e1) {}
+              });
+            }
+          } catch (e) {}
+
+          setTimeout(() => {
+            try {
+              iframe.contentWindow.focus();
+              iframe.contentWindow.print();
+            } catch (e2) {
+              console.warn(e2);
+              // último recurso: janela nova
+              try {
+                const w = window.open('', '_blank', 'noopener,noreferrer,width=520,height=740');
+                if (w) {
+                  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
+                  w.document.close();
+                  setTimeout(() => { try { w.focus(); w.print(); } catch (e3) {} }, 300);
+                }
+              } catch (e4) {}
+            }
+            // remove iframe depois (não interrompe o diálogo de impressão)
+            setTimeout(() => {
+              try { iframe.remove(); } catch (e5) {}
+            }, 60000);
+          }, 180);
+        };
+
+        // espera o documento do iframe carregar
+        if (iframe.contentWindow.document.readyState === 'complete') {
+          rodar();
+        } else {
+          iframe.onload = rodar;
+          setTimeout(rodar, 300);
+        }
+      } catch (err) {
+        console.warn(err);
+        toast('Não foi possível abrir a impressão. Tente novamente.', 'error');
+      }
     }
 
     function imprimirComprovanteCaixaId(id) {
@@ -7816,7 +8766,7 @@
           <div style="text-align:center;margin:12px 0;">
             <div style="font-size:11px;margin-bottom:4px;">CÓDIGO</div>
             <div style="font-size:20px;font-weight:800;letter-spacing:0.12em;">${v.codigo || '—'}</div>
-            <svg id="barcode-print" style="max-width:100%;height:56px;margin-top:6px;"></svg>
+            <svg id="barcode-print" class="barcode-print" data-codigo="${v.codigo || ''}" style="max-width:100%;height:56px;margin-top:6px;"></svg>
           </div>
           <div style="margin-bottom:8px;">
             Data: ${formatarData(v.data)} &nbsp; ${v.hora || ''}<br>
@@ -7841,7 +8791,7 @@
           </table>
           <div style="border-top:1px dashed #000;padding-top:8px;margin-bottom:12px;">
             <strong>TOTAL: ${formatarMoeda(v.total)}</strong><br>
-            Forma: ${v.forma === 'fiado' ? 'FIADO' : 'À VISTA'}
+            Forma: ${rotuloFormaPagamento(v.forma).toUpperCase()}
             ${v.pago > 0 ? '<br>Valor informado como pago: ' + formatarMoeda(v.pago) : ''}
           </div>
           <div style="text-align:center;font-size:11px;margin-top:16px;">
@@ -7854,12 +8804,25 @@
         afterRender: (areaEl, prevEl) => {
           try {
             if (typeof JsBarcode === 'undefined' || !v.codigo) return;
+            const codigo = String(v.codigo);
             [areaEl, prevEl].forEach(root => {
               if (!root) return;
-              root.querySelectorAll('svg.barcode-print').forEach(svg => {
-                JsBarcode(svg, v.codigo, {
-                  format: 'CODE128', width: 2, height: 48, displayValue: false, margin: 0
-                });
+              const svgs = root.querySelectorAll('svg#barcode-print, svg.barcode-print');
+              svgs.forEach(svg => {
+                try {
+                  svg.setAttribute('data-codigo', codigo);
+                  // limpa conteúdo anterior
+                  while (svg.firstChild) svg.removeChild(svg.firstChild);
+                  JsBarcode(svg, codigo, {
+                    format: 'CODE128',
+                    width: 2,
+                    height: 52,
+                    displayValue: true,
+                    fontSize: 14,
+                    margin: 4,
+                    textMargin: 2
+                  });
+                } catch (e1) { console.warn('JsBarcode item', e1); }
               });
             });
           } catch (e) { console.warn(e); }
@@ -8049,7 +9012,7 @@
         const itensHtml = (v.itens || []).map(i =>
           `<div style="margin-bottom:2px;"><strong>${i.nome}</strong> — qtd: <strong>${i.qtd}</strong> × ${formatarMoeda(i.precoUnit)} = ${formatarMoeda(i.total)}</div>`
         ).join('') || '—';
-        const formaLabel = v.forma === 'fiado' ? 'Fiado' : 'À vista';
+        const formaLabel = rotuloFormaPagamento(v.forma);
         const formaClass = v.forma === 'fiado' ? 'aberto' : 'pago';
         return `
           <tr>
@@ -8372,7 +9335,7 @@
           </div>
           <div style="margin-bottom:10px;">
             <strong>TOTAL:</strong> ${formatarMoeda(v.total)}<br>
-            Forma: ${v.forma === 'fiado' ? 'FIADO' : 'À VISTA'}
+            Forma: ${rotuloFormaPagamento(v.forma).toUpperCase()}
             ${v.forma === 'fiado' && v.prazo ? `<br>Prazo: ${formatarData(v.prazo)}` : ''}
           </div>
           <div style="margin-top:28px;">
@@ -8801,7 +9764,7 @@
                   <td>${formatarData(v.data)}${v.hora && v.hora !== '—' ? ' · ' + v.hora : ''}</td>
                   <td>${v.clienteNome || '—'}</td>
                   <td>${v.vendedor || '—'}</td>
-                  <td><span class="status ${v.forma === 'fiado' ? 'aberto' : 'pago'}">${v.forma === 'fiado' ? 'Fiado' : 'À vista'}</span></td>
+                  <td><span class="status ${(v.forma === 'fiado' || v.forma === 'pendente' || !v.forma) ? 'aberto' : 'pago'}">${rotuloFormaPagamentoVenda(v)}</span></td>
                   <td><strong>${formatarMoeda(v.total)}</strong></td>
                 </tr>
               `).join('');
@@ -8938,7 +9901,7 @@
     }
 
     function gerarImpressao(v) {
-      const formaLabel = v.forma === 'fiado' ? 'FIADO' : 'À VISTA';
+      const formaLabel = (rotuloFormaPagamento(v.forma) || 'À VISTA').toUpperCase();
       const nomeEntregador = v.entregador || v.vendedor || (usuarioAtual ? usuarioAtual.nome : '________________');
       const empresa = nomeEmpresaExibicao();
 
