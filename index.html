@@ -2681,6 +2681,39 @@
       <section id="page-personalizacao" class="page hidden">
         <div class="panel">
           <div class="panel-header">
+            <h3>💳 PIX da loja (cobrança de clientes)</h3>
+            <button type="button" class="btn btn-primary" onclick="salvarPixLoja()">Salvar PIX</button>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
+            Cadastre a <strong>chave PIX</strong> e o código <strong>PIX Copia e Cola</strong> do banco da sua empresa.
+            Quando o caixa escolher pagamento <strong>PIX</strong>, o sistema mostra o QR Code e o código para o cliente pagar.
+          </p>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Chave PIX</label>
+              <input type="text" id="pers-pix-chave" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória" />
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>PIX Copia e Cola (gera o QR Code) *</label>
+              <textarea id="pers-pix-copia-cola" rows="3" placeholder="Cole aqui o código completo do Pix Copia e Cola do seu banco (começa com 000201...)" style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.82rem;font-family:ui-monospace,monospace;resize:vertical;"></textarea>
+              <small style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">No app do banco: cobrar com QR → copiar código Pix Copia e Cola e colar aqui.</small>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Nome do beneficiário (opcional)</label>
+              <input type="text" id="pers-pix-beneficiario" placeholder="Nome que aparece para o cliente" />
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Pré-visualização do QR</label>
+              <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+                <canvas id="pers-pix-qr-preview" width="180" height="180" style="border:1px solid var(--border);border-radius:12px;background:#fff;max-width:180px;"></canvas>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="atualizarPreviewQrPixLoja()">Gerar preview</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
             <h3>Ordem do menu lateral</h3>
             <div class="btn-group">
               <button class="btn btn-secondary btn-sm" onclick="restaurarOrdemMenuPadrao()">Ordem padrão</button>
@@ -3162,7 +3195,15 @@
     }
 
     function personalizacaoPadrao() {
-      return { nomeExibicao: '', primary: '#2f3e6b', primaryDark: '#1a2544', accent: '#c9a84c' };
+      return {
+        nomeExibicao: '',
+        primary: '#2f3e6b',
+        primaryDark: '#1a2544',
+        accent: '#c9a84c',
+        pixChave: '',
+        pixCopiaCola: '',
+        pixBeneficiario: ''
+      };
     }
 
     function obterPersonalizacao() {
@@ -3172,8 +3213,142 @@
         nomeExibicao: p.nomeExibicao != null ? String(p.nomeExibicao) : '',
         primary: p.primary || pad.primary,
         primaryDark: p.primaryDark || pad.primaryDark,
-        accent: p.accent || pad.accent
+        accent: p.accent || pad.accent,
+        pixChave: p.pixChave != null ? String(p.pixChave) : '',
+        pixCopiaCola: p.pixCopiaCola != null ? String(p.pixCopiaCola) : '',
+        pixBeneficiario: p.pixBeneficiario != null ? String(p.pixBeneficiario) : ''
       };
+    }
+
+    function obterPixLoja() {
+      const p = obterPersonalizacao();
+      return {
+        chave: (p.pixChave || '').trim(),
+        copiaCola: (p.pixCopiaCola || '').trim(),
+        beneficiario: (p.pixBeneficiario || '').trim()
+      };
+    }
+
+    function desenharQrCodeEmCanvas(canvas, texto, size) {
+      if (!canvas || !texto) return;
+      const opts = {
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: size || 180,
+        color: { dark: '#000000', light: '#ffffff' }
+      };
+      try {
+        if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
+          QRCode.toCanvas(canvas, texto, opts, function (err) {
+            if (err) console.warn('QR', err);
+          });
+          return;
+        }
+      } catch (e) { console.warn(e); }
+      // fallback texto
+      const ctx = canvas.getContext && canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#333';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('QR indisponível', 20, canvas.height / 2);
+      }
+    }
+
+    function atualizarPreviewQrPixLoja() {
+      const el = document.getElementById('pers-pix-copia-cola');
+      const canvas = document.getElementById('pers-pix-qr-preview');
+      if (!canvas) return;
+      const texto = el ? (el.value || '').trim() : obterPixLoja().copiaCola;
+      if (!texto) {
+        toast('Cole o PIX Copia e Cola para gerar o QR', 'error');
+        return;
+      }
+      desenharQrCodeEmCanvas(canvas, texto, 180);
+    }
+
+    function carregarPixLojaNoForm() {
+      const p = obterPixLoja();
+      const c = document.getElementById('pers-pix-chave');
+      const cc = document.getElementById('pers-pix-copia-cola');
+      const b = document.getElementById('pers-pix-beneficiario');
+      if (c) c.value = p.chave || '';
+      if (cc) cc.value = p.copiaCola || '';
+      if (b) b.value = p.beneficiario || '';
+      if (p.copiaCola) {
+        const canvas = document.getElementById('pers-pix-qr-preview');
+        if (canvas) desenharQrCodeEmCanvas(canvas, p.copiaCola, 180);
+      }
+    }
+
+    function salvarPixLoja() {
+      if (!isAdmin()) { toast('Apenas administradores', 'error'); return; }
+      const chave = (document.getElementById('pers-pix-chave') || {}).value || '';
+      const copiaCola = (document.getElementById('pers-pix-copia-cola') || {}).value || '';
+      const beneficiario = (document.getElementById('pers-pix-beneficiario') || {}).value || '';
+      if (!String(copiaCola).trim() && !String(chave).trim()) {
+        toast('Informe pelo menos a chave PIX ou o Copia e Cola', 'error');
+        return;
+      }
+      if (!estado.personalizacao || typeof estado.personalizacao !== 'object') {
+        estado.personalizacao = personalizacaoPadrao();
+      }
+      estado.personalizacao.pixChave = String(chave).trim();
+      estado.personalizacao.pixCopiaCola = String(copiaCola).trim();
+      estado.personalizacao.pixBeneficiario = String(beneficiario).trim();
+      registrarLog('Configurou PIX da loja', (estado.personalizacao.pixBeneficiario || estado.personalizacao.pixChave || 'PIX'), 'usuario');
+      salvar();
+      if (estado.personalizacao.pixCopiaCola) atualizarPreviewQrPixLoja();
+      toast('PIX da loja salvo!', 'success');
+    }
+
+    function htmlBlocoPixCobranca(opts) {
+      opts = opts || {};
+      const pix = obterPixLoja();
+      const total = opts.total != null ? Number(opts.total) : null;
+      const canvasId = opts.canvasId || ('pix-qr-' + Date.now());
+      if (!pix.copiaCola && !pix.chave) {
+        return `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 0.9rem;margin-top:0.65rem;font-size:0.84rem;color:#92400e;">
+          ⚠️ PIX da loja ainda não configurado. Vá em <strong>Personalização</strong> e cadastre a chave / Copia e Cola do banco.
+        </div>`;
+      }
+      return `
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:0.85rem 0.95rem;margin-top:0.65rem;">
+          <p style="font-weight:750;color:#065f46;margin-bottom:0.45rem;">💚 Pagar com PIX</p>
+          ${pix.beneficiario ? `<p style="font-size:0.82rem;margin-bottom:0.35rem;"><strong>Beneficiário:</strong> ${pix.beneficiario}</p>` : ''}
+          ${total != null && !isNaN(total) ? `<p style="font-size:0.9rem;margin-bottom:0.5rem;"><strong>Valor:</strong> ${formatarMoeda(total)}</p>` : ''}
+          ${pix.copiaCola ? `
+            <div style="text-align:center;margin:0.5rem 0 0.65rem;">
+              <canvas id="${canvasId}" width="200" height="200" style="border:1px solid #a7f3d0;border-radius:12px;background:#fff;max-width:200px;"></canvas>
+              <p style="font-size:0.72rem;color:var(--text-muted);margin-top:0.35rem;">Escaneie no app do banco</p>
+            </div>
+            <div class="form-group" style="margin-bottom:0.45rem;">
+              <label>PIX Copia e Cola</label>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <textarea id="${canvasId}-copia" readonly rows="2" style="flex:1;min-width:140px;font-size:0.75rem;font-family:ui-monospace,monospace;padding:0.5rem 0.65rem;border:1.5px solid #a7f3d0;border-radius:10px;background:#fff;">${pix.copiaCola.replace(/</g, '&lt;')}</textarea>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copiarTextoEl('${canvasId}-copia')">Copiar</button>
+              </div>
+            </div>
+          ` : ''}
+          ${pix.chave ? `
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Chave PIX</label>
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <input type="text" id="${canvasId}-chave" readonly value="${String(pix.chave).replace(/"/g, '&quot;')}" style="flex:1;min-width:140px;font-weight:600;" />
+                <button type="button" class="btn btn-secondary btn-sm" onclick="copiarTextoEl('${canvasId}-chave')">Copiar chave</button>
+              </div>
+            </div>
+          ` : ''}
+        </div>`;
+    }
+
+    function montarQrAposInserirNoDom(canvasId, texto) {
+      if (!texto) return;
+      setTimeout(() => {
+        const canvas = document.getElementById(canvasId);
+        if (canvas) desenharQrCodeEmCanvas(canvas, texto, 200);
+      }, 40);
     }
 
     function aplicarTemaPersonalizacao() {
@@ -3198,6 +3373,7 @@
       renderModulosLoja();
       aplicarOrdemMenu();
       if (typeof aplicarTemaPersonalizacao === 'function') aplicarTemaPersonalizacao();
+      if (typeof carregarPixLojaNoForm === 'function') carregarPixLojaNoForm();
     }
 
     function syncCorTxt(tipo) {
@@ -3227,11 +3403,19 @@
 
     function salvarPersonalizacao() {
       if (!isAdmin()) { toast('Apenas administradores', 'error'); return; }
+      const prev = obterPersonalizacao();
+      const nomeEl = document.getElementById('pers-nome-empresa');
+      const prEl = document.getElementById('pers-cor-primary');
+      const pdEl = document.getElementById('pers-cor-primary-dark');
+      const acEl = document.getElementById('pers-cor-accent');
       estado.personalizacao = {
-        nomeExibicao: (document.getElementById('pers-nome-empresa').value || '').trim(),
-        primary: document.getElementById('pers-cor-primary').value,
-        primaryDark: document.getElementById('pers-cor-primary-dark').value,
-        accent: document.getElementById('pers-cor-accent').value
+        nomeExibicao: nomeEl ? (nomeEl.value || '').trim() : prev.nomeExibicao,
+        primary: prEl ? prEl.value : prev.primary,
+        primaryDark: pdEl ? pdEl.value : prev.primaryDark,
+        accent: acEl ? acEl.value : prev.accent,
+        pixChave: prev.pixChave,
+        pixCopiaCola: prev.pixCopiaCola,
+        pixBeneficiario: prev.pixBeneficiario
       };
       registrarLog('Editar personalização', 'Cores e nome do sistema', 'usuario');
       salvar();
@@ -7545,6 +7729,32 @@
         else gCartParc.style.display = 'flex';
       }
 
+      let gPixVenda = document.getElementById('grupo-pix-venda');
+      if (!gPixVenda) {
+        const grid = document.getElementById('venda-pagamento');
+        if (grid && grid.parentElement && grid.parentElement.parentElement) {
+          gPixVenda = document.createElement('div');
+          gPixVenda.id = 'grupo-pix-venda';
+          gPixVenda.style.gridColumn = '1 / -1';
+          gPixVenda.style.display = 'none';
+          grid.parentElement.parentElement.appendChild(gPixVenda);
+        }
+      }
+      if (gPixVenda) {
+        const isPix = forma === 'pix';
+        if (pode && isPix) {
+          gPixVenda.style.display = 'block';
+          const total = (typeof carrinho !== 'undefined' && Array.isArray(carrinho))
+            ? carrinho.reduce((s, i) => s + (Number(i.total) || 0), 0) : 0;
+          gPixVenda.innerHTML = htmlBlocoPixCobranca({ total: total, canvasId: 'venda-pix-qr' });
+          const pix = obterPixLoja();
+          if (pix.copiaCola) montarQrAposInserirNoDom('venda-pix-qr', pix.copiaCola);
+        } else {
+          gPixVenda.style.display = 'none';
+          gPixVenda.innerHTML = '';
+        }
+      }
+
       const gPrazo = document.getElementById('grupo-prazo');
       if (gPrazo) gPrazo.style.display = (pode && isFiado) ? 'flex' : 'none';
       const gp = document.getElementById('grupo-parcelas');
@@ -8017,6 +8227,9 @@
               <label>Valor já pago (R$)</label>
               <input type="number" id="caixa-pago" min="0" step="0.01" value="${pagoVal}" oninput="onCaixaFormaChange()" />
             </div>
+            <div id="caixa-grupo-pix" style="display:${formaSel === 'pix' ? 'block' : 'none'};grid-column:1/-1;">
+              ${formaSel === 'pix' ? htmlBlocoPixCobranca({ total: Number(v.total) || 0, canvasId: 'caixa-pix-qr' }) : ''}
+            </div>
             <div class="form-group" id="caixa-grupo-prazo" style="display:${formaSel === 'fiado' ? 'flex' : 'none'};">
               <label>1º vencimento *</label>
               <input type="date" id="caixa-prazo" value="${prazoPadrao}" onchange="atualizarPreviewParcelasCaixa()" />
@@ -8078,6 +8291,10 @@
       window._caixaVendaId = v.id;
       window._caixaVendaTotal = Number(v.total) || 0;
       if (podePag && typeof onCaixaFormaChange === 'function') onCaixaFormaChange();
+      else if (formaSel === 'pix') {
+        const pix = obterPixLoja();
+        if (pix.copiaCola) montarQrAposInserirNoDom('caixa-pix-qr', pix.copiaCola);
+      }
     }
 
     function onCaixaFormaChange() {
@@ -8090,13 +8307,27 @@
       const gParc = document.getElementById('caixa-grupo-parcelas');
       const gInt = document.getElementById('caixa-grupo-intervalo');
       const gPrev = document.getElementById('caixa-grupo-preview');
+      const gPix = document.getElementById('caixa-grupo-pix');
       const tipoCart = (document.getElementById('caixa-cartao-tipo') || {}).value || 'debito';
+      const isPix = forma === 'pix';
       if (gCartao) gCartao.style.display = isCartao ? 'flex' : 'none';
       if (gCartParc) gCartParc.style.display = (isCartao && tipoCart === 'credito') ? 'flex' : 'none';
       if (gPrazo) gPrazo.style.display = isFiado ? 'flex' : 'none';
       if (gParc) gParc.style.display = isFiado ? 'flex' : 'none';
       if (gInt) gInt.style.display = isFiado ? 'flex' : 'none';
       if (gPrev) gPrev.style.display = isFiado ? 'block' : 'none';
+      if (gPix) {
+        if (isPix) {
+          gPix.style.display = 'block';
+          const total = Number(window._caixaVendaTotal) || 0;
+          gPix.innerHTML = htmlBlocoPixCobranca({ total: total, canvasId: 'caixa-pix-qr' });
+          const pix = obterPixLoja();
+          if (pix.copiaCola) montarQrAposInserirNoDom('caixa-pix-qr', pix.copiaCola);
+        } else {
+          gPix.style.display = 'none';
+          gPix.innerHTML = '';
+        }
+      }
       if (isFiado) atualizarPreviewParcelasCaixa();
     }
 
