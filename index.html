@@ -2232,7 +2232,7 @@
           <!-- Cliente com busca -->
           <div style="margin-bottom:1.1rem;">
             <div class="form-group" style="margin-bottom:0.6rem;">
-              <label>Cliente *</label>
+              <label>Cliente</label>
               <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
                 <div class="search-box" style="flex:1;min-width:200px;max-width:100%;">
                   <input type="text" id="venda-busca-cliente" placeholder="Pesquisar cliente por nome ou telefone..." oninput="filtrarClientesVenda()" autocomplete="off" />
@@ -2242,7 +2242,7 @@
                 </button>
               </div>
               <p style="font-size:0.78rem;color:var(--text-muted);margin:0.35rem 0 0;">
-                Use o botão acima para vender sem cadastro (só nome e dados básicos).
+                Cliente é opcional. Use o botão acima para dados avulsos, ou deixe em branco (fica como Consumidor). Fiado exige cliente cadastrado.
               </p>
               <select id="venda-cliente" size="5" style="width:100%;margin-top:0.45rem;min-height:120px;" onchange="onClienteVendaChange()">
                 <option value="">— Digite acima para buscar ou selecione —</option>
@@ -7995,12 +7995,16 @@
 
       if (isAvulso) {
         const av = dadosAvulsoComoCliente();
-        clienteNome = av.nome;
-        clienteTelefone = av.telefone;
-        clienteEndereco = formatarEnderecoCliente(av);
+        clienteNome = (av.nome || '').trim() || 'Consumidor';
+        clienteTelefone = av.telefone || '';
+        clienteEndereco = formatarEnderecoCliente(av) || '';
         clienteDocumento = av.documento || '';
-        if (!clienteNome) { toast('Informe o nome do cliente', 'error'); return null; }
-        if (document.getElementById('avulso-cadastrar').checked) {
+        const querCadastrar = document.getElementById('avulso-cadastrar') && document.getElementById('avulso-cadastrar').checked;
+        if (querCadastrar) {
+          if (!(av.nome || '').trim()) {
+            toast('Para cadastrar o cliente, informe o nome', 'error');
+            return null;
+          }
           const novo = {
             id: uid(),
             nome: av.nome,
@@ -8018,14 +8022,28 @@
         } else {
           clienteId = null;
         }
-      } else {
-        if (!clienteId) { toast('Selecione um cliente ou use "Cliente não cadastrado"', 'error'); return null; }
+      } else if (clienteId) {
         const cliente = getCliente(clienteId);
-        if (!cliente) { toast('Cliente não encontrado', 'error'); return null; }
-        clienteNome = cliente.nome;
-        clienteTelefone = cliente.telefone || '';
-        clienteEndereco = formatarEnderecoCliente(cliente);
-        clienteDocumento = cliente.documento || '';
+        if (!cliente) {
+          // seleção inválida: segue como consumidor sem cadastro
+          clienteId = null;
+          clienteNome = 'Consumidor';
+          clienteTelefone = '';
+          clienteEndereco = '';
+          clienteDocumento = '';
+        } else {
+          clienteNome = cliente.nome;
+          clienteTelefone = cliente.telefone || '';
+          clienteEndereco = formatarEnderecoCliente(cliente);
+          clienteDocumento = cliente.documento || '';
+        }
+      } else {
+        // Cliente opcional: venda sem identificar
+        clienteId = null;
+        clienteNome = 'Consumidor';
+        clienteTelefone = '';
+        clienteEndereco = '';
+        clienteDocumento = '';
       }
 
       if (carrinho.length === 0) { toast('Adicione pelo menos um item', 'error'); return null; }
