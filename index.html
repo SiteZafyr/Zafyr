@@ -486,6 +486,75 @@
       text-align: center;
     }
 
+    /* Cards de lojas — um card por loja, botões separados */
+    .dono-lojas-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .dono-loja-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      box-shadow: 0 2px 10px rgba(26, 37, 68, 0.05);
+    }
+    .dono-loja-card.selecionada {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(74, 93, 140, 0.18);
+      background: #f7f9ff;
+    }
+    .dono-loja-card-titulo {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.5rem;
+    }
+    .dono-loja-card-titulo strong {
+      font-size: 1.02rem;
+      color: var(--primary-dark);
+    }
+    .dono-loja-codigo {
+      font-size: 0.78rem;
+      background: #eef0f6;
+      color: var(--text-muted);
+      padding: 0.12rem 0.45rem;
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+    }
+    .dono-loja-card-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .dono-loja-card-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .dono-loja-card-acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.25rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+    }
+    .dono-loja-card-acoes .btn {
+      min-width: 140px;
+    }
+    #dono-lista-lojas > .dono-vazio {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      padding: 1.75rem 0.75rem;
+      text-align: center;
+      background: #f8f9fc;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+    }
+
     .dono-acoes-box {
       background: #eef0f6;
       border: 1px solid #d4d8e4;
@@ -1864,23 +1933,31 @@
               <button type="button" class="btn btn-secondary btn-sm" onclick="renderListaLojasDono()">🔄 Atualizar lista</button>
             </div>
             <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
-              Aqui você vê <strong>todas as lojas</strong> do sistema. Se o administrador esqueceu o <strong>login</strong> ou a <strong>senha</strong>,
-              redefina abaixo — os dados da loja (estoque, clientes, vendas) <strong>não são apagados</strong>.
+              Cada bloco abaixo é <strong>uma loja</strong>. Os botões de cada bloco valem só para aquela loja.
+              Redefinir login/senha <strong>não apaga</strong> estoque, clientes nem vendas.
             </p>
             <div class="form-group" style="margin-bottom:1rem;max-width:420px;">
               <label>🔎 Buscar loja</label>
               <input type="text" id="dono-busca-lojas" placeholder="Código ou nome da empresa..." oninput="renderListaLojasDono()" />
             </div>
-            <div id="dono-lista-lojas"><div class="dono-vazio">Carregando lojas…</div></div>
+            <div id="dono-lista-lojas" class="dono-lojas-grid"><div class="dono-vazio">Carregando lojas…</div></div>
           </div>
 
-          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;">
-            <div class="panel-header">
-              <h3 id="dono-loja-detalhe-titulo">Acesso da loja</h3>
-              <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja (admin)</button>
+          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;border:2px solid var(--primary-light);">
+            <div class="panel-header" style="align-items:flex-start;gap:0.75rem;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:0.2rem;">Gerenciando acessos da loja</div>
+                <h3 id="dono-loja-detalhe-titulo" style="margin:0;">Acesso da loja</h3>
+              </div>
+              <div class="btn-group" style="flex-wrap:wrap;">
+                <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="fecharDetalheLojaDono()">✕ Fechar</button>
+              </div>
             </div>
-            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;"></div>
-            <div class="table-wrap" style="margin-bottom:1rem;">
+            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;background:#f0f4ff;border:1px solid #d4dcf0;border-radius:12px;padding:0.75rem 0.9rem;"></div>
+
+            <p style="font-weight:750;color:var(--primary-dark);margin-bottom:0.55rem;font-size:0.9rem;">👥 Usuários desta loja</p>
+            <div class="table-wrap" style="margin-bottom:1.15rem;">
               <table>
                 <thead>
                   <tr>
@@ -1893,14 +1970,16 @@
                 <tbody id="dono-loja-usuarios"></tbody>
               </table>
             </div>
-            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;">
-              <p style="font-weight:700;margin-bottom:0.65rem;color:var(--primary-dark);">Redefinir acesso de um usuário</p>
+
+            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;">
+              <p style="font-weight:700;margin-bottom:0.35rem;color:var(--primary-dark);">🔑 Redefinir acesso de um usuário</p>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.4;">Clique em <strong>Redefinir</strong> na tabela acima e informe o novo login e senha.</p>
               <input type="hidden" id="dono-rec-codigo" />
               <input type="hidden" id="dono-rec-user-id" />
               <div class="form-grid">
                 <div class="form-group">
                   <label>Usuário selecionado</label>
-                  <input type="text" id="dono-rec-user-nome" readonly />
+                  <input type="text" id="dono-rec-user-nome" readonly placeholder="Nenhum selecionado" />
                 </div>
                 <div class="form-group">
                   <label>Novo login *</label>
@@ -1913,12 +1992,12 @@
               </div>
               <div class="btn-group" style="margin-top:0.75rem;">
                 <button type="button" class="btn btn-primary" onclick="salvarRecuperacaoAcessoDono()">💾 Salvar login e senha</button>
-                <button type="button" class="btn btn-secondary" onclick="fecharDetalheLojaDono()">Fechar</button>
               </div>
             </div>
-            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;margin-top:1rem;">
-              <p style="font-weight:700;margin-bottom:0.65rem;color:#92400e;">Criar administrador de emergência</p>
-              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;">Use se a loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
+
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;">
+              <p style="font-weight:700;margin-bottom:0.35rem;color:#92400e;">⚠️ Criar administrador de emergência</p>
+              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;line-height:1.4;">Use se esta loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
               <div class="form-grid">
                 <div class="form-group">
                   <label>Nome</label>
@@ -5868,6 +5947,7 @@
       if (!box) return;
       box.innerHTML = '<div class="dono-vazio">Carregando lojas…</div>';
       const busca = ((document.getElementById('dono-busca-lojas') || {}).value || '').toLowerCase().trim();
+      const codigoAberto = ((document.getElementById('dono-rec-codigo') || {}).value || '').trim();
       const plat = await lerPlataforma();
       const codigos = await obterCodigosTodasLojas();
       const itens = [];
@@ -5885,21 +5965,36 @@
         return;
       }
       box.innerHTML = itens.map(it => {
-        const st = it.acesso.status === 'bloqueado' ? '🚫 bloqueada' : (it.acesso.status === 'liberado' ? '✅ liberada' : '—');
-        const pago = it.acesso.pago ? '💰 paga' : (it.acesso.pago === false ? '⏳ não paga' : '');
+        const bloqueada = it.acesso.status === 'bloqueado';
+        const liberada = it.acesso.status === 'liberado';
+        const stBadge = bloqueada
+          ? '<span class="status atrasado">🚫 Bloqueada</span>'
+          : (liberada ? '<span class="status pago">✅ Liberada</span>' : '<span class="status aberto">— Status</span>');
+        const pagoBadge = it.acesso.pago
+          ? '<span class="status pago">💰 Paga</span>'
+          : (it.acesso.pago === false ? '<span class="status aberto">⏳ Não paga</span>' : '');
         const codEsc = String(it.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        return `<div class="dono-item" style="display:flex;justify-content:space-between;gap:0.5rem;align-items:flex-start;">
-          <div style="flex:1;min-width:0;">
-            <strong style="color:var(--primary-dark);">${it.nome}</strong>
-            <span style="color:var(--text-muted);"> · ${it.codigo}</span><br>
-            <span style="font-size:0.82rem;">${st}${pago ? ' · ' + pago : ''}</span>
-            ${it.meta.adminLogin ? '<br><span style="font-size:0.8rem;color:var(--text-muted);">Admin inicial: <code>' + it.meta.adminLogin + '</code></span>' : ''}
-          </div>
-          <div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">
-            <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra na loja como administrador, sem registrar nos logs">🚪 Entrar na loja</button>
-            <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">🔑 Acessos</button>
-          </div>
-        </div>`;
+        const selecionada = codigoAberto && codigoAberto === String(it.codigo);
+        return `
+          <div class="dono-loja-card${selecionada ? ' selecionada' : ''}" data-loja-codigo="${it.codigo}">
+            <div class="dono-loja-card-titulo">
+              <strong>${it.nome}</strong>
+              <code class="dono-loja-codigo">${it.codigo}</code>
+            </div>
+            <div class="dono-loja-card-badges">
+              ${stBadge}
+              ${pagoBadge}
+            </div>
+            ${it.meta.adminLogin ? `<div class="dono-loja-card-meta">Admin inicial: <code>${it.meta.adminLogin}</code></div>` : ''}
+            <div class="dono-loja-card-acoes">
+              <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra nesta loja como administrador">
+                🚪 Entrar nesta loja
+              </button>
+              <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">
+                🔑 Gerenciar acessos
+              </button>
+            </div>
+          </div>`;
       }).join('');
     }
 
@@ -5919,15 +6014,21 @@
       document.getElementById('dono-emerg-login').value = '';
       document.getElementById('dono-emerg-senha').value = '';
 
+      document.querySelectorAll('.dono-loja-card').forEach(el => {
+        if (el.getAttribute('data-loja-codigo') === codigo) el.classList.add('selecionada');
+        else el.classList.remove('selecionada');
+      });
+
       const meta = await lerMetaLoja(codigo);
       const plat = await lerPlataforma();
       const acesso = (plat.acessos || {})[codigo] || {};
       const nome = acesso.nome || meta.nome || codigo;
-      document.getElementById('dono-loja-detalhe-titulo').textContent = 'Acesso — ' + nome;
+      document.getElementById('dono-loja-detalhe-titulo').textContent = nome + '  ·  ' + codigo;
       document.getElementById('dono-loja-detalhe-info').innerHTML =
-        '<strong>Código:</strong> ' + codigo +
+        '<strong>Loja:</strong> ' + nome +
+        '<br><strong>Código:</strong> <code>' + codigo + '</code>' +
         (meta.adminLogin ? '<br><strong>Login do admin na criação:</strong> ' + meta.adminLogin : '') +
-        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas.</span>';
+        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas desta loja.</span>';
 
       const estadoLoja = await lerEstadoLojaIsolado(codigo);
       const users = Array.isArray(estadoLoja.usuarios) ? estadoLoja.usuarios : [];
@@ -5960,6 +6061,9 @@
         painel.style.display = 'none';
         painel.classList.add('hidden');
       }
+      const rec = document.getElementById('dono-rec-codigo');
+      if (rec) rec.value = '';
+      document.querySelectorAll('.dono-loja-card.selecionada').forEach(el => el.classList.remove('selecionada'));
     }
 
     /**
