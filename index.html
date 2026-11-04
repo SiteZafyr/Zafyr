@@ -2441,6 +2441,14 @@
             <div class="panel-header" style="border-bottom:none;margin-bottom:0.45rem;padding-bottom:0;">
               <h3 style="font-size:0.92rem;">Adicionar produto</h3>
             </div>
+            <div id="grupo-venda-barcode" style="display:none;margin-bottom:0.75rem;">
+              <div style="display:flex;flex-wrap:wrap;gap:0.45rem;align-items:center;">
+                <input type="text" id="venda-barcode-input" placeholder="Código de barras ou digite e Enter" style="flex:1;min-width:160px;padding:0.55rem 0.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarProdutoPorBarcodeInput();}" />
+                <button type="button" class="btn btn-secondary" onclick="abrirScannerBarcode('venda')">📷 Câmera</button>
+                <button type="button" class="btn btn-primary" onclick="buscarProdutoPorBarcodeInput()">Buscar</button>
+              </div>
+              <small style="font-size:0.75rem;color:var(--text-muted);display:block;margin-top:0.3rem;">Aponte a câmera ou digite o código para adicionar ao carrinho.</small>
+            </div>
             <div class="form-grid">
               <div class="form-group">
                 <label>Produto *</label>
@@ -2818,6 +2826,33 @@
           </p>
           <div id="lista-modulos-loja" style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem 0.85rem;"></div>
         </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>📷 Código de barras (câmera do celular)</h3>
+            <button type="button" class="btn btn-primary" onclick="salvarConfigBarcode()">Salvar</button>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
+            Ative para ler códigos de barras com a <strong>câmera do celular</strong> no cadastro de produtos e/ou na venda.
+            Desligado por padrão — o restante do sistema continua igual.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            <label style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;">
+              <input type="checkbox" id="pers-barcode-cadastro" style="margin-top:0.2rem;width:18px;height:18px;flex-shrink:0;" />
+              <span>
+                <strong style="display:block;color:var(--primary-dark);">Cadastro de produtos</strong>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Permite ler/informar o código de barras ao criar ou editar um item.</span>
+              </span>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;">
+              <input type="checkbox" id="pers-barcode-venda" style="margin-top:0.2rem;width:18px;height:18px;flex-shrink:0;" />
+              <span>
+                <strong style="display:block;color:var(--primary-dark);">Nova venda</strong>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Permite apontar a câmera para o código e adicionar o produto ao carrinho.</span>
+              </span>
+            </label>
+          </div>
+        </div>
       </section>
 
 
@@ -2838,6 +2873,14 @@
           <div class="form-group" style="grid-column:1/-1;">
             <label>Nome do Produto *</label>
             <input type="text" id="produto-nome" placeholder="Ex: Ovos Brancos, Ovos Caipira, Ovos de Codorna..." />
+          </div>
+          <div class="form-group" id="grupo-produto-barcode" style="grid-column:1/-1;display:none;">
+            <label>Código de barras</label>
+            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+              <input type="text" id="produto-barcode" placeholder="EAN / código do produto" style="flex:1;min-width:140px;" autocomplete="off" />
+              <button type="button" class="btn btn-secondary btn-sm" onclick="abrirScannerBarcode('produto')">📷 Ler com câmera</button>
+            </div>
+            <small style="font-size:0.75rem;color:var(--text-muted);">Opcional. Usado na venda quando a leitura por câmera estiver ativa.</small>
           </div>
           <div class="form-group">
             <label>Valor de venda (R$) *</label>
@@ -3065,12 +3108,33 @@
 
   <div class="toast-container" id="toasts"></div>
   <div id="print-area" aria-hidden="true"></div>
+
+  <!-- Scanner de código de barras (câmera) -->
+  <div id="barcode-scanner-overlay" class="modal-overlay" style="z-index:210;" onclick="if(event.target===this)fecharScannerBarcode()">
+    <div class="modal" style="max-width:min(480px,100%);">
+      <div class="modal-header">
+        <h3 id="barcode-scanner-titulo">📷 Ler código de barras</h3>
+        <button type="button" class="modal-close" onclick="fecharScannerBarcode()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0.85rem;">
+        <p id="barcode-scanner-status" style="font-size:0.84rem;color:var(--text-muted);margin-bottom:0.55rem;line-height:1.4;">Iniciando câmera…</p>
+        <div id="barcode-scanner-video-wrap" style="position:relative;width:100%;background:#000;border-radius:12px;overflow:hidden;min-height:220px;">
+          <video id="barcode-scanner-video" playsinline muted style="width:100%;display:block;max-height:50vh;object-fit:cover;"></video>
+          <div id="barcode-scanner-fallback" style="display:none;padding:1rem;"></div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.4;">Aponte para o código. A leitura é automática. Use HTTPS (ou app) e permita o acesso à câmera.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="fecharScannerBarcode()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="print-preview-overlay" onclick="if(event.target===this)fecharPreviewImpressao()">
     <div class="print-preview-box" role="dialog" aria-modal="true" aria-label="Comprovante">
       <div class="print-preview-toolbar">
         <span class="titulo-prev">📄 Comprovante</span>
         <button type="button" class="btn btn-primary" onclick="confirmarImpressaoPreview()">🖨️ Imprimir</button>
-        <button type="button" class="btn btn-secondary" onclick="compartilharComprovantePreview()">📤 Compartilhar</button>
         <button type="button" class="btn btn-secondary" onclick="fecharPreviewImpressao()">✕ Fechar</button>
       </div>
       <div id="print-preview-content"></div>
@@ -3287,7 +3351,10 @@
         accent: '#c9a84c',
         pixChave: '',
         pixCopiaCola: '',
-        pixBeneficiario: ''
+        pixBeneficiario: '',
+        /** Leitura de código de barras pela câmera (admin liga/desliga) */
+        barcodeCadastro: false,
+        barcodeVenda: false
       };
     }
 
@@ -3301,8 +3368,17 @@
         accent: p.accent || pad.accent,
         pixChave: p.pixChave != null ? String(p.pixChave) : '',
         pixCopiaCola: p.pixCopiaCola != null ? String(p.pixCopiaCola) : '',
-        pixBeneficiario: p.pixBeneficiario != null ? String(p.pixBeneficiario) : ''
+        pixBeneficiario: p.pixBeneficiario != null ? String(p.pixBeneficiario) : '',
+        barcodeCadastro: p.barcodeCadastro === true,
+        barcodeVenda: p.barcodeVenda === true
       };
+    }
+
+    function barcodeCadastroAtivo() {
+      try { return !!obterPersonalizacao().barcodeCadastro; } catch (e) { return false; }
+    }
+    function barcodeVendaAtivo() {
+      try { return !!obterPersonalizacao().barcodeVenda; } catch (e) { return false; }
     }
 
     function obterPixLoja() {
@@ -3578,6 +3654,296 @@
       aplicarOrdemMenu();
       if (typeof aplicarTemaPersonalizacao === 'function') aplicarTemaPersonalizacao();
       if (typeof carregarPixLojaNoForm === 'function') carregarPixLojaNoForm();
+      try {
+        const p = obterPersonalizacao();
+        const elCad = document.getElementById('pers-barcode-cadastro');
+        const elVen = document.getElementById('pers-barcode-venda');
+        if (elCad) elCad.checked = !!p.barcodeCadastro;
+        if (elVen) elVen.checked = !!p.barcodeVenda;
+      } catch (e) {}
+    }
+
+    function salvarConfigBarcode() {
+      if (!isAdmin()) { toast('Apenas administradores', 'error'); return; }
+      const prev = obterPersonalizacao();
+      const cad = !!(document.getElementById('pers-barcode-cadastro') || {}).checked;
+      const ven = !!(document.getElementById('pers-barcode-venda') || {}).checked;
+      estado.personalizacao = Object.assign({}, prev, {
+        barcodeCadastro: cad,
+        barcodeVenda: ven
+      });
+      registrarLog(
+        'Configurou código de barras',
+        'Cadastro: ' + (cad ? 'sim' : 'não') + ' · Venda: ' + (ven ? 'sim' : 'não'),
+        'usuario'
+      );
+      salvar();
+      atualizarUiBarcode();
+      toast('Configuração de código de barras salva!', 'success');
+    }
+
+    function atualizarUiBarcode() {
+      const cad = barcodeCadastroAtivo();
+      const ven = barcodeVendaAtivo();
+      const gProd = document.getElementById('grupo-produto-barcode');
+      if (gProd) gProd.style.display = cad ? '' : 'none';
+      const gVen = document.getElementById('grupo-venda-barcode');
+      if (gVen) gVen.style.display = ven ? '' : 'none';
+    }
+
+    // ===================== SCANNER CÓDIGO DE BARRAS (CÂMERA) =====================
+    let _barcodeScanCtx = null; // 'produto' | 'venda'
+    let _barcodeStream = null;
+    let _barcodeRaf = null;
+    let _barcodeDetector = null;
+    let _barcodeLastHit = '';
+    let _barcodeLastHitAt = 0;
+
+    function normalizarCodigoBarras(v) {
+      return String(v || '').replace(/\s+/g, '').trim();
+    }
+
+    function buscarProdutoPorCodigoBarras(codigo) {
+      const c = normalizarCodigoBarras(codigo);
+      if (!c) return null;
+      return (estado.produtos || []).find(p => {
+        const bc = normalizarCodigoBarras(p.codigoBarras || p.barcode || '');
+        return bc && bc === c;
+      }) || null;
+    }
+
+    function onCodigoBarrasLido(codigo) {
+      const c = normalizarCodigoBarras(codigo);
+      if (!c) return;
+      const agora = Date.now();
+      if (c === _barcodeLastHit && (agora - _barcodeLastHitAt) < 1500) return;
+      _barcodeLastHit = c;
+      _barcodeLastHitAt = agora;
+
+      if (_barcodeScanCtx === 'produto') {
+        const el = document.getElementById('produto-barcode');
+        if (el) el.value = c;
+        fecharScannerBarcode();
+        toast('Código lido: ' + c, 'success');
+        return;
+      }
+      if (_barcodeScanCtx === 'venda') {
+        fecharScannerBarcode();
+        aplicarCodigoBarrasNaVenda(c);
+      }
+    }
+
+    function aplicarCodigoBarrasNaVenda(codigo) {
+      if (!barcodeVendaAtivo()) {
+        toast('Leitura na venda está desativada pelo admin.', 'error');
+        return;
+      }
+      const p = buscarProdutoPorCodigoBarras(codigo);
+      if (!p) {
+        toast('Nenhum produto com o código ' + codigo, 'error');
+        const inp = document.getElementById('venda-barcode-input');
+        if (inp) { inp.value = codigo; inp.focus(); }
+        return;
+      }
+      const sel = document.getElementById('cart-produto');
+      if (sel) {
+        sel.value = p.id;
+        atualizarPrecoCart();
+      }
+      const qtdEl = document.getElementById('cart-qtd');
+      if (qtdEl && (!qtdEl.value || parseInt(qtdEl.value, 10) < 1)) qtdEl.value = '1';
+      const inp = document.getElementById('venda-barcode-input');
+      if (inp) inp.value = '';
+      adicionarAoCarrinho();
+    }
+
+    function buscarProdutoPorBarcodeInput() {
+      const inp = document.getElementById('venda-barcode-input');
+      const codigo = normalizarCodigoBarras(inp ? inp.value : '');
+      if (!codigo) { toast('Informe o código de barras', 'error'); return; }
+      aplicarCodigoBarrasNaVenda(codigo);
+    }
+
+    function setBarcodeScannerStatus(msg) {
+      const el = document.getElementById('barcode-scanner-status');
+      if (el) el.textContent = msg || '';
+    }
+
+    async function abrirScannerBarcode(ctx) {
+      if (ctx === 'produto' && !barcodeCadastroAtivo()) {
+        toast('Leitura no cadastro está desativada pelo admin.', 'error');
+        return;
+      }
+      if (ctx === 'venda' && !barcodeVendaAtivo()) {
+        toast('Leitura na venda está desativada pelo admin.', 'error');
+        return;
+      }
+      if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        toast('A câmera exige conexão segura (HTTPS).', 'error');
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast('Este aparelho/navegador não permite câmera.', 'error');
+        return;
+      }
+
+      _barcodeScanCtx = ctx || 'venda';
+      const overlay = document.getElementById('barcode-scanner-overlay');
+      const titulo = document.getElementById('barcode-scanner-titulo');
+      if (titulo) {
+        titulo.textContent = _barcodeScanCtx === 'produto'
+          ? '📷 Ler código (cadastro)'
+          : '📷 Ler código (venda)';
+      }
+      if (overlay) overlay.classList.add('show');
+      setBarcodeScannerStatus('Pedindo acesso à câmera…');
+
+      try {
+        await fecharScannerBarcodeStreams();
+        _barcodeStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        const video = document.getElementById('barcode-scanner-video');
+        if (!video) throw new Error('Vídeo não encontrado');
+        video.srcObject = _barcodeStream;
+        await video.play();
+        setBarcodeScannerStatus('Aponte a câmera para o código de barras…');
+
+        if (typeof BarcodeDetector !== 'undefined') {
+          try {
+            const formats = ['ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e', 'qr_code', 'itf'];
+            _barcodeDetector = new BarcodeDetector({ formats });
+          } catch (e) {
+            try { _barcodeDetector = new BarcodeDetector(); } catch (e2) { _barcodeDetector = null; }
+          }
+        } else {
+          _barcodeDetector = null;
+        }
+
+        if (_barcodeDetector) {
+          const loop = async () => {
+            if (!_barcodeStream) return;
+            try {
+              if (video.readyState >= 2) {
+                const codes = await _barcodeDetector.detect(video);
+                if (codes && codes.length) {
+                  const raw = codes[0].rawValue || codes[0].raw || '';
+                  if (raw) {
+                    onCodigoBarrasLido(raw);
+                    return;
+                  }
+                }
+              }
+            } catch (e) {}
+            _barcodeRaf = requestAnimationFrame(loop);
+          };
+          _barcodeRaf = requestAnimationFrame(loop);
+        } else {
+          // Fallback: Html5Qrcode (iOS Safari e navegadores sem BarcodeDetector)
+          setBarcodeScannerStatus('Carregando leitor compatível…');
+          try {
+            await garantirHtml5Qrcode();
+            await iniciarHtml5QrcodeFallback();
+          } catch (eFb) {
+            console.warn(eFb);
+            setBarcodeScannerStatus('Câmera aberta, mas a leitura automática não está disponível neste navegador. Digite o código no campo.');
+          }
+        }
+      } catch (err) {
+        console.warn(err);
+        setBarcodeScannerStatus('Não foi possível abrir a câmera. Verifique a permissão.');
+        toast('Sem acesso à câmera. Permita nas configurações do aparelho.', 'error');
+      }
+    }
+
+    let _html5QrCode = null;
+
+    function garantirHtml5Qrcode() {
+      return new Promise((resolve, reject) => {
+        if (typeof Html5Qrcode !== 'undefined') { resolve(); return; }
+        const existing = document.querySelector('script[data-html5-qrcode]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => reject(new Error('Falha ao carregar leitor')));
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+        s.async = true;
+        s.setAttribute('data-html5-qrcode', '1');
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Falha ao carregar leitor'));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function iniciarHtml5QrcodeFallback() {
+      // Para de usar o <video> nativo e deixa o Html5Qrcode gerenciar a câmera
+      await fecharScannerBarcodeStreams();
+      const wrap = document.getElementById('barcode-scanner-fallback');
+      const video = document.getElementById('barcode-scanner-video');
+      if (video) video.style.display = 'none';
+      if (!wrap) throw new Error('fallback wrap ausente');
+      wrap.style.display = 'block';
+      wrap.innerHTML = '<div id="barcode-html5-reader" style="width:100%;"></div>';
+
+      _html5QrCode = new Html5Qrcode('barcode-html5-reader');
+      setBarcodeScannerStatus('Aponte a câmera para o código de barras…');
+      await _html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 260, height: 140 }, aspectRatio: 1.777 },
+        (decodedText) => {
+          if (decodedText) onCodigoBarrasLido(decodedText);
+        },
+        () => {}
+      );
+    }
+
+    async function pararHtml5Qrcode() {
+      if (_html5QrCode) {
+        try { await _html5QrCode.stop(); } catch (e) {}
+        try { await _html5QrCode.clear(); } catch (e) {}
+        _html5QrCode = null;
+      }
+      const wrap = document.getElementById('barcode-scanner-fallback');
+      if (wrap) {
+        wrap.style.display = 'none';
+        wrap.innerHTML = '';
+      }
+      const video = document.getElementById('barcode-scanner-video');
+      if (video) video.style.display = 'block';
+    }
+
+    async function fecharScannerBarcodeStreams() {
+      if (_barcodeRaf) {
+        try { cancelAnimationFrame(_barcodeRaf); } catch (e) {}
+        _barcodeRaf = null;
+      }
+      _barcodeDetector = null;
+      try { await pararHtml5Qrcode(); } catch (e) {}
+      if (_barcodeStream) {
+        try {
+          _barcodeStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
+        } catch (e) {}
+        _barcodeStream = null;
+      }
+      const video = document.getElementById('barcode-scanner-video');
+      if (video) {
+        try { video.pause(); } catch (e) {}
+        try { video.srcObject = null; } catch (e) {}
+      }
+    }
+
+    async function fecharScannerBarcode() {
+      await fecharScannerBarcodeStreams();
+      _barcodeScanCtx = null;
+      const overlay = document.getElementById('barcode-scanner-overlay');
+      if (overlay) overlay.classList.remove('show');
     }
 
     function syncCorTxt(tipo) {
@@ -4665,11 +5031,17 @@
         e.personalizacao = personalizacaoPadrao();
       } else {
         const pad = personalizacaoPadrao();
+        const op = e.personalizacao;
         e.personalizacao = {
-          nomeExibicao: e.personalizacao.nomeExibicao != null ? String(e.personalizacao.nomeExibicao) : '',
-          primary: e.personalizacao.primary || pad.primary,
-          primaryDark: e.personalizacao.primaryDark || pad.primaryDark,
-          accent: e.personalizacao.accent || pad.accent
+          nomeExibicao: op.nomeExibicao != null ? String(op.nomeExibicao) : '',
+          primary: op.primary || pad.primary,
+          primaryDark: op.primaryDark || pad.primaryDark,
+          accent: op.accent || pad.accent,
+          pixChave: op.pixChave != null ? String(op.pixChave) : '',
+          pixCopiaCola: op.pixCopiaCola != null ? String(op.pixCopiaCola) : '',
+          pixBeneficiario: op.pixBeneficiario != null ? String(op.pixBeneficiario) : '',
+          barcodeCadastro: op.barcodeCadastro === true,
+          barcodeVenda: op.barcodeVenda === true
         };
       }
       if (!Array.isArray(e.modulosAtivos)) e.modulosAtivos = PERMISSOES_APP.map(p => p.id);
@@ -7567,6 +7939,7 @@
       document.getElementById('user-papel').textContent = papelLabel(usuarioAtual.papel);
 
       aplicarTemaPersonalizacao();
+      try { atualizarUiBarcode(); } catch (e) {}
 
       // Ordem do menu + permissões do cargo
       aplicarOrdemMenu();
@@ -7679,6 +8052,7 @@
           const btnDir = document.getElementById('btn-finalizar-direto');
           if (btnDir) btnDir.style.display = isAdmin() ? '' : 'none';
           if (typeof aplicarVisibilidadePagamentoVenda === 'function') aplicarVisibilidadePagamentoVenda();
+          try { atualizarUiBarcode(); } catch (e) {}
         }
         if (page === 'caixa') { renderCaixa(); document.getElementById('caixa-codigo') && document.getElementById('caixa-codigo').focus(); }
         if (page === 'caixas-fechados') { renderCaixasFechados(); }
@@ -8123,6 +8497,7 @@
       if (!isAdmin()) { toast('Acesso restrito', 'error'); return; }
       document.getElementById('produto-id').value = id || '';
       document.getElementById('modal-produto-titulo').textContent = id ? 'Editar Produto' : 'Novo Produto';
+      atualizarUiBarcode();
       if (id) {
         const p = getProduto(id);
         if (!p) return;
@@ -8132,6 +8507,8 @@
         document.getElementById('produto-estoque').value = p.estoque;
         document.getElementById('produto-minimo').value = p.minimo;
         document.getElementById('produto-unidade').value = p.unidade || '';
+        const bc = document.getElementById('produto-barcode');
+        if (bc) bc.value = p.codigoBarras || p.barcode || '';
         document.getElementById('produto-estoque').disabled = true;
       } else {
         document.getElementById('produto-nome').value = '';
@@ -8140,12 +8517,17 @@
         document.getElementById('produto-estoque').value = '0';
         document.getElementById('produto-minimo').value = '5';
         document.getElementById('produto-unidade').value = '';
+        const bc = document.getElementById('produto-barcode');
+        if (bc) bc.value = '';
         document.getElementById('produto-estoque').disabled = false;
       }
       document.getElementById('modal-produto').classList.add('show');
     }
 
-    function fecharModalProduto() { document.getElementById('modal-produto').classList.remove('show'); }
+    function fecharModalProduto() {
+      try { fecharScannerBarcode(); } catch (e) {}
+      document.getElementById('modal-produto').classList.remove('show');
+    }
 
     function salvarProduto() {
       if (!exigirPodeEditar('produtos')) return;
@@ -8157,16 +8539,30 @@
       const estoque = parseInt(document.getElementById('produto-estoque').value, 10) || 0;
       const minimo = parseInt(document.getElementById('produto-minimo').value, 10) || 0;
       const unidade = document.getElementById('produto-unidade').value.trim();
+      const codigoBarras = ((document.getElementById('produto-barcode') || {}).value || '').trim();
 
       if (!nome) { toast('Nome é obrigatório', 'error'); return; }
       if (isNaN(preco) || preco < 0) { toast('Valor de venda inválido', 'error'); return; }
       if (isNaN(custo) || custo < 0) { toast('Valor de compra inválido', 'error'); return; }
 
+      if (codigoBarras) {
+        const outro = (estado.produtos || []).find(x =>
+          x && x.id !== id && String(x.codigoBarras || x.barcode || '').trim() === codigoBarras
+        );
+        if (outro) {
+          toast('Este código de barras já está no produto: ' + (outro.nome || ''), 'error');
+          return;
+        }
+      }
+
       if (id) {
         const p = getProduto(id);
-        if (p) { p.nome = nome; p.preco = preco; p.custo = custo; p.minimo = minimo; p.unidade = unidade; }
+        if (p) {
+          p.nome = nome; p.preco = preco; p.custo = custo; p.minimo = minimo; p.unidade = unidade;
+          p.codigoBarras = codigoBarras;
+        }
       } else {
-        estado.produtos.push({ id: uid(), nome, preco, custo, estoque, minimo, unidade });
+        estado.produtos.push({ id: uid(), nome, preco, custo, estoque, minimo, unidade, codigoBarras });
       }
       registrarLog(
         id ? 'Editar produto' : 'Cadastrar produto',
@@ -9819,102 +10215,18 @@ function cancelarVendaPendente(id) {
       document.addEventListener('keydown', onKey);
     }
 
-    function ehDispositivoMovel() {
-      try {
-        if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
-          return navigator.userAgentData.mobile;
-        }
-      } catch (e) {}
-      const ua = navigator.userAgent || '';
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
-      if (navigator.maxTouchPoints > 1 && Math.min(window.innerWidth || 0, window.innerHeight || 0) < 900) return true;
-      return false;
-    }
-
-    /** App instalado (PWA / “Adicionar à tela inicial”) ou WebView */
-    function ehModoApp() {
-      try {
-        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
-        if (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
-        if (window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches) return true;
-      } catch (e) {}
-      if (typeof navigator.standalone === 'boolean' && navigator.standalone) return true; // iOS
-      const ua = navigator.userAgent || '';
-      // WebViews comuns de “transformar site em app”
-      if (/\bwv\b|; wv\)|WebView|FBAN|FBAV|Instagram|Line\//i.test(ua)) return true;
-      if (document.referrer === 'android-app://') return true;
-      return false;
-    }
-
-    function obterHtmlComprovanteAtual() {
+    function confirmarImpressaoPreview() {
       const prev = document.getElementById('print-preview-content');
       const area = document.getElementById('print-area');
-      if (prev && prev.innerHTML && prev.innerHTML.trim()) return prev.innerHTML;
-      if (area && area.innerHTML && area.innerHTML.trim()) return area.innerHTML;
-      return '';
-    }
+      let html = '';
+      if (prev && prev.innerHTML && prev.innerHTML.trim()) html = prev.innerHTML;
+      else if (area && area.innerHTML && area.innerHTML.trim()) html = area.innerHTML;
+      if (!html) {
+        toast('Nada para imprimir — abra o comprovante novamente.', 'error');
+        return;
+      }
 
-    /**
-     * Impressão na própria página (#print-area).
-     * Funciona melhor em PWA/Vercel/app do que iframe 0x0 ou window.open.
-     */
-    function imprimirNaPaginaPrincipal(htmlConteudo) {
-      const area = document.getElementById('print-area');
-      if (!area) return false;
-
-      area.innerHTML = htmlConteudo || '';
-      try { reaplicarBarcodesNo(area); } catch (e) {}
-
-      // Garante estilos para o motor de impressão enxergar o conteúdo
-      area.setAttribute('data-printing', '1');
-      area.style.setProperty('position', 'absolute', 'important');
-      area.style.setProperty('left', '0', 'important');
-      area.style.setProperty('top', '0', 'important');
-      area.style.setProperty('width', '100%', 'important');
-      area.style.setProperty('visibility', 'visible', 'important');
-      area.style.setProperty('z-index', '2147483647', 'important');
-      area.style.setProperty('pointer-events', 'none', 'important');
-      area.style.setProperty('background', '#fff', 'important');
-      area.style.setProperty('display', 'block', 'important');
-
-      const overlay = document.getElementById('print-preview-overlay');
-      if (overlay) overlay.classList.remove('show');
-
-      const restaurar = () => {
-        area.removeAttribute('data-printing');
-        area.style.removeProperty('position');
-        area.style.removeProperty('left');
-        area.style.removeProperty('top');
-        area.style.removeProperty('width');
-        area.style.removeProperty('visibility');
-        area.style.removeProperty('z-index');
-        area.style.removeProperty('pointer-events');
-        area.style.removeProperty('background');
-        area.style.removeProperty('display');
-        // volta ao estado “fora da tela”
-        area.style.cssText = '';
-        try {
-          window.removeEventListener('afterprint', restaurar);
-        } catch (e) {}
-      };
-
-      window.addEventListener('afterprint', restaurar);
-
-      setTimeout(() => {
-        try {
-          window.focus();
-          window.print();
-        } catch (e) {
-          console.warn(e);
-        }
-        // iOS / alguns WebViews não disparam afterprint
-        setTimeout(restaurar, 4000);
-      }, 80);
-
-      return true;
-    }
-
-    function imprimirViaIframeDesktop(htmlConteudo) {
+      // Impressão via iframe isolado (evita página em branco no Chrome/Edge)
       try {
         const antigo = document.getElementById('print-iframe-temp');
         if (antigo) antigo.remove();
@@ -9922,8 +10234,7 @@ function cancelarVendaPendente(id) {
         const iframe = document.createElement('iframe');
         iframe.id = 'print-iframe-temp';
         iframe.setAttribute('aria-hidden', 'true');
-        // tamanho real (mesmo fora da tela) — 0x0 falha em vários navegadores
-        iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:1200px;border:0;opacity:0;pointer-events:none;';
+        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
         document.body.appendChild(iframe);
 
         const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -9933,20 +10244,23 @@ function cancelarVendaPendente(id) {
           '<meta name="viewport" content="width=device-width, initial-scale=1">' +
           '<title>Impressão</title>' +
           '<style>' +
-          'html,body{margin:0;padding:0;background:#fff;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
+          'html,body{margin:0;padding:0;background:#fff;color:#000;}' +
           'body{font-family:"Courier New",Courier,monospace;font-size:13px;line-height:1.4;padding:14px 16px;}' +
           'table{width:100%;border-collapse:collapse;}' +
           'th,td{font-size:12px;}' +
           'svg,canvas,img{max-width:100%;height:auto;}' +
-          '@media print{body{padding:8px 10px;} @page{margin:8mm;}}' +
-          '</style></head><body>' + htmlConteudo + '</body></html>'
+          '@media print{body{padding:8px 10px;} @page{margin:10mm;}}' +
+          '</style></head><body>' + html + '</body></html>'
         );
         doc.close();
 
         const rodar = () => {
           try {
-            if (typeof JsBarcode !== 'undefined') {
-              doc.querySelectorAll('#barcode-print, svg.barcode-print').forEach(svg => {
+            // redesenha barcode dentro do iframe, se houver
+            const win = iframe.contentWindow;
+            if (win && typeof JsBarcode !== 'undefined') {
+              const svgs = doc.querySelectorAll('#barcode-print, svg.barcode-print');
+              svgs.forEach(svg => {
                 const codigo = (svg.getAttribute('data-codigo') || '').trim();
                 if (!codigo) return;
                 try {
@@ -9959,107 +10273,41 @@ function cancelarVendaPendente(id) {
               });
             }
           } catch (e) {}
+
           setTimeout(() => {
             try {
               iframe.contentWindow.focus();
               iframe.contentWindow.print();
             } catch (e2) {
               console.warn(e2);
-              imprimirNaPaginaPrincipal(htmlConteudo);
+              // último recurso: janela nova
+              try {
+                const w = window.open('', '_blank', 'noopener,noreferrer,width=520,height=740');
+                if (w) {
+                  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
+                  w.document.close();
+                  setTimeout(() => { try { w.focus(); w.print(); } catch (e3) {} }, 300);
+                }
+              } catch (e4) {}
             }
-            setTimeout(() => { try { iframe.remove(); } catch (e3) {} }, 60000);
-          }, 200);
+            // remove iframe depois (não interrompe o diálogo de impressão)
+            setTimeout(() => {
+              try { iframe.remove(); } catch (e5) {}
+            }, 60000);
+          }, 180);
         };
 
-        if (iframe.contentWindow.document.readyState === 'complete') rodar();
-        else {
+        // espera o documento do iframe carregar
+        if (iframe.contentWindow.document.readyState === 'complete') {
+          rodar();
+        } else {
           iframe.onload = rodar;
-          setTimeout(rodar, 400);
+          setTimeout(rodar, 300);
         }
-        return true;
       } catch (err) {
         console.warn(err);
-        return false;
+        toast('Não foi possível abrir a impressão. Tente novamente.', 'error');
       }
-    }
-
-    function confirmarImpressaoPreview() {
-      const html = obterHtmlComprovanteAtual();
-      if (!html) {
-        toast('Nada para imprimir — abra o comprovante novamente.', 'error');
-        return;
-      }
-
-      const app = ehModoApp();
-      const mobile = ehDispositivoMovel();
-
-      try {
-        // PWA / app Vercel / celular: imprime na página (não depende de pop-up nem iframe oculto)
-        if (app || mobile) {
-          const ok = imprimirNaPaginaPrincipal(html);
-          if (ok) {
-            toast(app
-              ? 'Se a impressão não abrir, use Compartilhar ou Salvar PDF.'
-              : 'Se o diálogo não abrir, toque em Compartilhar.', 'success');
-            return;
-          }
-        }
-
-        // Desktop no navegador: iframe isolado
-        if (imprimirViaIframeDesktop(html)) return;
-
-        // Último recurso
-        imprimirNaPaginaPrincipal(html);
-      } catch (err) {
-        console.warn(err);
-        try { imprimirNaPaginaPrincipal(html); } catch (e2) {}
-        toast('Falha ao imprimir. Tente Compartilhar.', 'error');
-      }
-    }
-
-    async function compartilharComprovantePreview() {
-      const html = obterHtmlComprovanteAtual();
-      const prev = document.getElementById('print-preview-content');
-      if (!html) {
-        toast('Nada para compartilhar.', 'error');
-        return;
-      }
-      const texto = ((prev && prev.innerText) || '').trim().substring(0, 2000) || 'Comprovante';
-
-      try {
-        if (navigator.share) {
-          const data = { title: 'Comprovante', text: texto };
-          // Alguns aparelhos aceitam arquivo HTML
-          try {
-            if (navigator.canShare) {
-              const blob = new Blob(
-                ['<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprovante</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>'],
-                { type: 'text/html' }
-              );
-              const file = new File([blob], 'comprovante.html', { type: 'text/html' });
-              if (navigator.canShare({ files: [file] })) {
-                data.files = [file];
-              }
-            }
-          } catch (e) {}
-          await navigator.share(data);
-          return;
-        }
-      } catch (e) {
-        if (e && e.name === 'AbortError') return;
-        console.warn(e);
-      }
-
-      // Sem Web Share: copia texto
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(texto);
-          toast('Texto do comprovante copiado.', 'success');
-          return;
-        }
-      } catch (e2) {}
-
-      toast('Compartilhar não disponível neste aparelho. Use Imprimir / Salvar PDF.', 'error');
     }
 
     function imprimirComprovanteCaixaId(id) {
