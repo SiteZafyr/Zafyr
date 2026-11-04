@@ -486,6 +486,75 @@
       text-align: center;
     }
 
+    /* Cards de lojas — um card por loja, botões separados */
+    .dono-lojas-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .dono-loja-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 0.95rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+      box-shadow: 0 2px 10px rgba(26, 37, 68, 0.05);
+    }
+    .dono-loja-card.selecionada {
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(74, 93, 140, 0.18);
+      background: #f7f9ff;
+    }
+    .dono-loja-card-titulo {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.35rem 0.5rem;
+    }
+    .dono-loja-card-titulo strong {
+      font-size: 1.02rem;
+      color: var(--primary-dark);
+    }
+    .dono-loja-codigo {
+      font-size: 0.78rem;
+      background: #eef0f6;
+      color: var(--text-muted);
+      padding: 0.12rem 0.45rem;
+      border-radius: 6px;
+      font-family: ui-monospace, monospace;
+    }
+    .dono-loja-card-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+    }
+    .dono-loja-card-meta {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .dono-loja-card-acoes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      margin-top: 0.25rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid var(--border);
+    }
+    .dono-loja-card-acoes .btn {
+      min-width: 140px;
+    }
+    #dono-lista-lojas > .dono-vazio {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      padding: 1.75rem 0.75rem;
+      text-align: center;
+      background: #f8f9fc;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+    }
+
     .dono-acoes-box {
       background: #eef0f6;
       border: 1px solid #d4d8e4;
@@ -1330,6 +1399,144 @@
         max-width: 100%;
         padding: 1rem 0.75rem;
       }
+
+      /* Mensagens do dono no celular: lista OU conversa em tela cheia */
+      .dono-msg-layout {
+        grid-template-columns: 1fr !important;
+        min-height: min(70dvh, 640px) !important;
+        height: min(72dvh, 680px) !important;
+        gap: 0 !important;
+      }
+      .dono-msg-list,
+      .dono-msg-chat {
+        max-height: none !important;
+        min-height: 0 !important;
+        height: 100% !important;
+      }
+      .dono-msg-layout:not(.chat-aberta) .dono-msg-chat {
+        display: none !important;
+      }
+      .dono-msg-layout.chat-aberta .dono-msg-list {
+        display: none !important;
+      }
+      .dono-msg-layout.chat-aberta .dono-msg-chat {
+        display: flex !important;
+      }
+      .dono-msg-thread {
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+      }
+      .dono-msg-header {
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: center;
+      }
+      .dono-msg-header .btn {
+        float: none !important;
+        margin-left: 0 !important;
+      }
+      .dono-msg-composer-row {
+        flex-wrap: nowrap;
+      }
+      .dono-msg-composer-row textarea {
+        min-width: 0 !important;
+        flex: 1 1 auto;
+      }
+    }
+
+    /* Layout desktop/tablet das mensagens do dono */
+    .dono-msg-layout {
+      display: grid;
+      grid-template-columns: minmax(180px, 240px) 1fr;
+      gap: 0.85rem;
+      min-height: 420px;
+      height: min(62vh, 620px);
+      min-width: 0;
+    }
+    .dono-msg-list {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: auto;
+      background: #f8f9fc;
+      min-width: 0;
+      min-height: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .dono-msg-chat {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .dono-msg-header {
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      color: var(--primary-dark);
+      flex-shrink: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+      line-height: 1.35;
+    }
+    .dono-msg-header > span {
+      flex: 1 1 auto;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .dono-msg-thread {
+      flex: 1 1 auto;
+      overflow: auto;
+      padding: 0.85rem;
+      background: #f0f2f7;
+      min-height: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .dono-msg-composer {
+      padding: 0.65rem 0.85rem;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .dono-msg-composer-row {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .dono-msg-composer-row textarea {
+      flex: 1;
+      min-width: 140px;
+      padding: 0.55rem 0.7rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      resize: vertical;
+      max-height: 120px;
+    }
+    .dono-msg-thread img {
+      max-width: min(100%, 280px) !important;
+      height: auto !important;
+      border-radius: 10px;
+    }
+    .dono-msg-panel {
+      overflow: hidden;
+    }
+    /* Botão voltar só no celular */
+    .dono-msg-btn-voltar {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .dono-msg-btn-voltar {
+        display: inline-flex !important;
+      }
     }
 
     @media (max-width: 480px) {
@@ -1864,23 +2071,31 @@
               <button type="button" class="btn btn-secondary btn-sm" onclick="renderListaLojasDono()">🔄 Atualizar lista</button>
             </div>
             <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
-              Aqui você vê <strong>todas as lojas</strong> do sistema. Se o administrador esqueceu o <strong>login</strong> ou a <strong>senha</strong>,
-              redefina abaixo — os dados da loja (estoque, clientes, vendas) <strong>não são apagados</strong>.
+              Cada bloco abaixo é <strong>uma loja</strong>. Os botões de cada bloco valem só para aquela loja.
+              Redefinir login/senha <strong>não apaga</strong> estoque, clientes nem vendas.
             </p>
             <div class="form-group" style="margin-bottom:1rem;max-width:420px;">
               <label>🔎 Buscar loja</label>
               <input type="text" id="dono-busca-lojas" placeholder="Código ou nome da empresa..." oninput="renderListaLojasDono()" />
             </div>
-            <div id="dono-lista-lojas"><div class="dono-vazio">Carregando lojas…</div></div>
+            <div id="dono-lista-lojas" class="dono-lojas-grid"><div class="dono-vazio">Carregando lojas…</div></div>
           </div>
 
-          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;">
-            <div class="panel-header">
-              <h3 id="dono-loja-detalhe-titulo">Acesso da loja</h3>
-              <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja (admin)</button>
+          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;border:2px solid var(--primary-light);">
+            <div class="panel-header" style="align-items:flex-start;gap:0.75rem;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:0.2rem;">Gerenciando acessos da loja</div>
+                <h3 id="dono-loja-detalhe-titulo" style="margin:0;">Acesso da loja</h3>
+              </div>
+              <div class="btn-group" style="flex-wrap:wrap;">
+                <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="fecharDetalheLojaDono()">✕ Fechar</button>
+              </div>
             </div>
-            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;"></div>
-            <div class="table-wrap" style="margin-bottom:1rem;">
+            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;background:#f0f4ff;border:1px solid #d4dcf0;border-radius:12px;padding:0.75rem 0.9rem;"></div>
+
+            <p style="font-weight:750;color:var(--primary-dark);margin-bottom:0.55rem;font-size:0.9rem;">👥 Usuários desta loja</p>
+            <div class="table-wrap" style="margin-bottom:1.15rem;">
               <table>
                 <thead>
                   <tr>
@@ -1893,14 +2108,16 @@
                 <tbody id="dono-loja-usuarios"></tbody>
               </table>
             </div>
-            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;">
-              <p style="font-weight:700;margin-bottom:0.65rem;color:var(--primary-dark);">Redefinir acesso de um usuário</p>
+
+            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;">
+              <p style="font-weight:700;margin-bottom:0.35rem;color:var(--primary-dark);">🔑 Redefinir acesso de um usuário</p>
+              <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.4;">Clique em <strong>Redefinir</strong> na tabela acima e informe o novo login e senha.</p>
               <input type="hidden" id="dono-rec-codigo" />
               <input type="hidden" id="dono-rec-user-id" />
               <div class="form-grid">
                 <div class="form-group">
                   <label>Usuário selecionado</label>
-                  <input type="text" id="dono-rec-user-nome" readonly />
+                  <input type="text" id="dono-rec-user-nome" readonly placeholder="Nenhum selecionado" />
                 </div>
                 <div class="form-group">
                   <label>Novo login *</label>
@@ -1913,12 +2130,12 @@
               </div>
               <div class="btn-group" style="margin-top:0.75rem;">
                 <button type="button" class="btn btn-primary" onclick="salvarRecuperacaoAcessoDono()">💾 Salvar login e senha</button>
-                <button type="button" class="btn btn-secondary" onclick="fecharDetalheLojaDono()">Fechar</button>
               </div>
             </div>
-            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;margin-top:1rem;">
-              <p style="font-weight:700;margin-bottom:0.65rem;color:#92400e;">Criar administrador de emergência</p>
-              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;">Use se a loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
+
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;">
+              <p style="font-weight:700;margin-bottom:0.35rem;color:#92400e;">⚠️ Criar administrador de emergência</p>
+              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;line-height:1.4;">Use se esta loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
               <div class="form-grid">
                 <div class="form-group">
                   <label>Nome</label>
@@ -1943,28 +2160,28 @@
 
         <!-- MENSAGENS DOS CLIENTES (empresas) -->
         <section id="dono-page-mensagens" class="dono-page hidden">
-          <div class="panel">
+          <div class="panel dono-msg-panel">
             <div class="panel-header">
               <h3>💬 Mensagens dos clientes</h3>
               <button type="button" class="btn btn-sm btn-secondary" onclick="renderMensagensDono()">🔄 Atualizar</button>
             </div>
-            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
+            <p class="dono-msg-hint" style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
               Conversas das lojas/empresas com você. Podem enviar texto e imagem.
             </p>
-            <div style="display:grid;grid-template-columns:minmax(180px,240px) 1fr;gap:0.85rem;min-height:420px;">
-              <div style="border:1px solid var(--border);border-radius:12px;overflow:auto;background:#f8f9fc;max-height:520px;" id="dono-msg-lista-empresas">
+            <div class="dono-msg-layout" id="dono-msg-layout">
+              <div class="dono-msg-list" id="dono-msg-lista-empresas">
                 <div class="empty" style="padding:1rem;font-size:0.84rem;">Carregando…</div>
               </div>
-              <div style="border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;min-height:420px;background:#fff;">
-                <div id="dono-msg-header" style="padding:0.65rem 0.85rem;border-bottom:1px solid var(--border);font-weight:700;color:var(--primary-dark);">
+              <div class="dono-msg-chat" id="dono-msg-chat-panel">
+                <div id="dono-msg-header" class="dono-msg-header">
                   Selecione uma empresa à esquerda
                 </div>
-                <div id="dono-msg-thread" style="flex:1;overflow:auto;padding:0.85rem;max-height:360px;background:#f0f2f7;"></div>
-                <div id="dono-msg-composer" style="padding:0.65rem 0.85rem;border-top:1px solid var(--border);display:none;">
-                  <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:flex-end;">
-                    <textarea id="dono-msg-texto" rows="2" placeholder="Responder…" style="flex:1;min-width:160px;padding:0.55rem 0.7rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;"></textarea>
+                <div id="dono-msg-thread" class="dono-msg-thread"></div>
+                <div id="dono-msg-composer" class="dono-msg-composer" style="display:none;">
+                  <div class="dono-msg-composer-row">
+                    <textarea id="dono-msg-texto" rows="2" placeholder="Responder…"></textarea>
                     <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
-                      📷 Imagem
+                      📷
                       <input type="file" id="dono-msg-img" accept="image/*" style="display:none;" onchange="previewMsgImagem('dono')" />
                     </label>
                     <button type="button" class="btn btn-primary btn-sm" onclick="enviarMensagemDono()">Enviar</button>
@@ -2138,6 +2355,14 @@
       <section id="page-estoque" class="page hidden">
         <div class="panel">
           <div class="panel-header"><h3>Entrada / Saída de Estoque</h3></div>
+          <div id="grupo-mov-barcode" style="display:none;margin-bottom:0.85rem;">
+            <div style="display:flex;flex-wrap:wrap;gap:0.45rem;align-items:center;">
+              <input type="text" id="mov-barcode-input" placeholder="Código de barras ou digite e Enter" style="flex:1;min-width:160px;padding:0.55rem 0.75rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarProdutoPorBarcodeMovimentacao();}" />
+              <button type="button" class="btn btn-secondary" onclick="abrirScannerBarcode('movimentacao')">📷 Câmera</button>
+              <button type="button" class="btn btn-primary" onclick="buscarProdutoPorBarcodeMovimentacao()">Buscar</button>
+            </div>
+            <small style="font-size:0.75rem;color:var(--text-muted);display:block;margin-top:0.3rem;">Aponte a câmera ou digite o código para selecionar o produto da entrada/saída.</small>
+          </div>
           <div class="form-grid">
             <div class="form-group">
               <label>Produto *</label>
@@ -2267,25 +2492,36 @@
         <div class="panel">
           <div class="panel-header"><h3>🛒 Registrar Venda</h3></div>
 
-          <!-- Cliente com busca -->
+          <!-- Cliente: só mostra busca/lista ao clicar em Adicionar cliente -->
           <div style="margin-bottom:1.1rem;">
             <div class="form-group" style="margin-bottom:0.6rem;">
-              <label>Cliente *</label>
+              <label>Cliente</label>
               <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center;">
-                <div class="search-box" style="flex:1;min-width:200px;max-width:100%;">
-                  <input type="text" id="venda-busca-cliente" placeholder="Pesquisar cliente por nome ou telefone..." oninput="filtrarClientesVenda()" autocomplete="off" />
-                </div>
-                <button type="button" class="btn btn-primary" onclick="selecionarClienteAvulso()" style="white-space:nowrap;">
+                <button type="button" class="btn btn-primary" id="btn-adicionar-cliente-venda" onclick="mostrarSeletorClienteVenda()" style="white-space:nowrap;">
+                  ➕ Adicionar cliente
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="selecionarClienteAvulso()" style="white-space:nowrap;">
                   👤 Cliente não cadastrado
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm hidden" id="btn-ocultar-cliente-venda" onclick="ocultarSeletorClienteVenda()" style="white-space:nowrap;">
+                  ✕ Ocultar lista
                 </button>
               </div>
               <p style="font-size:0.78rem;color:var(--text-muted);margin:0.35rem 0 0;">
-                Cliente é opcional. Use o botão acima para dados avulsos, ou deixe em branco (fica como Consumidor). Fiado exige cliente cadastrado.
+                Cliente é opcional. Toque em <strong>Adicionar cliente</strong> para buscar um cadastrado, ou em <strong>Cliente não cadastrado</strong> para preencher os dados. Sem cliente fica como Consumidor. Fiado exige cliente cadastrado.
               </p>
-              <select id="venda-cliente" size="5" style="width:100%;margin-top:0.45rem;min-height:120px;" onchange="onClienteVendaChange()">
+              <div id="cliente-selecionado-info" style="margin-top:0.45rem;font-size:0.85rem;color:var(--primary-dark);font-weight:600;"></div>
+            </div>
+
+            <!-- Lista / busca de clientes cadastrados (oculto até clicar em Adicionar cliente) -->
+            <div id="grupo-cliente-cadastrado" class="hidden" style="background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:0.9rem;margin-top:0.5rem;">
+              <p style="font-size:0.82rem;font-weight:600;color:var(--text-muted);margin-bottom:0.55rem;">Selecionar cliente cadastrado</p>
+              <div class="search-box" style="margin-bottom:0.5rem;">
+                <input type="text" id="venda-busca-cliente" placeholder="Pesquisar cliente por nome ou telefone..." oninput="filtrarClientesVenda()" autocomplete="off" />
+              </div>
+              <select id="venda-cliente" size="5" style="width:100%;min-height:120px;" onchange="onClienteVendaChange()">
                 <option value="">— Digite acima para buscar ou selecione —</option>
               </select>
-              <div id="cliente-selecionado-info" style="margin-top:0.4rem;font-size:0.85rem;color:var(--primary-dark);font-weight:600;"></div>
             </div>
 
             <!-- Campos para cliente avulso (não cadastrado) -->
@@ -2833,7 +3069,7 @@
             <button type="button" class="btn btn-primary" onclick="salvarConfigBarcode()">Salvar</button>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
-            Ative para ler códigos de barras com a <strong>câmera do celular</strong> no cadastro de produtos e/ou na venda.
+            Ative para ler códigos de barras com a <strong>câmera do celular</strong> no cadastro, na venda e/ou na movimentação de estoque.
             Desligado por padrão — o restante do sistema continua igual.
           </p>
           <div style="display:flex;flex-direction:column;gap:0.75rem;">
@@ -2849,6 +3085,13 @@
               <span>
                 <strong style="display:block;color:var(--primary-dark);">Nova venda</strong>
                 <span style="font-size:0.82rem;color:var(--text-muted);">Permite apontar a câmera para o código e adicionar o produto ao carrinho.</span>
+              </span>
+            </label>
+            <label style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;">
+              <input type="checkbox" id="pers-barcode-mov" style="margin-top:0.2rem;width:18px;height:18px;flex-shrink:0;" />
+              <span>
+                <strong style="display:block;color:var(--primary-dark);">Movimentação de estoque</strong>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Permite ler o código para selecionar o produto na entrada ou saída.</span>
               </span>
             </label>
           </div>
@@ -3129,12 +3372,12 @@
       </div>
     </div>
   </div>
-
   <div id="print-preview-overlay" onclick="if(event.target===this)fecharPreviewImpressao()">
     <div class="print-preview-box" role="dialog" aria-modal="true" aria-label="Comprovante">
       <div class="print-preview-toolbar">
         <span class="titulo-prev">📄 Comprovante</span>
         <button type="button" class="btn btn-primary" onclick="confirmarImpressaoPreview()">🖨️ Imprimir</button>
+        <button type="button" class="btn btn-secondary" onclick="compartilharComprovantePreview()">📤 Compartilhar</button>
         <button type="button" class="btn btn-secondary" onclick="fecharPreviewImpressao()">✕ Fechar</button>
       </div>
       <div id="print-preview-content"></div>
@@ -3352,9 +3595,9 @@
         pixChave: '',
         pixCopiaCola: '',
         pixBeneficiario: '',
-        /** Leitura de código de barras pela câmera (admin liga/desliga) */
         barcodeCadastro: false,
-        barcodeVenda: false
+        barcodeVenda: false,
+        barcodeMovimentacao: false
       };
     }
 
@@ -3370,7 +3613,8 @@
         pixCopiaCola: p.pixCopiaCola != null ? String(p.pixCopiaCola) : '',
         pixBeneficiario: p.pixBeneficiario != null ? String(p.pixBeneficiario) : '',
         barcodeCadastro: p.barcodeCadastro === true,
-        barcodeVenda: p.barcodeVenda === true
+        barcodeVenda: p.barcodeVenda === true,
+        barcodeMovimentacao: p.barcodeMovimentacao === true
       };
     }
 
@@ -3379,6 +3623,9 @@
     }
     function barcodeVendaAtivo() {
       try { return !!obterPersonalizacao().barcodeVenda; } catch (e) { return false; }
+    }
+    function barcodeMovimentacaoAtivo() {
+      try { return !!obterPersonalizacao().barcodeMovimentacao; } catch (e) { return false; }
     }
 
     function obterPixLoja() {
@@ -3658,8 +3905,10 @@
         const p = obterPersonalizacao();
         const elCad = document.getElementById('pers-barcode-cadastro');
         const elVen = document.getElementById('pers-barcode-venda');
+        const elMov = document.getElementById('pers-barcode-mov');
         if (elCad) elCad.checked = !!p.barcodeCadastro;
         if (elVen) elVen.checked = !!p.barcodeVenda;
+        if (elMov) elMov.checked = !!p.barcodeMovimentacao;
       } catch (e) {}
     }
 
@@ -3668,13 +3917,15 @@
       const prev = obterPersonalizacao();
       const cad = !!(document.getElementById('pers-barcode-cadastro') || {}).checked;
       const ven = !!(document.getElementById('pers-barcode-venda') || {}).checked;
+      const mov = !!(document.getElementById('pers-barcode-mov') || {}).checked;
       estado.personalizacao = Object.assign({}, prev, {
         barcodeCadastro: cad,
-        barcodeVenda: ven
+        barcodeVenda: ven,
+        barcodeMovimentacao: mov
       });
       registrarLog(
         'Configurou código de barras',
-        'Cadastro: ' + (cad ? 'sim' : 'não') + ' · Venda: ' + (ven ? 'sim' : 'não'),
+        'Cadastro: ' + (cad ? 'sim' : 'não') + ' · Venda: ' + (ven ? 'sim' : 'não') + ' · Movimentação: ' + (mov ? 'sim' : 'não'),
         'usuario'
       );
       salvar();
@@ -3685,19 +3936,23 @@
     function atualizarUiBarcode() {
       const cad = barcodeCadastroAtivo();
       const ven = barcodeVendaAtivo();
+      const mov = barcodeMovimentacaoAtivo();
       const gProd = document.getElementById('grupo-produto-barcode');
       if (gProd) gProd.style.display = cad ? '' : 'none';
       const gVen = document.getElementById('grupo-venda-barcode');
       if (gVen) gVen.style.display = ven ? '' : 'none';
+      const gMov = document.getElementById('grupo-mov-barcode');
+      if (gMov) gMov.style.display = mov ? '' : 'none';
     }
 
     // ===================== SCANNER CÓDIGO DE BARRAS (CÂMERA) =====================
-    let _barcodeScanCtx = null; // 'produto' | 'venda'
+    let _barcodeScanCtx = null;
     let _barcodeStream = null;
     let _barcodeRaf = null;
     let _barcodeDetector = null;
     let _barcodeLastHit = '';
     let _barcodeLastHitAt = 0;
+    let _html5QrCode = null;
 
     function normalizarCodigoBarras(v) {
       return String(v || '').replace(/\s+/g, '').trim();
@@ -3730,6 +3985,11 @@
       if (_barcodeScanCtx === 'venda') {
         fecharScannerBarcode();
         aplicarCodigoBarrasNaVenda(c);
+        return;
+      }
+      if (_barcodeScanCtx === 'movimentacao') {
+        fecharScannerBarcode();
+        aplicarCodigoBarrasNaMovimentacao(c);
       }
     }
 
@@ -3757,6 +4017,28 @@
       adicionarAoCarrinho();
     }
 
+    function aplicarCodigoBarrasNaMovimentacao(codigo) {
+      if (!barcodeMovimentacaoAtivo()) {
+        toast('Leitura na movimentação está desativada pelo admin.', 'error');
+        return;
+      }
+      const p = buscarProdutoPorCodigoBarras(codigo);
+      if (!p) {
+        toast('Nenhum produto com o código ' + codigo, 'error');
+        const inp = document.getElementById('mov-barcode-input');
+        if (inp) { inp.value = codigo; inp.focus(); }
+        return;
+      }
+      const sel = document.getElementById('mov-produto');
+      if (sel) sel.value = p.id;
+      const qtdEl = document.getElementById('mov-qtd');
+      if (qtdEl && (!qtdEl.value || parseInt(qtdEl.value, 10) < 1)) qtdEl.value = '1';
+      const inp = document.getElementById('mov-barcode-input');
+      if (inp) inp.value = '';
+      toast('Produto selecionado: ' + (p.nome || ''), 'success');
+      try { if (qtdEl) qtdEl.focus(); } catch (e) {}
+    }
+
     function buscarProdutoPorBarcodeInput() {
       const inp = document.getElementById('venda-barcode-input');
       const codigo = normalizarCodigoBarras(inp ? inp.value : '');
@@ -3764,9 +4046,68 @@
       aplicarCodigoBarrasNaVenda(codigo);
     }
 
+    function buscarProdutoPorBarcodeMovimentacao() {
+      const inp = document.getElementById('mov-barcode-input');
+      const codigo = normalizarCodigoBarras(inp ? inp.value : '');
+      if (!codigo) { toast('Informe o código de barras', 'error'); return; }
+      aplicarCodigoBarrasNaMovimentacao(codigo);
+    }
+
     function setBarcodeScannerStatus(msg) {
       const el = document.getElementById('barcode-scanner-status');
       if (el) el.textContent = msg || '';
+    }
+
+    function garantirHtml5Qrcode() {
+      return new Promise((resolve, reject) => {
+        if (typeof Html5Qrcode !== 'undefined') { resolve(); return; }
+        const existing = document.querySelector('script[data-html5-qrcode]');
+        if (existing) {
+          existing.addEventListener('load', () => resolve());
+          existing.addEventListener('error', () => reject(new Error('Falha ao carregar leitor')));
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
+        s.async = true;
+        s.setAttribute('data-html5-qrcode', '1');
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('Falha ao carregar leitor'));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function pararHtml5Qrcode() {
+      if (_html5QrCode) {
+        try { await _html5QrCode.stop(); } catch (e) {}
+        try { await _html5QrCode.clear(); } catch (e) {}
+        _html5QrCode = null;
+      }
+      const wrap = document.getElementById('barcode-scanner-fallback');
+      if (wrap) {
+        wrap.style.display = 'none';
+        wrap.innerHTML = '';
+      }
+      const video = document.getElementById('barcode-scanner-video');
+      if (video) video.style.display = 'block';
+    }
+
+    async function iniciarHtml5QrcodeFallback() {
+      await fecharScannerBarcodeStreams();
+      const wrap = document.getElementById('barcode-scanner-fallback');
+      const video = document.getElementById('barcode-scanner-video');
+      if (video) video.style.display = 'none';
+      if (!wrap) throw new Error('fallback wrap ausente');
+      wrap.style.display = 'block';
+      wrap.innerHTML = '<div id="barcode-html5-reader" style="width:100%;"></div>';
+      _html5QrCode = new Html5Qrcode('barcode-html5-reader');
+      setBarcodeScannerStatus('Aponte a câmera para o código de barras…');
+      await _html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 260, height: 140 }, aspectRatio: 1.777 },
+        (decodedText) => { if (decodedText) onCodigoBarrasLido(decodedText); },
+        () => {}
+      );
     }
 
     async function abrirScannerBarcode(ctx) {
@@ -3776,6 +4117,10 @@
       }
       if (ctx === 'venda' && !barcodeVendaAtivo()) {
         toast('Leitura na venda está desativada pelo admin.', 'error');
+        return;
+      }
+      if (ctx === 'movimentacao' && !barcodeMovimentacaoAtivo()) {
+        toast('Leitura na movimentação está desativada pelo admin.', 'error');
         return;
       }
       if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
@@ -3793,7 +4138,9 @@
       if (titulo) {
         titulo.textContent = _barcodeScanCtx === 'produto'
           ? '📷 Ler código (cadastro)'
-          : '📷 Ler código (venda)';
+          : (_barcodeScanCtx === 'movimentacao'
+            ? '📷 Ler código (movimentação)'
+            : '📷 Ler código (venda)');
       }
       if (overlay) overlay.classList.add('show');
       setBarcodeScannerStatus('Pedindo acesso à câmera…');
@@ -3844,7 +4191,6 @@
           };
           _barcodeRaf = requestAnimationFrame(loop);
         } else {
-          // Fallback: Html5Qrcode (iOS Safari e navegadores sem BarcodeDetector)
           setBarcodeScannerStatus('Carregando leitor compatível…');
           try {
             await garantirHtml5Qrcode();
@@ -3859,64 +4205,6 @@
         setBarcodeScannerStatus('Não foi possível abrir a câmera. Verifique a permissão.');
         toast('Sem acesso à câmera. Permita nas configurações do aparelho.', 'error');
       }
-    }
-
-    let _html5QrCode = null;
-
-    function garantirHtml5Qrcode() {
-      return new Promise((resolve, reject) => {
-        if (typeof Html5Qrcode !== 'undefined') { resolve(); return; }
-        const existing = document.querySelector('script[data-html5-qrcode]');
-        if (existing) {
-          existing.addEventListener('load', () => resolve());
-          existing.addEventListener('error', () => reject(new Error('Falha ao carregar leitor')));
-          return;
-        }
-        const s = document.createElement('script');
-        s.src = 'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js';
-        s.async = true;
-        s.setAttribute('data-html5-qrcode', '1');
-        s.onload = () => resolve();
-        s.onerror = () => reject(new Error('Falha ao carregar leitor'));
-        document.head.appendChild(s);
-      });
-    }
-
-    async function iniciarHtml5QrcodeFallback() {
-      // Para de usar o <video> nativo e deixa o Html5Qrcode gerenciar a câmera
-      await fecharScannerBarcodeStreams();
-      const wrap = document.getElementById('barcode-scanner-fallback');
-      const video = document.getElementById('barcode-scanner-video');
-      if (video) video.style.display = 'none';
-      if (!wrap) throw new Error('fallback wrap ausente');
-      wrap.style.display = 'block';
-      wrap.innerHTML = '<div id="barcode-html5-reader" style="width:100%;"></div>';
-
-      _html5QrCode = new Html5Qrcode('barcode-html5-reader');
-      setBarcodeScannerStatus('Aponte a câmera para o código de barras…');
-      await _html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 260, height: 140 }, aspectRatio: 1.777 },
-        (decodedText) => {
-          if (decodedText) onCodigoBarrasLido(decodedText);
-        },
-        () => {}
-      );
-    }
-
-    async function pararHtml5Qrcode() {
-      if (_html5QrCode) {
-        try { await _html5QrCode.stop(); } catch (e) {}
-        try { await _html5QrCode.clear(); } catch (e) {}
-        _html5QrCode = null;
-      }
-      const wrap = document.getElementById('barcode-scanner-fallback');
-      if (wrap) {
-        wrap.style.display = 'none';
-        wrap.innerHTML = '';
-      }
-      const video = document.getElementById('barcode-scanner-video');
-      if (video) video.style.display = 'block';
     }
 
     async function fecharScannerBarcodeStreams() {
@@ -5041,7 +5329,8 @@
           pixCopiaCola: op.pixCopiaCola != null ? String(op.pixCopiaCola) : '',
           pixBeneficiario: op.pixBeneficiario != null ? String(op.pixBeneficiario) : '',
           barcodeCadastro: op.barcodeCadastro === true,
-          barcodeVenda: op.barcodeVenda === true
+          barcodeVenda: op.barcodeVenda === true,
+          barcodeMovimentacao: op.barcodeMovimentacao === true
         };
       }
       if (!Array.isArray(e.modulosAtivos)) e.modulosAtivos = PERMISSOES_APP.map(p => p.id);
@@ -5919,19 +6208,34 @@
           });
         }
 
+        // Mobile: mostra lista ou conversa
+        try {
+          const layout = document.getElementById('dono-msg-layout');
+          if (layout) {
+            if (_msgEmpresaSel) layout.classList.add('chat-aberta');
+            else layout.classList.remove('chat-aberta');
+          }
+        } catch (eLay) {}
+
         if (_msgEmpresaSel && porEmpresa[String(_msgEmpresaSel)]) {
           const pack = porEmpresa[String(_msgEmpresaSel)];
           const fechada = !!pack.fechada;
           if (header) {
             header.innerHTML = '';
+            const btnVoltar = document.createElement('button');
+            btnVoltar.type = 'button';
+            btnVoltar.className = 'btn btn-sm btn-secondary dono-msg-btn-voltar';
+            btnVoltar.textContent = '← Conversas';
+            btnVoltar.onclick = function () { voltarListaMsgDono(); };
+            header.appendChild(btnVoltar);
             const tit = document.createElement('span');
             tit.textContent = (pack.nome || '') + ' · ' + pack.codigo + (fechada ? ' (fechada)' : '');
             header.appendChild(tit);
             const btnF = document.createElement('button');
             btnF.type = 'button';
             btnF.className = 'btn btn-sm btn-secondary';
-            btnF.style.cssText = 'float:right;min-height:30px;margin-left:0.5rem;';
-            btnF.textContent = fechada ? '📁 Fechada' : '📁 Fechar conversa';
+            btnF.style.cssText = 'min-height:30px;';
+            btnF.textContent = fechada ? '📁 Fechada' : '📁 Fechar';
             btnF.onclick = function () { fecharConversaMsg(pack.codigo); };
             header.appendChild(btnF);
           }
@@ -5982,6 +6286,22 @@
 
     function selecionarEmpresaMsgDono(codigo) {
       _msgEmpresaSel = codigo ? String(codigo) : null;
+      try {
+        const layout = document.getElementById('dono-msg-layout');
+        if (layout) {
+          if (_msgEmpresaSel) layout.classList.add('chat-aberta');
+          else layout.classList.remove('chat-aberta');
+        }
+      } catch (e) {}
+      renderMensagensDono();
+    }
+
+    function voltarListaMsgDono() {
+      _msgEmpresaSel = null;
+      try {
+        const layout = document.getElementById('dono-msg-layout');
+        if (layout) layout.classList.remove('chat-aberta');
+      } catch (e) {}
       renderMensagensDono();
     }
 
@@ -6241,6 +6561,7 @@
       if (!box) return;
       box.innerHTML = '<div class="dono-vazio">Carregando lojas…</div>';
       const busca = ((document.getElementById('dono-busca-lojas') || {}).value || '').toLowerCase().trim();
+      const codigoAberto = ((document.getElementById('dono-rec-codigo') || {}).value || '').trim();
       const plat = await lerPlataforma();
       const codigos = await obterCodigosTodasLojas();
       const itens = [];
@@ -6258,21 +6579,36 @@
         return;
       }
       box.innerHTML = itens.map(it => {
-        const st = it.acesso.status === 'bloqueado' ? '🚫 bloqueada' : (it.acesso.status === 'liberado' ? '✅ liberada' : '—');
-        const pago = it.acesso.pago ? '💰 paga' : (it.acesso.pago === false ? '⏳ não paga' : '');
+        const bloqueada = it.acesso.status === 'bloqueado';
+        const liberada = it.acesso.status === 'liberado';
+        const stBadge = bloqueada
+          ? '<span class="status atrasado">🚫 Bloqueada</span>'
+          : (liberada ? '<span class="status pago">✅ Liberada</span>' : '<span class="status aberto">— Status</span>');
+        const pagoBadge = it.acesso.pago
+          ? '<span class="status pago">💰 Paga</span>'
+          : (it.acesso.pago === false ? '<span class="status aberto">⏳ Não paga</span>' : '');
         const codEsc = String(it.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        return `<div class="dono-item" style="display:flex;justify-content:space-between;gap:0.5rem;align-items:flex-start;">
-          <div style="flex:1;min-width:0;">
-            <strong style="color:var(--primary-dark);">${it.nome}</strong>
-            <span style="color:var(--text-muted);"> · ${it.codigo}</span><br>
-            <span style="font-size:0.82rem;">${st}${pago ? ' · ' + pago : ''}</span>
-            ${it.meta.adminLogin ? '<br><span style="font-size:0.8rem;color:var(--text-muted);">Admin inicial: <code>' + it.meta.adminLogin + '</code></span>' : ''}
-          </div>
-          <div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">
-            <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra na loja como administrador, sem registrar nos logs">🚪 Entrar na loja</button>
-            <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">🔑 Acessos</button>
-          </div>
-        </div>`;
+        const selecionada = codigoAberto && codigoAberto === String(it.codigo);
+        return `
+          <div class="dono-loja-card${selecionada ? ' selecionada' : ''}" data-loja-codigo="${it.codigo}">
+            <div class="dono-loja-card-titulo">
+              <strong>${it.nome}</strong>
+              <code class="dono-loja-codigo">${it.codigo}</code>
+            </div>
+            <div class="dono-loja-card-badges">
+              ${stBadge}
+              ${pagoBadge}
+            </div>
+            ${it.meta.adminLogin ? `<div class="dono-loja-card-meta">Admin inicial: <code>${it.meta.adminLogin}</code></div>` : ''}
+            <div class="dono-loja-card-acoes">
+              <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra nesta loja como administrador">
+                🚪 Entrar nesta loja
+              </button>
+              <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">
+                🔑 Gerenciar acessos
+              </button>
+            </div>
+          </div>`;
       }).join('');
     }
 
@@ -6292,15 +6628,21 @@
       document.getElementById('dono-emerg-login').value = '';
       document.getElementById('dono-emerg-senha').value = '';
 
+      document.querySelectorAll('.dono-loja-card').forEach(el => {
+        if (el.getAttribute('data-loja-codigo') === codigo) el.classList.add('selecionada');
+        else el.classList.remove('selecionada');
+      });
+
       const meta = await lerMetaLoja(codigo);
       const plat = await lerPlataforma();
       const acesso = (plat.acessos || {})[codigo] || {};
       const nome = acesso.nome || meta.nome || codigo;
-      document.getElementById('dono-loja-detalhe-titulo').textContent = 'Acesso — ' + nome;
+      document.getElementById('dono-loja-detalhe-titulo').textContent = nome + '  ·  ' + codigo;
       document.getElementById('dono-loja-detalhe-info').innerHTML =
-        '<strong>Código:</strong> ' + codigo +
+        '<strong>Loja:</strong> ' + nome +
+        '<br><strong>Código:</strong> <code>' + codigo + '</code>' +
         (meta.adminLogin ? '<br><strong>Login do admin na criação:</strong> ' + meta.adminLogin : '') +
-        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas.</span>';
+        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas desta loja.</span>';
 
       const estadoLoja = await lerEstadoLojaIsolado(codigo);
       const users = Array.isArray(estadoLoja.usuarios) ? estadoLoja.usuarios : [];
@@ -6333,6 +6675,9 @@
         painel.style.display = 'none';
         painel.classList.add('hidden');
       }
+      const rec = document.getElementById('dono-rec-codigo');
+      if (rec) rec.value = '';
+      document.querySelectorAll('.dono-loja-card.selecionada').forEach(el => el.classList.remove('selecionada'));
     }
 
     /**
@@ -7964,7 +8309,11 @@
 
       if (paginaIni === 'dashboard') renderDashboard();
       else if (paginaIni === 'produtos') renderProdutos();
-      else if (paginaIni === 'estoque') { preencherSelectProdutos('mov-produto'); renderHistoricoEstoque(); }
+      else if (paginaIni === 'estoque') {
+        preencherSelectProdutos('mov-produto');
+        renderHistoricoEstoque();
+        try { atualizarUiBarcode(); } catch (e) {}
+      }
       else if (paginaIni === 'clientes') renderClientes();
       else if (paginaIni === 'fiado') renderFiado();
       else if (paginaIni === 'vendas') renderVendasLog();
@@ -8035,7 +8384,11 @@
 
         if (page === 'dashboard') renderDashboard();
         if (page === 'produtos') renderProdutos();
-        if (page === 'estoque') { preencherSelectProdutos('mov-produto'); renderHistoricoEstoque(); }
+        if (page === 'estoque') {
+          preencherSelectProdutos('mov-produto');
+          renderHistoricoEstoque();
+          try { atualizarUiBarcode(); } catch (e) {}
+        }
         if (page === 'clientes') renderClientes();
         if (page === 'fiado') renderFiado();
         if (page === 'vendas') renderVendasLog();
@@ -8497,7 +8850,7 @@
       if (!isAdmin()) { toast('Acesso restrito', 'error'); return; }
       document.getElementById('produto-id').value = id || '';
       document.getElementById('modal-produto-titulo').textContent = id ? 'Editar Produto' : 'Novo Produto';
-      atualizarUiBarcode();
+      try { atualizarUiBarcode(); } catch (e) {}
       if (id) {
         const p = getProduto(id);
         if (!p) return;
@@ -8849,6 +9202,32 @@
       }
     }
 
+    function mostrarSeletorClienteVenda() {
+      const grupoCad = document.getElementById('grupo-cliente-cadastrado');
+      const grupoAv = document.getElementById('grupo-cliente-avulso');
+      const btnOcultar = document.getElementById('btn-ocultar-cliente-venda');
+      if (grupoAv) grupoAv.classList.add('hidden');
+      if (grupoCad) grupoCad.classList.remove('hidden');
+      if (btnOcultar) btnOcultar.classList.remove('hidden');
+      const sel = document.getElementById('venda-cliente');
+      if (sel && sel.value === '__avulso__') {
+        sel.value = '';
+        document.getElementById('cliente-selecionado-info').textContent = '';
+      }
+      preencherSelectClientes(document.getElementById('venda-busca-cliente')?.value || '');
+      try {
+        const busca = document.getElementById('venda-busca-cliente');
+        if (busca) busca.focus();
+      } catch (e) {}
+    }
+
+    function ocultarSeletorClienteVenda() {
+      const grupoCad = document.getElementById('grupo-cliente-cadastrado');
+      const btnOcultar = document.getElementById('btn-ocultar-cliente-venda');
+      if (grupoCad) grupoCad.classList.add('hidden');
+      if (btnOcultar) btnOcultar.classList.add('hidden');
+    }
+
     function filtrarClientesVenda() {
       const busca = document.getElementById('venda-busca-cliente').value;
       // Se estava em modo avulso e começou a buscar, volta para lista
@@ -8864,6 +9243,8 @@
       const val = sel.value;
       if (val === '__avulso__') {
         document.getElementById('grupo-cliente-avulso').classList.remove('hidden');
+        const grupoCad = document.getElementById('grupo-cliente-cadastrado');
+        if (grupoCad) grupoCad.classList.add('hidden');
         document.getElementById('cliente-selecionado-info').textContent = '👤 Cliente não cadastrado';
         return;
       }
@@ -8879,6 +9260,8 @@
           '✓ ' + c.nome + (c.telefone ? ' · ' + c.telefone : '') + (endCompleto ? ' · ' + endCompleto : '');
         // Sempre preenche dados de entrega a partir do cadastro do cliente
         preencherEntregaDoCliente(c);
+        // Após escolher, pode recolher a lista para a tela ficar limpa
+        ocultarSeletorClienteVenda();
       }
     }
 
@@ -8901,9 +9284,14 @@
         sel.insertBefore(opt, sel.firstChild);
       }
       sel.value = '__avulso__';
+      const grupoCad = document.getElementById('grupo-cliente-cadastrado');
+      if (grupoCad) grupoCad.classList.add('hidden');
+      const btnOcultar = document.getElementById('btn-ocultar-cliente-venda');
+      if (btnOcultar) btnOcultar.classList.add('hidden');
       document.getElementById('grupo-cliente-avulso').classList.remove('hidden');
       document.getElementById('cliente-selecionado-info').textContent = '👤 Cliente não cadastrado';
-      document.getElementById('venda-busca-cliente').value = '';
+      const busca = document.getElementById('venda-busca-cliente');
+      if (busca) busca.value = '';
       document.getElementById('avulso-nome').focus();
     }
 
@@ -8912,6 +9300,10 @@
       if (busca) busca.value = '';
       preencherSelectClientes();
       document.getElementById('grupo-cliente-avulso').classList.add('hidden');
+      const grupoCad = document.getElementById('grupo-cliente-cadastrado');
+      if (grupoCad) grupoCad.classList.add('hidden');
+      const btnOcultar = document.getElementById('btn-ocultar-cliente-venda');
+      if (btnOcultar) btnOcultar.classList.add('hidden');
       document.getElementById('cliente-selecionado-info').textContent = '';
       ['avulso-nome','avulso-telefone','avulso-documento','avulso-endereco','avulso-numero','avulso-bairro','avulso-complemento','avulso-referencia'].forEach(id => {
         const el = document.getElementById(id);
@@ -10213,6 +10605,72 @@ function cancelarVendaPendente(id) {
         }
       };
       document.addEventListener('keydown', onKey);
+    }
+
+    async function compartilharComprovantePreview() {
+      const prev = document.getElementById('print-preview-content');
+      const area = document.getElementById('print-area');
+      let html = '';
+      if (prev && prev.innerHTML && prev.innerHTML.trim()) html = prev.innerHTML;
+      else if (area && area.innerHTML && area.innerHTML.trim()) html = area.innerHTML;
+      if (!html) {
+        toast('Nada para compartilhar — abra o comprovante novamente.', 'error');
+        return;
+      }
+      const texto = ((prev && prev.innerText) || (area && area.innerText) || '').trim().substring(0, 2500) || 'Comprovante';
+      const tituloEl = document.querySelector('#print-preview-overlay .titulo-prev');
+      const titulo = (tituloEl && tituloEl.textContent) ? tituloEl.textContent.replace(/^[^\wÀ-ú]+/, '').trim() : 'Comprovante';
+
+      try {
+        if (navigator.share) {
+          const data = { title: titulo || 'Comprovante', text: texto };
+          try {
+            if (navigator.canShare) {
+              const blob = new Blob(
+                ['<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
+                  (titulo || 'Comprovante') +
+                  '</title></head><body style="font-family:monospace;padding:16px;color:#000;background:#fff;">' +
+                  html + '</body></html>'],
+                { type: 'text/html' }
+              );
+              const file = new File([blob], 'comprovante.html', { type: 'text/html' });
+              if (navigator.canShare({ files: [file] })) {
+                data.files = [file];
+              }
+            }
+          } catch (e) {}
+          await navigator.share(data);
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn(e);
+      }
+
+      // Sem Web Share: copia o texto
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(texto);
+          toast('Texto do comprovante copiado. Cole onde quiser compartilhar.', 'success');
+          return;
+        }
+      } catch (e2) {}
+
+      // Fallback antigo
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = texto;
+        ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        ta.remove();
+        toast('Texto do comprovante copiado.', 'success');
+        return;
+      } catch (e3) {}
+
+      toast('Compartilhar não disponível neste aparelho.', 'error');
     }
 
     function confirmarImpressaoPreview() {
