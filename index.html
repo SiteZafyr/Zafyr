@@ -486,75 +486,6 @@
       text-align: center;
     }
 
-    /* Cards de lojas — um card por loja, botões separados */
-    .dono-lojas-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-    }
-    .dono-loja-card {
-      background: #fff;
-      border: 1.5px solid var(--border);
-      border-radius: 14px;
-      padding: 0.95rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.55rem;
-      box-shadow: 0 2px 10px rgba(26, 37, 68, 0.05);
-    }
-    .dono-loja-card.selecionada {
-      border-color: var(--primary-light);
-      box-shadow: 0 0 0 3px rgba(74, 93, 140, 0.18);
-      background: #f7f9ff;
-    }
-    .dono-loja-card-titulo {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: baseline;
-      gap: 0.35rem 0.5rem;
-    }
-    .dono-loja-card-titulo strong {
-      font-size: 1.02rem;
-      color: var(--primary-dark);
-    }
-    .dono-loja-codigo {
-      font-size: 0.78rem;
-      background: #eef0f6;
-      color: var(--text-muted);
-      padding: 0.12rem 0.45rem;
-      border-radius: 6px;
-      font-family: ui-monospace, monospace;
-    }
-    .dono-loja-card-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-    }
-    .dono-loja-card-meta {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-    .dono-loja-card-acoes {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.45rem;
-      margin-top: 0.25rem;
-      padding-top: 0.65rem;
-      border-top: 1px solid var(--border);
-    }
-    .dono-loja-card-acoes .btn {
-      min-width: 140px;
-    }
-    #dono-lista-lojas > .dono-vazio {
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      padding: 1.75rem 0.75rem;
-      text-align: center;
-      background: #f8f9fc;
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-    }
-
     .dono-acoes-box {
       background: #eef0f6;
       border: 1px solid #d4d8e4;
@@ -1933,31 +1864,23 @@
               <button type="button" class="btn btn-secondary btn-sm" onclick="renderListaLojasDono()">🔄 Atualizar lista</button>
             </div>
             <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
-              Cada bloco abaixo é <strong>uma loja</strong>. Os botões de cada bloco valem só para aquela loja.
-              Redefinir login/senha <strong>não apaga</strong> estoque, clientes nem vendas.
+              Aqui você vê <strong>todas as lojas</strong> do sistema. Se o administrador esqueceu o <strong>login</strong> ou a <strong>senha</strong>,
+              redefina abaixo — os dados da loja (estoque, clientes, vendas) <strong>não são apagados</strong>.
             </p>
             <div class="form-group" style="margin-bottom:1rem;max-width:420px;">
               <label>🔎 Buscar loja</label>
               <input type="text" id="dono-busca-lojas" placeholder="Código ou nome da empresa..." oninput="renderListaLojasDono()" />
             </div>
-            <div id="dono-lista-lojas" class="dono-lojas-grid"><div class="dono-vazio">Carregando lojas…</div></div>
+            <div id="dono-lista-lojas"><div class="dono-vazio">Carregando lojas…</div></div>
           </div>
 
-          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;border:2px solid var(--primary-light);">
-            <div class="panel-header" style="align-items:flex-start;gap:0.75rem;">
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-muted);margin-bottom:0.2rem;">Gerenciando acessos da loja</div>
-                <h3 id="dono-loja-detalhe-titulo" style="margin:0;">Acesso da loja</h3>
-              </div>
-              <div class="btn-group" style="flex-wrap:wrap;">
-                <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="fecharDetalheLojaDono()">✕ Fechar</button>
-              </div>
+          <div class="panel hidden" id="dono-loja-detalhe" style="display:none;">
+            <div class="panel-header">
+              <h3 id="dono-loja-detalhe-titulo">Acesso da loja</h3>
+              <button type="button" class="btn btn-success btn-sm" id="btn-entrar-loja-detalhe" onclick="entrarComoAdminLojaDono(document.getElementById('dono-rec-codigo').value)">🚪 Entrar nesta loja (admin)</button>
             </div>
-            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;background:#f0f4ff;border:1px solid #d4dcf0;border-radius:12px;padding:0.75rem 0.9rem;"></div>
-
-            <p style="font-weight:750;color:var(--primary-dark);margin-bottom:0.55rem;font-size:0.9rem;">👥 Usuários desta loja</p>
-            <div class="table-wrap" style="margin-bottom:1.15rem;">
+            <div id="dono-loja-detalhe-info" style="font-size:0.88rem;margin-bottom:1rem;line-height:1.5;"></div>
+            <div class="table-wrap" style="margin-bottom:1rem;">
               <table>
                 <thead>
                   <tr>
@@ -1970,16 +1893,14 @@
                 <tbody id="dono-loja-usuarios"></tbody>
               </table>
             </div>
-
-            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1rem;">
-              <p style="font-weight:700;margin-bottom:0.35rem;color:var(--primary-dark);">🔑 Redefinir acesso de um usuário</p>
-              <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.4;">Clique em <strong>Redefinir</strong> na tabela acima e informe o novo login e senha.</p>
+            <div style="background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:1rem;">
+              <p style="font-weight:700;margin-bottom:0.65rem;color:var(--primary-dark);">Redefinir acesso de um usuário</p>
               <input type="hidden" id="dono-rec-codigo" />
               <input type="hidden" id="dono-rec-user-id" />
               <div class="form-grid">
                 <div class="form-group">
                   <label>Usuário selecionado</label>
-                  <input type="text" id="dono-rec-user-nome" readonly placeholder="Nenhum selecionado" />
+                  <input type="text" id="dono-rec-user-nome" readonly />
                 </div>
                 <div class="form-group">
                   <label>Novo login *</label>
@@ -1992,12 +1913,12 @@
               </div>
               <div class="btn-group" style="margin-top:0.75rem;">
                 <button type="button" class="btn btn-primary" onclick="salvarRecuperacaoAcessoDono()">💾 Salvar login e senha</button>
+                <button type="button" class="btn btn-secondary" onclick="fecharDetalheLojaDono()">Fechar</button>
               </div>
             </div>
-
-            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;">
-              <p style="font-weight:700;margin-bottom:0.35rem;color:#92400e;">⚠️ Criar administrador de emergência</p>
-              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;line-height:1.4;">Use se esta loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;margin-top:1rem;">
+              <p style="font-weight:700;margin-bottom:0.65rem;color:#92400e;">Criar administrador de emergência</p>
+              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.65rem;">Use se a loja ficou sem nenhum admin. Não apaga usuários existentes.</p>
               <div class="form-grid">
                 <div class="form-group">
                   <label>Nome</label>
@@ -3149,6 +3070,7 @@
       <div class="print-preview-toolbar">
         <span class="titulo-prev">📄 Comprovante</span>
         <button type="button" class="btn btn-primary" onclick="confirmarImpressaoPreview()">🖨️ Imprimir</button>
+        <button type="button" class="btn btn-secondary" onclick="compartilharComprovantePreview()">📤 Compartilhar</button>
         <button type="button" class="btn btn-secondary" onclick="fecharPreviewImpressao()">✕ Fechar</button>
       </div>
       <div id="print-preview-content"></div>
@@ -5947,7 +5869,6 @@
       if (!box) return;
       box.innerHTML = '<div class="dono-vazio">Carregando lojas…</div>';
       const busca = ((document.getElementById('dono-busca-lojas') || {}).value || '').toLowerCase().trim();
-      const codigoAberto = ((document.getElementById('dono-rec-codigo') || {}).value || '').trim();
       const plat = await lerPlataforma();
       const codigos = await obterCodigosTodasLojas();
       const itens = [];
@@ -5965,36 +5886,21 @@
         return;
       }
       box.innerHTML = itens.map(it => {
-        const bloqueada = it.acesso.status === 'bloqueado';
-        const liberada = it.acesso.status === 'liberado';
-        const stBadge = bloqueada
-          ? '<span class="status atrasado">🚫 Bloqueada</span>'
-          : (liberada ? '<span class="status pago">✅ Liberada</span>' : '<span class="status aberto">— Status</span>');
-        const pagoBadge = it.acesso.pago
-          ? '<span class="status pago">💰 Paga</span>'
-          : (it.acesso.pago === false ? '<span class="status aberto">⏳ Não paga</span>' : '');
+        const st = it.acesso.status === 'bloqueado' ? '🚫 bloqueada' : (it.acesso.status === 'liberado' ? '✅ liberada' : '—');
+        const pago = it.acesso.pago ? '💰 paga' : (it.acesso.pago === false ? '⏳ não paga' : '');
         const codEsc = String(it.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        const selecionada = codigoAberto && codigoAberto === String(it.codigo);
-        return `
-          <div class="dono-loja-card${selecionada ? ' selecionada' : ''}" data-loja-codigo="${it.codigo}">
-            <div class="dono-loja-card-titulo">
-              <strong>${it.nome}</strong>
-              <code class="dono-loja-codigo">${it.codigo}</code>
-            </div>
-            <div class="dono-loja-card-badges">
-              ${stBadge}
-              ${pagoBadge}
-            </div>
-            ${it.meta.adminLogin ? `<div class="dono-loja-card-meta">Admin inicial: <code>${it.meta.adminLogin}</code></div>` : ''}
-            <div class="dono-loja-card-acoes">
-              <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra nesta loja como administrador">
-                🚪 Entrar nesta loja
-              </button>
-              <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">
-                🔑 Gerenciar acessos
-              </button>
-            </div>
-          </div>`;
+        return `<div class="dono-item" style="display:flex;justify-content:space-between;gap:0.5rem;align-items:flex-start;">
+          <div style="flex:1;min-width:0;">
+            <strong style="color:var(--primary-dark);">${it.nome}</strong>
+            <span style="color:var(--text-muted);"> · ${it.codigo}</span><br>
+            <span style="font-size:0.82rem;">${st}${pago ? ' · ' + pago : ''}</span>
+            ${it.meta.adminLogin ? '<br><span style="font-size:0.8rem;color:var(--text-muted);">Admin inicial: <code>' + it.meta.adminLogin + '</code></span>' : ''}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.3rem;flex-shrink:0;">
+            <button type="button" class="btn btn-sm btn-success" onclick="entrarComoAdminLojaDono('${codEsc}')" title="Entra na loja como administrador, sem registrar nos logs">🚪 Entrar na loja</button>
+            <button type="button" class="btn btn-sm btn-primary" onclick="abrirDetalheLojaDono('${codEsc}')">🔑 Acessos</button>
+          </div>
+        </div>`;
       }).join('');
     }
 
@@ -6014,21 +5920,15 @@
       document.getElementById('dono-emerg-login').value = '';
       document.getElementById('dono-emerg-senha').value = '';
 
-      document.querySelectorAll('.dono-loja-card').forEach(el => {
-        if (el.getAttribute('data-loja-codigo') === codigo) el.classList.add('selecionada');
-        else el.classList.remove('selecionada');
-      });
-
       const meta = await lerMetaLoja(codigo);
       const plat = await lerPlataforma();
       const acesso = (plat.acessos || {})[codigo] || {};
       const nome = acesso.nome || meta.nome || codigo;
-      document.getElementById('dono-loja-detalhe-titulo').textContent = nome + '  ·  ' + codigo;
+      document.getElementById('dono-loja-detalhe-titulo').textContent = 'Acesso — ' + nome;
       document.getElementById('dono-loja-detalhe-info').innerHTML =
-        '<strong>Loja:</strong> ' + nome +
-        '<br><strong>Código:</strong> <code>' + codigo + '</code>' +
+        '<strong>Código:</strong> ' + codigo +
         (meta.adminLogin ? '<br><strong>Login do admin na criação:</strong> ' + meta.adminLogin : '') +
-        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas desta loja.</span>';
+        '<br><span style="color:var(--text-muted);">Redefinir login/senha não apaga estoque, clientes nem vendas.</span>';
 
       const estadoLoja = await lerEstadoLojaIsolado(codigo);
       const users = Array.isArray(estadoLoja.usuarios) ? estadoLoja.usuarios : [];
@@ -6061,9 +5961,6 @@
         painel.style.display = 'none';
         painel.classList.add('hidden');
       }
-      const rec = document.getElementById('dono-rec-codigo');
-      if (rec) rec.value = '';
-      document.querySelectorAll('.dono-loja-card.selecionada').forEach(el => el.classList.remove('selecionada'));
     }
 
     /**
@@ -9922,18 +9819,102 @@ function cancelarVendaPendente(id) {
       document.addEventListener('keydown', onKey);
     }
 
-    function confirmarImpressaoPreview() {
+    function ehDispositivoMovel() {
+      try {
+        if (navigator.userAgentData && typeof navigator.userAgentData.mobile === 'boolean') {
+          return navigator.userAgentData.mobile;
+        }
+      } catch (e) {}
+      const ua = navigator.userAgent || '';
+      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua)) return true;
+      if (navigator.maxTouchPoints > 1 && Math.min(window.innerWidth || 0, window.innerHeight || 0) < 900) return true;
+      return false;
+    }
+
+    /** App instalado (PWA / “Adicionar à tela inicial”) ou WebView */
+    function ehModoApp() {
+      try {
+        if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+        if (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if (window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+      } catch (e) {}
+      if (typeof navigator.standalone === 'boolean' && navigator.standalone) return true; // iOS
+      const ua = navigator.userAgent || '';
+      // WebViews comuns de “transformar site em app”
+      if (/\bwv\b|; wv\)|WebView|FBAN|FBAV|Instagram|Line\//i.test(ua)) return true;
+      if (document.referrer === 'android-app://') return true;
+      return false;
+    }
+
+    function obterHtmlComprovanteAtual() {
       const prev = document.getElementById('print-preview-content');
       const area = document.getElementById('print-area');
-      let html = '';
-      if (prev && prev.innerHTML && prev.innerHTML.trim()) html = prev.innerHTML;
-      else if (area && area.innerHTML && area.innerHTML.trim()) html = area.innerHTML;
-      if (!html) {
-        toast('Nada para imprimir — abra o comprovante novamente.', 'error');
-        return;
-      }
+      if (prev && prev.innerHTML && prev.innerHTML.trim()) return prev.innerHTML;
+      if (area && area.innerHTML && area.innerHTML.trim()) return area.innerHTML;
+      return '';
+    }
 
-      // Impressão via iframe isolado (evita página em branco no Chrome/Edge)
+    /**
+     * Impressão na própria página (#print-area).
+     * Funciona melhor em PWA/Vercel/app do que iframe 0x0 ou window.open.
+     */
+    function imprimirNaPaginaPrincipal(htmlConteudo) {
+      const area = document.getElementById('print-area');
+      if (!area) return false;
+
+      area.innerHTML = htmlConteudo || '';
+      try { reaplicarBarcodesNo(area); } catch (e) {}
+
+      // Garante estilos para o motor de impressão enxergar o conteúdo
+      area.setAttribute('data-printing', '1');
+      area.style.setProperty('position', 'absolute', 'important');
+      area.style.setProperty('left', '0', 'important');
+      area.style.setProperty('top', '0', 'important');
+      area.style.setProperty('width', '100%', 'important');
+      area.style.setProperty('visibility', 'visible', 'important');
+      area.style.setProperty('z-index', '2147483647', 'important');
+      area.style.setProperty('pointer-events', 'none', 'important');
+      area.style.setProperty('background', '#fff', 'important');
+      area.style.setProperty('display', 'block', 'important');
+
+      const overlay = document.getElementById('print-preview-overlay');
+      if (overlay) overlay.classList.remove('show');
+
+      const restaurar = () => {
+        area.removeAttribute('data-printing');
+        area.style.removeProperty('position');
+        area.style.removeProperty('left');
+        area.style.removeProperty('top');
+        area.style.removeProperty('width');
+        area.style.removeProperty('visibility');
+        area.style.removeProperty('z-index');
+        area.style.removeProperty('pointer-events');
+        area.style.removeProperty('background');
+        area.style.removeProperty('display');
+        // volta ao estado “fora da tela”
+        area.style.cssText = '';
+        try {
+          window.removeEventListener('afterprint', restaurar);
+        } catch (e) {}
+      };
+
+      window.addEventListener('afterprint', restaurar);
+
+      setTimeout(() => {
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {
+          console.warn(e);
+        }
+        // iOS / alguns WebViews não disparam afterprint
+        setTimeout(restaurar, 4000);
+      }, 80);
+
+      return true;
+    }
+
+    function imprimirViaIframeDesktop(htmlConteudo) {
       try {
         const antigo = document.getElementById('print-iframe-temp');
         if (antigo) antigo.remove();
@@ -9941,7 +9922,8 @@ function cancelarVendaPendente(id) {
         const iframe = document.createElement('iframe');
         iframe.id = 'print-iframe-temp';
         iframe.setAttribute('aria-hidden', 'true');
-        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+        // tamanho real (mesmo fora da tela) — 0x0 falha em vários navegadores
+        iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:1200px;border:0;opacity:0;pointer-events:none;';
         document.body.appendChild(iframe);
 
         const doc = iframe.contentDocument || iframe.contentWindow.document;
@@ -9951,23 +9933,20 @@ function cancelarVendaPendente(id) {
           '<meta name="viewport" content="width=device-width, initial-scale=1">' +
           '<title>Impressão</title>' +
           '<style>' +
-          'html,body{margin:0;padding:0;background:#fff;color:#000;}' +
+          'html,body{margin:0;padding:0;background:#fff;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}' +
           'body{font-family:"Courier New",Courier,monospace;font-size:13px;line-height:1.4;padding:14px 16px;}' +
           'table{width:100%;border-collapse:collapse;}' +
           'th,td{font-size:12px;}' +
           'svg,canvas,img{max-width:100%;height:auto;}' +
-          '@media print{body{padding:8px 10px;} @page{margin:10mm;}}' +
-          '</style></head><body>' + html + '</body></html>'
+          '@media print{body{padding:8px 10px;} @page{margin:8mm;}}' +
+          '</style></head><body>' + htmlConteudo + '</body></html>'
         );
         doc.close();
 
         const rodar = () => {
           try {
-            // redesenha barcode dentro do iframe, se houver
-            const win = iframe.contentWindow;
-            if (win && typeof JsBarcode !== 'undefined') {
-              const svgs = doc.querySelectorAll('#barcode-print, svg.barcode-print');
-              svgs.forEach(svg => {
+            if (typeof JsBarcode !== 'undefined') {
+              doc.querySelectorAll('#barcode-print, svg.barcode-print').forEach(svg => {
                 const codigo = (svg.getAttribute('data-codigo') || '').trim();
                 if (!codigo) return;
                 try {
@@ -9980,41 +9959,107 @@ function cancelarVendaPendente(id) {
               });
             }
           } catch (e) {}
-
           setTimeout(() => {
             try {
               iframe.contentWindow.focus();
               iframe.contentWindow.print();
             } catch (e2) {
               console.warn(e2);
-              // último recurso: janela nova
-              try {
-                const w = window.open('', '_blank', 'noopener,noreferrer,width=520,height=740');
-                if (w) {
-                  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Impressão</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>');
-                  w.document.close();
-                  setTimeout(() => { try { w.focus(); w.print(); } catch (e3) {} }, 300);
-                }
-              } catch (e4) {}
+              imprimirNaPaginaPrincipal(htmlConteudo);
             }
-            // remove iframe depois (não interrompe o diálogo de impressão)
-            setTimeout(() => {
-              try { iframe.remove(); } catch (e5) {}
-            }, 60000);
-          }, 180);
+            setTimeout(() => { try { iframe.remove(); } catch (e3) {} }, 60000);
+          }, 200);
         };
 
-        // espera o documento do iframe carregar
-        if (iframe.contentWindow.document.readyState === 'complete') {
-          rodar();
-        } else {
+        if (iframe.contentWindow.document.readyState === 'complete') rodar();
+        else {
           iframe.onload = rodar;
-          setTimeout(rodar, 300);
+          setTimeout(rodar, 400);
         }
+        return true;
       } catch (err) {
         console.warn(err);
-        toast('Não foi possível abrir a impressão. Tente novamente.', 'error');
+        return false;
       }
+    }
+
+    function confirmarImpressaoPreview() {
+      const html = obterHtmlComprovanteAtual();
+      if (!html) {
+        toast('Nada para imprimir — abra o comprovante novamente.', 'error');
+        return;
+      }
+
+      const app = ehModoApp();
+      const mobile = ehDispositivoMovel();
+
+      try {
+        // PWA / app Vercel / celular: imprime na página (não depende de pop-up nem iframe oculto)
+        if (app || mobile) {
+          const ok = imprimirNaPaginaPrincipal(html);
+          if (ok) {
+            toast(app
+              ? 'Se a impressão não abrir, use Compartilhar ou Salvar PDF.'
+              : 'Se o diálogo não abrir, toque em Compartilhar.', 'success');
+            return;
+          }
+        }
+
+        // Desktop no navegador: iframe isolado
+        if (imprimirViaIframeDesktop(html)) return;
+
+        // Último recurso
+        imprimirNaPaginaPrincipal(html);
+      } catch (err) {
+        console.warn(err);
+        try { imprimirNaPaginaPrincipal(html); } catch (e2) {}
+        toast('Falha ao imprimir. Tente Compartilhar.', 'error');
+      }
+    }
+
+    async function compartilharComprovantePreview() {
+      const html = obterHtmlComprovanteAtual();
+      const prev = document.getElementById('print-preview-content');
+      if (!html) {
+        toast('Nada para compartilhar.', 'error');
+        return;
+      }
+      const texto = ((prev && prev.innerText) || '').trim().substring(0, 2000) || 'Comprovante';
+
+      try {
+        if (navigator.share) {
+          const data = { title: 'Comprovante', text: texto };
+          // Alguns aparelhos aceitam arquivo HTML
+          try {
+            if (navigator.canShare) {
+              const blob = new Blob(
+                ['<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Comprovante</title></head><body style="font-family:monospace;padding:16px;">' + html + '</body></html>'],
+                { type: 'text/html' }
+              );
+              const file = new File([blob], 'comprovante.html', { type: 'text/html' });
+              if (navigator.canShare({ files: [file] })) {
+                data.files = [file];
+              }
+            }
+          } catch (e) {}
+          await navigator.share(data);
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        console.warn(e);
+      }
+
+      // Sem Web Share: copia texto
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(texto);
+          toast('Texto do comprovante copiado.', 'success');
+          return;
+        }
+      } catch (e2) {}
+
+      toast('Compartilhar não disponível neste aparelho. Use Imprimir / Salvar PDF.', 'error');
     }
 
     function imprimirComprovanteCaixaId(id) {
