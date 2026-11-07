@@ -2826,10 +2826,14 @@
         <div class="panel">
           <div class="panel-header">
             <h3>📁 Caixas fechados</h3>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="renderCaixasFechados()">🔄 Atualizar</button>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="renderCaixasFechados()">🔄 Atualizar</button>
+              <button type="button" class="btn btn-sm btn-danger" id="btn-excluir-todos-caixas-fechados" onclick="excluirTodosCaixasFechados()">🗑️ Excluir todos</button>
+            </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.9rem;">
             Histórico dos fechamentos de caixa. Cada registro guarda o total do dia e os valores por forma de pagamento.
+            Quem tem permissão de <strong>excluir</strong> em <em>Caixas fechados</em> (Categorias) pode apagar um por um ou todos de uma vez.
           </p>
           <div class="table-wrap">
             <table>
@@ -4346,6 +4350,7 @@
       venda: { pagamento: true },
       usuarios: { editar: true, excluir: true },
       caixa: { editar: true, excluir: true, pagamento: true },
+      'caixas-fechados': { editar: true, excluir: true },
       entregas: { editar: true, excluir: false }
     };
 
@@ -10473,13 +10478,87 @@ function cancelarVendaPendente(id) {
     }
 
 
+    function limparVinculoFechamentoNasVendas(fechamentoId) {
+      if (!fechamentoId) return 0;
+      let n = 0;
+      (estado.vendas || []).forEach(v => {
+        if (v.fechamentoId === fechamentoId) {
+          delete v.fechamentoId;
+          delete v.fechadoEm;
+          n += 1;
+        }
+      });
+      return n;
+    }
+
+    function excluirCaixaFechado(id) {
+      if (!exigirPodeExcluir('caixas-fechados', 'Seu cargo não pode excluir caixas fechados.')) return;
+      if (!Array.isArray(estado.fechamentosCaixa)) estado.fechamentosCaixa = [];
+      const reg = estado.fechamentosCaixa.find(x => x.id === id);
+      if (!reg) {
+        toast('Registro não encontrado', 'error');
+        return;
+      }
+      const resumo = (formatarData(reg.data) || '') + (reg.hora ? ' · ' + reg.hora : '') +
+        ' · Total ' + formatarMoeda(reg.totalGeral) +
+        (reg.qtdVendas != null ? ' · ' + reg.qtdVendas + ' venda(s)' : '');
+      if (!confirm(
+        'Excluir este fechamento de caixa?\n\n' + resumo +
+        '\n\nAs vendas ligadas a este fechamento voltam a ficar disponíveis para um novo fechamento (não apaga as vendas).'
+      )) return;
+      const liberadas = limparVinculoFechamentoNasVendas(id);
+      estado.fechamentosCaixa = estado.fechamentosCaixa.filter(x => x.id !== id);
+      registrarLog(
+        'Excluir caixa fechado',
+        resumo + (liberadas ? ' · ' + liberadas + ' venda(s) desvinculada(s)' : ''),
+        'caixa'
+      );
+      salvar();
+      renderCaixasFechados();
+      toast('Fechamento excluído' + (liberadas ? ' · ' + liberadas + ' venda(s) liberada(s)' : ''), 'success');
+    }
+
+    function excluirTodosCaixasFechados() {
+      if (!exigirPodeExcluir('caixas-fechados', 'Seu cargo não pode excluir caixas fechados.')) return;
+      if (!Array.isArray(estado.fechamentosCaixa)) estado.fechamentosCaixa = [];
+      const n = estado.fechamentosCaixa.length;
+      if (!n) {
+        toast('Não há caixas fechados para excluir.', 'error');
+        return;
+      }
+      if (!confirm(
+        'Excluir TODOS os ' + n + ' fechamento(s) de caixa?\n\n' +
+        'Esta ação não pode ser desfeita.\n' +
+        'As vendas vinculadas voltam a ficar disponíveis para um novo fechamento (as vendas em si não são apagadas).'
+      )) return;
+      if (!confirm('Confirma mesmo apagar o histórico inteiro de caixas fechados (' + n + ' registro(s))?')) return;
+      let liberadas = 0;
+      const ids = estado.fechamentosCaixa.map(r => r.id);
+      ids.forEach(id => { liberadas += limparVinculoFechamentoNasVendas(id); });
+      estado.fechamentosCaixa = [];
+      registrarLog(
+        'Excluir todos os caixas fechados',
+        n + ' registro(s) · ' + liberadas + ' venda(s) desvinculada(s)',
+        'caixa'
+      );
+      salvar();
+      renderCaixasFechados();
+      toast('Todos os fechamentos foram excluídos (' + n + ').', 'success');
+    }
+
     function renderCaixasFechados() {
       if (!temPermissao('caixas-fechados') && !temPermissao('caixa') && !isAdmin()) {
         const tbody0 = document.getElementById('lista-caixas-fechados');
         if (tbody0) tbody0.innerHTML = '<tr><td colspan="6" class="empty">Sem permissão.</td></tr>';
+        const btnAll0 = document.getElementById('btn-excluir-todos-caixas-fechados');
+        if (btnAll0) btnAll0.style.display = 'none';
         return;
       }
       if (!Array.isArray(estado.fechamentosCaixa)) estado.fechamentosCaixa = [];
+      const podeExcluir = podeExcluirModulo('caixas-fechados') || isAdmin();
+      const btnAll = document.getElementById('btn-excluir-todos-caixas-fechados');
+      if (btnAll) btnAll.style.display = podeExcluir ? '' : 'none';
+
       const lista = estado.fechamentosCaixa.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
       const tbody = document.getElementById('lista-caixas-fechados');
       if (!tbody) return;
@@ -10491,6 +10570,7 @@ function cancelarVendaPendente(id) {
         const formas = (reg.porForma || []).map(l =>
           `<div style="font-size:0.8rem;">${l.label || rotuloFormaPagamento(l.forma)}: <strong>${formatarMoeda(l.total)}</strong> <small style="color:var(--text-muted)">(${l.qtd})</small></div>`
         ).join('') || '—';
+        const idSafe = String(reg.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
         return `
           <tr>
             <td style="white-space:nowrap;">${formatarData(reg.data)}<br><small style="color:var(--text-muted)">${reg.hora || ''}</small></td>
@@ -10501,7 +10581,8 @@ function cancelarVendaPendente(id) {
               ${reg.totalFiado > 0 ? `<br><small style="color:var(--warning)">Fiado: ${formatarMoeda(reg.totalFiado)}</small>` : ''}
             </td>
             <td class="actions-cell">
-              <button class="btn btn-sm btn-secondary" onclick="imprimirResumoFechamentoCaixa((estado.fechamentosCaixa||[]).find(x=>x.id==='${reg.id}'))" title="Imprimir">🖨️ Imprimir</button>
+              <button class="btn btn-sm btn-secondary" onclick="imprimirResumoFechamentoCaixa((estado.fechamentosCaixa||[]).find(x=>x.id==='${idSafe}'))" title="Imprimir">🖨️ Imprimir</button>
+              ${podeExcluir ? `<button class="btn btn-sm btn-danger" onclick="excluirCaixaFechado('${idSafe}')" title="Excluir este fechamento">🗑️</button>` : ''}
             </td>
           </tr>`;
       }).join('');
