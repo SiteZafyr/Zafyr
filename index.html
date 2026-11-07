@@ -2289,10 +2289,49 @@
       <section id="page-dashboard" class="page">
         <div class="alerts" id="dash-alerts"></div>
         <div class="cards-grid" id="dash-cards"></div>
+
         <div class="panel">
           <div class="panel-header"><h3>📌 Resumo Rápido</h3></div>
           <div id="dash-resumo"></div>
         </div>
+
+        <div class="panel" id="dash-hoje-wrap">
+          <div class="panel-header">
+            <h3>📅 Movimento de hoje</h3>
+            <span id="dash-hoje-data" style="font-size:0.82rem;color:var(--text-muted);"></span>
+          </div>
+          <div class="cards-grid" id="dash-hoje-cards" style="margin-bottom:1rem;"></div>
+          <div id="dash-hoje-formas" style="font-size:0.88rem;line-height:1.55;"></div>
+        </div>
+
+        <div class="panel" id="dash-mes-wrap">
+          <div class="panel-header">
+            <h3>📈 Mês atual</h3>
+            <span id="dash-mes-periodo" style="font-size:0.82rem;color:var(--text-muted);"></span>
+          </div>
+          <div class="cards-grid" id="dash-mes-cards"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>🛒 Últimas vendas</h3>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="navegarPara('vendas')">Ver histórico</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Forma</th><th>Total</th><th>Vendedor</th></tr>
+              </thead>
+              <tbody id="dash-ultimas-vendas"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel" id="dash-pendencias-wrap">
+          <div class="panel-header"><h3>⏳ Pendências</h3></div>
+          <div id="dash-pendencias"></div>
+        </div>
+
         <div id="dash-top-vendas-wrap" class="hidden">
           <div class="panel">
             <div class="panel-header"><h3>🏆 Top 5 — Maiores vendas</h3></div>
@@ -2319,8 +2358,12 @@
             </div>
           </div>
         </div>
+
         <div class="panel">
-          <div class="panel-header"><h3>📦 Estoque por Produto</h3></div>
+          <div class="panel-header">
+            <h3>📦 Estoque por Produto</h3>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="navegarPara('produtos')">Gerenciar produtos</button>
+          </div>
           <div class="table-wrap">
             <table>
               <thead><tr><th>Produto</th><th>Estoque</th><th>Mínimo</th><th>Status</th></tr></thead>
@@ -8348,6 +8391,47 @@
       if (e.key === 'Enter') document.getElementById('login-usuario').focus();
     });
 
+    function navegarPara(page) {
+      if (!page) return;
+      const btn = document.querySelector('.nav-btn[data-page="' + page + '"]');
+      if (btn) {
+        btn.click();
+        return;
+      }
+      // Fallback se o botão não estiver visível no menu
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      const el = document.getElementById('page-' + page);
+      if (el) el.classList.remove('hidden');
+      const titles = {
+        dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Movimentação de Estoque',
+        clientes: 'Clientes', fiado: 'Fiado / Contas a Receber', vendas: 'Histórico de Vendas',
+        notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa',
+        'caixas-fechados': 'Caixas fechados', 'mensagens-dono': 'Falar com o suporte',
+        entregas: 'Entregas', mensal: 'Resumo Mensal', logs: 'Logs de Atividades',
+        usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
+      };
+      const t = document.getElementById('page-title');
+      if (t) t.textContent = titles[page] || page;
+      try {
+        if (page === 'dashboard') renderDashboard();
+        else if (page === 'produtos') renderProdutos();
+        else if (page === 'estoque') { preencherSelectProdutos('mov-produto'); renderHistoricoEstoque(); }
+        else if (page === 'clientes') renderClientes();
+        else if (page === 'fiado') renderFiado();
+        else if (page === 'vendas') renderVendasLog();
+        else if (page === 'notificacoes') renderNotificacoes();
+        else if (page === 'caixa') { if (typeof renderCaixa === 'function') renderCaixa(); }
+        else if (page === 'entregas') renderEntregas();
+        else if (page === 'mensal') renderResumoMensal();
+        else if (page === 'logs') renderLogs();
+      } catch (e) { console.warn(e); }
+      const sb = document.getElementById('sidebar');
+      const ov = document.getElementById('sidebar-overlay');
+      if (sb) sb.classList.remove('open');
+      if (ov) ov.classList.remove('show');
+    }
+
     // ===================== NAVEGAÇÃO =====================
     document.querySelectorAll('.nav-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -10607,36 +10691,205 @@ function cancelarVendaPendente(id) {
       document.addEventListener('keydown', onKey);
     }
 
-    async function compartilharComprovantePreview() {
+    /** Detecta app WebView (AppsGeyser, WebView Android, etc.) */
+    function ehWebViewApp() {
+      try {
+        if (window.matchMedia && (
+          window.matchMedia('(display-mode: standalone)').matches ||
+          window.matchMedia('(display-mode: fullscreen)').matches ||
+          window.matchMedia('(display-mode: minimal-ui)').matches
+        )) return true;
+      } catch (e) {}
+      if (typeof navigator.standalone === 'boolean' && navigator.standalone) return true;
+      const ua = navigator.userAgent || '';
+      // WebView Android clássico
+      if (/\bwv\b|; wv\)/i.test(ua)) return true;
+      if (/Version\/[\d.]+.*Chrome\/[\d.]+ Mobile/i.test(ua) && /Android/i.test(ua) && !/Chrome\/[.0-9]* Mobile Safari/i.test(ua) === false) {
+        // muitos WebViews Android
+      }
+      if (/; wv\)|WebView|AppsGeyser|Cordova|Ionic|Capacitor|FBAN|FBAV/i.test(ua)) return true;
+      // AppsGeyser / wrappers costumam não ter chrome na barra
+      try {
+        if (window.Android || window.AndroidInterface || window.JSBridge) return true;
+      } catch (e2) {}
+      return false;
+    }
+
+    function obterHtmlETextoComprovante() {
       const prev = document.getElementById('print-preview-content');
       const area = document.getElementById('print-area');
       let html = '';
       if (prev && prev.innerHTML && prev.innerHTML.trim()) html = prev.innerHTML;
       else if (area && area.innerHTML && area.innerHTML.trim()) html = area.innerHTML;
+      const texto = ((prev && prev.innerText) || (area && area.innerText) || '').trim().substring(0, 3000) || 'Comprovante';
+      const tituloEl = document.querySelector('#print-preview-overlay .titulo-prev');
+      const titulo = (tituloEl && tituloEl.textContent) ? tituloEl.textContent.replace(/^[^\wÀ-ú]+/, '').trim() : 'Comprovante';
+      return { html, texto, titulo };
+    }
+
+    function montarHtmlComprovanteCompleto(html, titulo) {
+      return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<title>' + (titulo || 'Comprovante') + '</title>' +
+        '<style>html,body{margin:0;padding:0;background:#fff;color:#000;}' +
+        'body{font-family:"Courier New",Courier,monospace;font-size:13px;line-height:1.4;padding:16px;}' +
+        'table{width:100%;border-collapse:collapse;}th,td{font-size:12px;}' +
+        'svg,canvas,img{max-width:100%;height:auto;}' +
+        '@media print{body{padding:8px;}@page{margin:8mm;}}</style></head><body>' +
+        (html || '') + '</body></html>';
+    }
+
+    function baixarComprovanteArquivo(html, titulo) {
+      try {
+        const full = montarHtmlComprovanteCompleto(html, titulo);
+        const blob = new Blob([full], { type: 'text/html;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'comprovante-' + Date.now() + '.html';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          try { a.remove(); URL.revokeObjectURL(url); } catch (e) {}
+        }, 2000);
+        return true;
+      } catch (e) {
+        console.warn(e);
+        return false;
+      }
+    }
+
+    function copiarTextoComprovante(texto) {
+      return new Promise(async (resolve) => {
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(texto);
+            resolve(true);
+            return;
+          }
+        } catch (e) {}
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = texto;
+          ta.setAttribute('readonly', '');
+          ta.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          ta.setSelectionRange(0, ta.value.length);
+          const ok = document.execCommand('copy');
+          ta.remove();
+          resolve(!!ok);
+          return;
+        } catch (e2) {}
+        resolve(false);
+      });
+    }
+
+    function abrirWhatsAppComprovante(texto) {
+      try {
+        const t = encodeURIComponent(String(texto || '').substring(0, 1800));
+        // Intent Android (WebView / AppsGeyser) + fallback web
+        const ua = navigator.userAgent || '';
+        if (/Android/i.test(ua)) {
+          window.location.href = 'intent://send?text=' + t + '#Intent;scheme=whatsapp;package=com.whatsapp;end';
+          setTimeout(() => {
+            try { window.open('https://wa.me/?text=' + t, '_blank'); } catch (e) {}
+          }, 800);
+        } else {
+          window.open('https://wa.me/?text=' + t, '_blank');
+        }
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    /** Menu de opções quando print/share nativo falha (AppsGeyser / WebView) */
+    function mostrarOpcoesComprovanteApp(html, texto, titulo) {
+      let box = document.getElementById('comprovante-app-opcoes');
+      if (box) box.remove();
+      box = document.createElement('div');
+      box.id = 'comprovante-app-opcoes';
+      box.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,20,36,0.55);display:flex;align-items:flex-end;justify-content:center;padding:0.75rem;';
+      box.onclick = function (ev) { if (ev.target === box) box.remove(); };
+      box.innerHTML =
+        '<div style="width:100%;max-width:420px;background:#fff;border-radius:16px 16px 12px 12px;padding:1rem 1rem 1.1rem;box-shadow:0 -8px 40px rgba(0,0,0,.25);">' +
+        '<p style="font-weight:800;color:#1a2544;margin-bottom:0.35rem;font-size:1rem;">Comprovante no aplicativo</p>' +
+        '<p style="font-size:0.82rem;color:#6b7280;margin-bottom:0.85rem;line-height:1.45;">Neste app (AppsGeyser/WebView) a impressão do sistema pode não abrir. Use uma das opções:</p>' +
+        '<div style="display:flex;flex-direction:column;gap:0.45rem;">' +
+        '<button type="button" class="btn btn-primary" id="app-opt-print" style="width:100%;">🖨️ Tentar imprimir de novo</button>' +
+        '<button type="button" class="btn btn-secondary" id="app-opt-wa" style="width:100%;">💬 Enviar no WhatsApp</button>' +
+        '<button type="button" class="btn btn-secondary" id="app-opt-copy" style="width:100%;">📋 Copiar texto</button>' +
+        '<button type="button" class="btn btn-secondary" id="app-opt-dl" style="width:100%;">⬇️ Baixar arquivo</button>' +
+        '<button type="button" class="btn btn-secondary" id="app-opt-close" style="width:100%;">Fechar</button>' +
+        '</div></div>';
+      document.body.appendChild(box);
+      document.getElementById('app-opt-close').onclick = () => box.remove();
+      document.getElementById('app-opt-print').onclick = () => {
+        box.remove();
+        imprimirComprovantePaginaPrincipal(html);
+      };
+      document.getElementById('app-opt-wa').onclick = () => {
+        abrirWhatsAppComprovante(texto);
+        toast('Abrindo WhatsApp…', 'success');
+      };
+      document.getElementById('app-opt-copy').onclick = async () => {
+        const ok = await copiarTextoComprovante(texto);
+        toast(ok ? 'Texto copiado! Cole no WhatsApp ou onde quiser.' : 'Não foi possível copiar.', ok ? 'success' : 'error');
+      };
+      document.getElementById('app-opt-dl').onclick = () => {
+        const ok = baixarComprovanteArquivo(html, titulo);
+        toast(ok ? 'Download iniciado. Abra o arquivo e use Compartilhar/Imprimir do celular.' : 'Falha ao baixar.', ok ? 'success' : 'error');
+      };
+    }
+
+    function imprimirComprovantePaginaPrincipal(html) {
+      const area = document.getElementById('print-area');
+      if (!area) return false;
+      area.innerHTML = html || '';
+      try {
+        if (typeof reaplicarBarcodesNo === 'function') reaplicarBarcodesNo(area);
+      } catch (e) {}
+      area.setAttribute('data-printing', '1');
+      area.style.cssText = 'position:fixed!important;left:0!important;top:0!important;width:100%!important;height:auto!important;visibility:visible!important;z-index:2147483646!important;background:#fff!important;display:block!important;padding:12px!important;overflow:auto!important;';
+      const overlay = document.getElementById('print-preview-overlay');
+      if (overlay) overlay.classList.remove('show');
+      const restaurar = () => {
+        area.removeAttribute('data-printing');
+        area.style.cssText = '';
+        try { window.removeEventListener('afterprint', restaurar); } catch (e) {}
+      };
+      window.addEventListener('afterprint', restaurar);
+      setTimeout(() => {
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {
+          console.warn(e);
+        }
+        setTimeout(restaurar, 5000);
+      }, 120);
+      return true;
+    }
+
+    async function compartilharComprovantePreview() {
+      const { html, texto, titulo } = obterHtmlETextoComprovante();
       if (!html) {
         toast('Nada para compartilhar — abra o comprovante novamente.', 'error');
         return;
       }
-      const texto = ((prev && prev.innerText) || (area && area.innerText) || '').trim().substring(0, 2500) || 'Comprovante';
-      const tituloEl = document.querySelector('#print-preview-overlay .titulo-prev');
-      const titulo = (tituloEl && tituloEl.textContent) ? tituloEl.textContent.replace(/^[^\wÀ-ú]+/, '').trim() : 'Comprovante';
 
+      // 1) Web Share nativo (Chrome no site)
       try {
         if (navigator.share) {
           const data = { title: titulo || 'Comprovante', text: texto };
           try {
             if (navigator.canShare) {
-              const blob = new Blob(
-                ['<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' +
-                  (titulo || 'Comprovante') +
-                  '</title></head><body style="font-family:monospace;padding:16px;color:#000;background:#fff;">' +
-                  html + '</body></html>'],
-                { type: 'text/html' }
-              );
+              const blob = new Blob([montarHtmlComprovanteCompleto(html, titulo)], { type: 'text/html' });
               const file = new File([blob], 'comprovante.html', { type: 'text/html' });
-              if (navigator.canShare({ files: [file] })) {
-                data.files = [file];
-              }
+              if (navigator.canShare({ files: [file] })) data.files = [file];
             }
           } catch (e) {}
           await navigator.share(data);
@@ -10647,44 +10900,42 @@ function cancelarVendaPendente(id) {
         console.warn(e);
       }
 
-      // Sem Web Share: copia o texto
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(texto);
-          toast('Texto do comprovante copiado. Cole onde quiser compartilhar.', 'success');
-          return;
-        }
-      } catch (e2) {}
-
-      // Fallback antigo
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = texto;
-        ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0;';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        document.execCommand('copy');
-        ta.remove();
-        toast('Texto do comprovante copiado.', 'success');
+      // 2) No app / WebView: menu com WhatsApp, copiar, baixar
+      if (ehWebViewApp() || /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || '')) {
+        mostrarOpcoesComprovanteApp(html, texto, titulo);
         return;
-      } catch (e3) {}
+      }
 
-      toast('Compartilhar não disponível neste aparelho.', 'error');
+      // 3) Desktop: copiar
+      const ok = await copiarTextoComprovante(texto);
+      toast(ok ? 'Texto do comprovante copiado.' : 'Compartilhar não disponível.', ok ? 'success' : 'error');
     }
 
     function confirmarImpressaoPreview() {
-      const prev = document.getElementById('print-preview-content');
-      const area = document.getElementById('print-area');
-      let html = '';
-      if (prev && prev.innerHTML && prev.innerHTML.trim()) html = prev.innerHTML;
-      else if (area && area.innerHTML && area.innerHTML.trim()) html = area.innerHTML;
+      const { html, texto, titulo } = obterHtmlETextoComprovante();
       if (!html) {
         toast('Nada para imprimir — abra o comprovante novamente.', 'error');
         return;
       }
 
-      // Impressão via iframe isolado (evita página em branco no Chrome/Edge)
+      // AppsGeyser / WebView: print costuma falhar — oferece alternativas
+      if (ehWebViewApp()) {
+        // tenta print da página; se o WebView ignorar, o usuário usa o menu
+        imprimirComprovantePaginaPrincipal(html);
+        setTimeout(() => {
+          mostrarOpcoesComprovanteApp(html, texto, titulo);
+          toast('Se a impressão não abriu, use WhatsApp, copiar ou baixar.', 'success');
+        }, 600);
+        return;
+      }
+
+      // Celular no navegador: print na página principal funciona melhor
+      if (/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent || '')) {
+        imprimirComprovantePaginaPrincipal(html);
+        return;
+      }
+
+      // Desktop: iframe isolado
       try {
         const antigo = document.getElementById('print-iframe-temp');
         if (antigo) antigo.remove();
@@ -10692,31 +10943,17 @@ function cancelarVendaPendente(id) {
         const iframe = document.createElement('iframe');
         iframe.id = 'print-iframe-temp';
         iframe.setAttribute('aria-hidden', 'true');
-        iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;opacity:0;pointer-events:none;';
+        iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:800px;height:1200px;border:0;opacity:0;pointer-events:none;';
         document.body.appendChild(iframe);
 
         const doc = iframe.contentDocument || iframe.contentWindow.document;
         doc.open();
-        doc.write(
-          '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">' +
-          '<meta name="viewport" content="width=device-width, initial-scale=1">' +
-          '<title>Impressão</title>' +
-          '<style>' +
-          'html,body{margin:0;padding:0;background:#fff;color:#000;}' +
-          'body{font-family:"Courier New",Courier,monospace;font-size:13px;line-height:1.4;padding:14px 16px;}' +
-          'table{width:100%;border-collapse:collapse;}' +
-          'th,td{font-size:12px;}' +
-          'svg,canvas,img{max-width:100%;height:auto;}' +
-          '@media print{body{padding:8px 10px;} @page{margin:10mm;}}' +
-          '</style></head><body>' + html + '</body></html>'
-        );
+        doc.write(montarHtmlComprovanteCompleto(html, 'Impressão'));
         doc.close();
 
         const rodar = () => {
           try {
-            // redesenha barcode dentro do iframe, se houver
-            const win = iframe.contentWindow;
-            if (win && typeof JsBarcode !== 'undefined') {
+            if (typeof JsBarcode !== 'undefined') {
               const svgs = doc.querySelectorAll('#barcode-print, svg.barcode-print');
               svgs.forEach(svg => {
                 const codigo = (svg.getAttribute('data-codigo') || '').trim();
@@ -11710,61 +11947,223 @@ function cancelarVendaPendente(id) {
 
     // ===================== DASHBOARD =====================
     function renderDashboard() {
+      if (!estado.produtos) estado.produtos = [];
+      if (!estado.clientes) estado.clientes = [];
+      if (!estado.dividas) estado.dividas = [];
+      if (!estado.vendas) estado.vendas = [];
+
       const notifs = getNotificacoes();
       const atrasados = notifs.filter(n => n.tipo === 'atrasado').length;
       const proximos = notifs.filter(n => ['hoje', 'amanha', 'proximo'].includes(n.tipo)).length;
       const totalReceber = estado.dividas.filter(d => statusDivida(d) !== 'pago').reduce((s, d) => s + Number(d.valor), 0);
       const contasVencidas = estado.dividas.filter(d => statusDivida(d) === 'atrasado').length;
-      const produtosBaixos = estado.produtos.filter(p => p.estoque <= p.minimo);
-
+      const contasAbertas = estado.dividas.filter(d => statusDivida(d) === 'aberto').length;
+      const produtosBaixos = estado.produtos.filter(p => Number(p.estoque) <= Number(p.minimo));
       const pendEntregas = getEntregasPendentes().length;
+      const pendCaixa = (typeof getPendentesCaixa === 'function') ? getPendentesCaixa().length : 0;
+
+      // Alertas
       let alertsHtml = '';
       if (atrasados > 0) alertsHtml += `<div class="alert danger">🔴 ${atrasados} pagamento${atrasados > 1 ? 's' : ''} atrasado${atrasados > 1 ? 's' : ''}</div>`;
       if (proximos > 0) alertsHtml += `<div class="alert warning">🟠 ${proximos} pagamento${proximos > 1 ? 's' : ''} vencem nos próximos 3 dias</div>`;
       if (pendEntregas > 0) alertsHtml += `<div class="alert info">🚚 ${pendEntregas} entrega${pendEntregas > 1 ? 's' : ''} pendente${pendEntregas > 1 ? 's' : ''}</div>`;
+      if (pendCaixa > 0) alertsHtml += `<div class="alert warning">🧾 ${pendCaixa} venda${pendCaixa > 1 ? 's' : ''} aguardando aprovação no caixa</div>`;
       produtosBaixos.forEach(p => {
-        alertsHtml += `<div class="alert info">🥚 Estoque baixo: <strong>${p.nome}</strong> — ${p.estoque} un.</div>`;
+        alertsHtml += `<div class="alert info">📦 Estoque baixo: <strong>${p.nome}</strong> — ${p.estoque} un. (mín. ${p.minimo})</div>`;
       });
       if (!alertsHtml) alertsHtml = '<div class="alert success">✅ Tudo em ordem no momento!</div>';
-      document.getElementById('dash-alerts').innerHTML = alertsHtml;
+      const elAlerts = document.getElementById('dash-alerts');
+      if (elAlerts) elAlerts.innerHTML = alertsHtml;
 
-      const totalEstoque = estado.produtos.reduce((s, p) => s + p.estoque, 0);
-      const vendasHoje = (estado.vendas || []).filter(v => v.data === hoje());
+      const totalEstoque = estado.produtos.reduce((s, p) => s + (Number(p.estoque) || 0), 0);
+      const hojeStr = hoje();
+      const vendasHoje = (estado.vendas || []).filter(v => v.data === hojeStr);
       const totalVendasHoje = vendasHoje.reduce((s, v) => s + Number(v.total || 0), 0);
       const totalVendasGeral = (estado.vendas || []).reduce((s, v) => s + Number(v.total || 0), 0);
 
-      document.getElementById('dash-cards').innerHTML = `
-        <div class="stat-card success"><div class="label">📦 Produtos</div><div class="value">${estado.produtos.length}</div></div>
-        <div class="stat-card info"><div class="label">🥚 Itens em estoque</div><div class="value">${totalEstoque}</div><div class="sub">unidades</div></div>
+      const elCards = document.getElementById('dash-cards');
+      if (elCards) {
+        elCards.innerHTML = `
+        <div class="stat-card success"><div class="label">📦 Produtos</div><div class="value">${estado.produtos.length}</div><div class="sub">${produtosBaixos.length} com estoque baixo</div></div>
+        <div class="stat-card info"><div class="label">📦 Itens em estoque</div><div class="value">${totalEstoque}</div><div class="sub">unidades</div></div>
         <div class="stat-card"><div class="label">👥 Clientes</div><div class="value">${estado.clientes.length}</div></div>
         <div class="stat-card" style="border-left-color:#8e44ad;"><div class="label">📋 Vendas hoje</div><div class="value">${vendasHoje.length}</div><div class="sub">${formatarMoeda(totalVendasHoje)}</div></div>
-        <div class="stat-card warning"><div class="label">💰 A receber</div><div class="value">${formatarMoeda(totalReceber)}</div></div>
+        <div class="stat-card warning"><div class="label">💰 A receber (fiado)</div><div class="value">${formatarMoeda(totalReceber)}</div><div class="sub">${contasAbertas + contasVencidas} parcelas em aberto</div></div>
         <div class="stat-card danger"><div class="label">Contas vencidas</div><div class="value">${contasVencidas}</div></div>
+        <div class="stat-card" style="border-left-color:#e67e22;"><div class="label">🧾 Caixa pendente</div><div class="value">${pendCaixa}</div><div class="sub">aguardando aprovação</div></div>
+        <div class="stat-card" style="border-left-color:#3b82f6;"><div class="label">🚚 Entregas</div><div class="value">${pendEntregas}</div><div class="sub">pendentes</div></div>
       `;
+      }
 
-      const abertos = estado.dividas.filter(d => statusDivida(d) === 'aberto').length;
-      document.getElementById('dash-resumo').innerHTML = `
-        <p style="margin-bottom:0.4rem;">• <strong>${estado.produtos.length}</strong> produtos cadastrados</p>
-        <p style="margin-bottom:0.4rem;">• <strong>${estado.clientes.length}</strong> clientes</p>
-        <p style="margin-bottom:0.4rem;">• <strong>${(estado.vendas || []).length}</strong> vendas no histórico (total ${formatarMoeda(totalVendasGeral)})</p>
-        <p style="margin-bottom:0.4rem;">• <strong>${abertos}</strong> contas em aberto</p>
-        <p style="margin-bottom:0.4rem;">• <strong>${contasVencidas}</strong> contas atrasadas</p>
-        <p>• Total a receber: <strong>${formatarMoeda(totalReceber)}</strong></p>
+      const elResumo = document.getElementById('dash-resumo');
+      if (elResumo) {
+        elResumo.innerHTML = `
+        <p style="margin-bottom:0.4rem;">• <strong>${estado.produtos.length}</strong> produtos cadastrados · <strong>${totalEstoque}</strong> unidades em estoque</p>
+        <p style="margin-bottom:0.4rem;">• <strong>${estado.clientes.length}</strong> clientes · <strong>${(estado.vendas || []).length}</strong> vendas no histórico (total ${formatarMoeda(totalVendasGeral)})</p>
+        <p style="margin-bottom:0.4rem;">• <strong>${contasAbertas}</strong> contas em aberto · <strong>${contasVencidas}</strong> atrasadas · a receber <strong>${formatarMoeda(totalReceber)}</strong></p>
+        <p style="margin-bottom:0.4rem;">• Hoje: <strong>${vendasHoje.length}</strong> venda(s) · <strong>${formatarMoeda(totalVendasHoje)}</strong></p>
+        <p>• Pendências: <strong>${pendCaixa}</strong> no caixa · <strong>${pendEntregas}</strong> entrega(s) · <strong>${produtosBaixos.length}</strong> produto(s) com estoque baixo</p>
       `;
+      }
 
+      // Movimento de hoje — por forma de pagamento
+      const elHojeData = document.getElementById('dash-hoje-data');
+      if (elHojeData) elHojeData.textContent = formatarData(hojeStr);
+
+      const porFormaHoje = {};
+      vendasHoje.forEach(v => {
+        const k = (typeof chaveFormaResumo === 'function') ? chaveFormaResumo(v.forma) : String(v.forma || 'outros');
+        if (!porFormaHoje[k]) porFormaHoje[k] = { qtd: 0, total: 0 };
+        porFormaHoje[k].qtd += 1;
+        porFormaHoje[k].total += Number(v.total) || 0;
+      });
+      const ordemF = (typeof ordemFormasResumo === 'function') ? ordemFormasResumo() : ['avista', 'pix', 'cartao_debito', 'cartao_credito', 'fiado', 'pendente', 'outros'];
+      const linhasForma = ordemF.filter(k => porFormaHoje[k]).map(k => {
+        const l = porFormaHoje[k];
+        const label = (typeof rotuloFormaPagamento === 'function') ? rotuloFormaPagamento(k) : k;
+        return `<span style="display:inline-block;margin:0.2rem 0.55rem 0.2rem 0;padding:0.35rem 0.65rem;background:#f4f5f9;border-radius:8px;border:1px solid var(--border);"><strong>${label}</strong>: ${formatarMoeda(l.total)} <small style="color:var(--text-muted)">(${l.qtd})</small></span>`;
+      }).join('');
+
+      const elHojeCards = document.getElementById('dash-hoje-cards');
+      if (elHojeCards) {
+        elHojeCards.innerHTML = `
+          <div class="stat-card success"><div class="label">Vendas hoje</div><div class="value">${vendasHoje.length}</div></div>
+          <div class="stat-card info"><div class="label">Faturamento hoje</div><div class="value">${formatarMoeda(totalVendasHoje)}</div></div>
+          <div class="stat-card warning"><div class="label">Ticket médio</div><div class="value">${formatarMoeda(vendasHoje.length ? totalVendasHoje / vendasHoje.length : 0)}</div></div>
+          <div class="stat-card"><div class="label">Pendentes no caixa</div><div class="value">${pendCaixa}</div></div>
+        `;
+      }
+      const elHojeFormas = document.getElementById('dash-hoje-formas');
+      if (elHojeFormas) {
+        elHojeFormas.innerHTML = vendasHoje.length
+          ? `<p style="margin-bottom:0.45rem;font-weight:650;color:var(--primary-dark);">Por forma de pagamento</p>${linhasForma || '—'}`
+          : '<p style="color:var(--text-muted);">Nenhuma venda registrada hoje ainda.</p>';
+      }
+
+      // Mês atual
+      let vendasMes = [];
+      try {
+        if (typeof getVendasMesAtual === 'function') vendasMes = getVendasMesAtual();
+        else {
+          const agora = new Date();
+          vendasMes = (estado.vendas || []).filter(v => {
+            let ts = v.timestamp;
+            if (!ts && v.data) ts = new Date(v.data + 'T12:00:00').getTime();
+            if (!ts) return false;
+            const d = new Date(ts);
+            return d.getFullYear() === agora.getFullYear() && d.getMonth() === agora.getMonth();
+          });
+        }
+      } catch (e) { vendasMes = []; }
+      const totalMes = vendasMes.reduce((s, v) => s + (Number(v.total) || 0), 0);
+      let custoMes = 0, lucroMes = 0;
+      try {
+        if (typeof calcularCustoVenda === 'function') {
+          custoMes = vendasMes.reduce((s, v) => s + calcularCustoVenda(v), 0);
+          lucroMes = totalMes - custoMes;
+        } else if (typeof calcularLucroVenda === 'function') {
+          lucroMes = vendasMes.reduce((s, v) => s + calcularLucroVenda(v), 0);
+          custoMes = totalMes - lucroMes;
+        }
+      } catch (e) {}
+      const agora = new Date();
+      const elMesPeriodo = document.getElementById('dash-mes-periodo');
+      if (elMesPeriodo) {
+        elMesPeriodo.textContent = agora.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      }
+      const elMesCards = document.getElementById('dash-mes-cards');
+      if (elMesCards) {
+        elMesCards.innerHTML = `
+          <div class="stat-card info"><div class="label">Vendas no mês</div><div class="value">${vendasMes.length}</div></div>
+          <div class="stat-card success"><div class="label">Faturamento</div><div class="value">${formatarMoeda(totalMes)}</div></div>
+          <div class="stat-card"><div class="label">Custo estimado</div><div class="value">${formatarMoeda(custoMes)}</div></div>
+          <div class="stat-card ${lucroMes >= 0 ? 'success' : 'danger'}"><div class="label">Lucro estimado</div><div class="value" style="color:${lucroMes >= 0 ? 'var(--success)' : 'var(--danger)'}">${formatarMoeda(lucroMes)}</div></div>
+        `;
+      }
+
+      // Últimas vendas
+      const ultimas = (estado.vendas || []).slice().sort((a, b) => {
+        const ta = a.timestamp || (a.data ? new Date(a.data + 'T' + (a.hora || '00:00')).getTime() : 0);
+        const tb = b.timestamp || (b.data ? new Date(b.data + 'T' + (b.hora || '00:00')).getTime() : 0);
+        return tb - ta;
+      }).slice(0, 8);
+      const tbUlt = document.getElementById('dash-ultimas-vendas');
+      if (tbUlt) {
+        if (!ultimas.length) {
+          tbUlt.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">📋</div>Nenhuma venda ainda.</td></tr>';
+        } else {
+          tbUlt.innerHTML = ultimas.map(v => {
+            const itens = (v.itens || []).map(i => i.nome + '×' + i.qtd).join(', ') || '—';
+            const forma = (typeof rotuloFormaPagamentoVenda === 'function')
+              ? rotuloFormaPagamentoVenda(v)
+              : ((typeof rotuloFormaPagamento === 'function') ? rotuloFormaPagamento(v.forma) : (v.forma || '—'));
+            const formaClass = (v.forma === 'fiado' || v.forma === 'pendente' || !v.forma) ? 'aberto' : 'pago';
+            return `<tr>
+              <td style="white-space:nowrap;">${formatarData(v.data)}<br><small style="color:var(--text-muted)">${v.hora || ''}</small></td>
+              <td><strong>${v.clienteNome || '—'}</strong></td>
+              <td style="font-size:0.8rem;max-width:200px;">${itens}</td>
+              <td><span class="status ${formaClass}">${forma}</span></td>
+              <td><strong>${formatarMoeda(v.total)}</strong></td>
+              <td>${v.vendedor || '—'}</td>
+            </tr>`;
+          }).join('');
+        }
+      }
+
+      // Pendências detalhadas
+      const elPend = document.getElementById('dash-pendencias');
+      if (elPend) {
+        let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.75rem;">';
+        html += `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.85rem;">
+          <div style="font-weight:750;color:#92400e;margin-bottom:0.35rem;">🧾 Caixa</div>
+          <div style="font-size:1.35rem;font-weight:800;color:var(--primary-dark);">${pendCaixa}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">venda(s) aguardando aprovação</div>
+          ${pendCaixa > 0 ? '<button type="button" class="btn btn-sm btn-warning" style="margin-top:0.55rem;" onclick="navegarPara(\'caixa\')">Ir ao caixa</button>' : ''}
+        </div>`;
+        html += `<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:0.85rem;">
+          <div style="font-weight:750;color:#1e40af;margin-bottom:0.35rem;">🚚 Entregas</div>
+          <div style="font-size:1.35rem;font-weight:800;color:var(--primary-dark);">${pendEntregas}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">pendente(s)</div>
+          ${pendEntregas > 0 ? '<button type="button" class="btn btn-sm btn-primary" style="margin-top:0.55rem;" onclick="navegarPara(\'entregas\')">Ver entregas</button>' : ''}
+        </div>`;
+        html += `<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:0.85rem;">
+          <div style="font-weight:750;color:#991b1b;margin-bottom:0.35rem;">💰 Fiado atrasado</div>
+          <div style="font-size:1.35rem;font-weight:800;color:var(--primary-dark);">${contasVencidas}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">parcela(s) · ${formatarMoeda(estado.dividas.filter(d => statusDivida(d) === 'atrasado').reduce((s, d) => s + Number(d.valor || 0), 0))}</div>
+          ${contasVencidas > 0 ? '<button type="button" class="btn btn-sm btn-danger" style="margin-top:0.55rem;" onclick="navegarPara(\'fiado\')">Ver fiado</button>' : ''}
+        </div>`;
+        html += `<div style="background:#f0f2f7;border:1px solid var(--border);border-radius:12px;padding:0.85rem;">
+          <div style="font-weight:750;color:var(--primary-dark);margin-bottom:0.35rem;">📦 Estoque baixo</div>
+          <div style="font-size:1.35rem;font-weight:800;color:var(--primary-dark);">${produtosBaixos.length}</div>
+          <div style="font-size:0.8rem;color:var(--text-muted);">${produtosBaixos.slice(0, 3).map(p => p.nome).join(', ') || 'nenhum'}${produtosBaixos.length > 3 ? '…' : ''}</div>
+          ${produtosBaixos.length > 0 ? '<button type="button" class="btn btn-sm btn-secondary" style="margin-top:0.55rem;" onclick="navegarPara(\'estoque\')">Movimentar</button>' : ''}
+        </div>`;
+        html += '</div>';
+        elPend.innerHTML = html;
+      }
+
+      // Estoque por produto
       const tbody = document.getElementById('dash-estoque-produtos');
-      if (estado.produtos.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum produto cadastrado.</td></tr>';
-      } else {
-        tbody.innerHTML = estado.produtos.map(p => {
-          const baixo = p.estoque <= p.minimo;
-          return `<tr>
-            <td><strong>${p.nome}</strong></td>
-            <td class="${baixo ? 'stock-low' : ''}">${p.estoque}</td>
-            <td>${p.minimo}</td>
-            <td><span class="status ${baixo ? 'baixo' : 'ok'}">${baixo ? 'Baixo' : 'OK'}</span></td>
-          </tr>`;
-        }).join('');
+      if (tbody) {
+        if (estado.produtos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum produto cadastrado.</td></tr>';
+        } else {
+          const ordenados = estado.produtos.slice().sort((a, b) => {
+            const ba = Number(a.estoque) <= Number(a.minimo) ? 0 : 1;
+            const bb = Number(b.estoque) <= Number(b.minimo) ? 0 : 1;
+            if (ba !== bb) return ba - bb;
+            return String(a.nome || '').localeCompare(String(b.nome || ''));
+          });
+          tbody.innerHTML = ordenados.map(p => {
+            const baixo = Number(p.estoque) <= Number(p.minimo);
+            return `<tr>
+              <td><strong>${p.nome}</strong></td>
+              <td class="${baixo ? 'stock-low' : ''}">${p.estoque}</td>
+              <td>${p.minimo}</td>
+              <td><span class="status ${baixo ? 'baixo' : 'ok'}">${baixo ? 'Baixo' : 'OK'}</span></td>
+            </tr>`;
+          }).join('');
+        }
       }
 
       // Top 5 — apenas administradores
@@ -11776,7 +12175,6 @@ function cancelarVendaPendente(id) {
           topWrap.classList.remove('hidden');
           const vendas = (estado.vendas || []).slice();
 
-          // Top 5 maiores vendas individuais
           const topVendas = vendas
             .slice()
             .sort((a, b) => Number(b.total || 0) - Number(a.total || 0))
@@ -11793,14 +12191,13 @@ function cancelarVendaPendente(id) {
                   <td>${formatarData(v.data)}${v.hora && v.hora !== '—' ? ' · ' + v.hora : ''}</td>
                   <td>${v.clienteNome || '—'}</td>
                   <td>${v.vendedor || '—'}</td>
-                  <td><span class="status ${(v.forma === 'fiado' || v.forma === 'pendente' || !v.forma) ? 'aberto' : 'pago'}">${rotuloFormaPagamentoVenda(v)}</span></td>
+                  <td><span class="status ${(v.forma === 'fiado' || v.forma === 'pendente' || !v.forma) ? 'aberto' : 'pago'}">${typeof rotuloFormaPagamentoVenda === 'function' ? rotuloFormaPagamentoVenda(v) : (v.forma || '—')}</span></td>
                   <td><strong>${formatarMoeda(v.total)}</strong></td>
                 </tr>
               `).join('');
             }
           }
 
-          // Top 5 vendedores (todas as vendas)
           const porVendedor = {};
           vendas.forEach(v => {
             const nome = (v.vendedor || 'Sem nome').trim() || 'Sem nome';
