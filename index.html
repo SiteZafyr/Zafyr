@@ -1172,7 +1172,7 @@
         z-index: 99999 !important;
       }
       #tela-login, .sidebar, .topbar, .sidebar-overlay, .modal-overlay,
-      .toast-container, .sync-status, .demo-banner, #tela-demo-cta,
+      .toast-container, .sync-status, .demo-banner, #plano-banner, #tela-demo-cta,
       #print-preview-overlay, .print-preview-toolbar {
         display: none !important;
         visibility: hidden !important;
@@ -1615,6 +1615,37 @@
       flex-wrap: wrap;
     }
     .demo-banner.show { display: flex; }
+
+    .plano-banner {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 510;
+      background: linear-gradient(90deg, #b91c1c, #dc2626);
+      color: #fff;
+      padding: 0.6rem 1rem;
+      font-size: 0.84rem;
+      font-weight: 650;
+      text-align: center;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.2);
+      align-items: center;
+      justify-content: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      line-height: 1.4;
+    }
+    .plano-banner.show { display: flex; }
+    .plano-banner.aviso {
+      background: linear-gradient(90deg, #c2410c, #ea580c);
+    }
+    body.plano-banner-ativo .main { padding-top: 2.85rem; }
+    body.plano-banner-ativo .sidebar { top: 2.85rem; bottom: 0; height: auto; }
+    body.modo-demo.plano-banner-ativo .main { padding-top: 5.2rem; }
+    body.modo-demo.plano-banner-ativo .sidebar { top: 5.2rem; }
+    body.modo-dono-suporte.plano-banner-ativo .main { padding-top: 5.1rem; }
+    body.modo-dono-suporte.plano-banner-ativo .sidebar { top: 5.1rem; }
     .demo-banner .btn {
       background: #fff;
       color: #d35400;
@@ -1681,6 +1712,10 @@
     <span>👀 Modo demonstração — nada é salvo de forma definitiva</span>
     <button type="button" class="btn" onclick="mostrarTelaAdquirir()">Quero adquirir</button>
     <button type="button" class="btn" onclick="encerrarDemonstracao()" style="background:rgba(255,255,255,0.2);color:#fff;">Sair da demo</button>
+  </div>
+
+  <div id="plano-banner" class="plano-banner" role="alert" aria-live="polite">
+    <span id="plano-banner-texto">⚠️ Seu plano está vencido.</span>
   </div>
 
   <!-- Tela final: adquirir o sistema -->
@@ -2267,7 +2302,7 @@
       <button class="nav-btn admin-menu admin-only" data-page="mensal">📈 Resumo Mensal</button>
       <button class="nav-btn admin-menu admin-only" data-page="logs">📜 Logs</button>
       <button class="nav-btn admin-menu admin-only" data-page="usuarios">👤 Usuários</button>
-      <button class="nav-btn admin-menu admin-only" data-page="personalizacao">🎨 Personalização</button>
+      <button class="nav-btn admin-menu admin-only" data-page="personalizacao">⚙️ Configuração</button>
       <button class="nav-btn admin-menu" data-page="mensagens-dono">💬 Falar com o suporte <span class="badge hidden" id="badge-msg-loja">0</span></button>
     </nav>
     <div class="sidebar-footer">
@@ -2290,32 +2325,97 @@
         <div class="alerts" id="dash-alerts"></div>
         <div class="cards-grid" id="dash-cards"></div>
 
-        <div class="panel">
-          <div class="panel-header"><h3>📌 Resumo Rápido</h3></div>
+        <div id="dash-menu" class="panel">
+          <div class="panel-header">
+            <h3>📊 Painel</h3>
+          </div>
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+            Toque em uma área para ver os detalhes. Os números principais ficam nos cards acima.
+          </p>
+          <div class="dash-menu-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0.85rem;">
+            <button type="button" class="btn btn-secondary dash-menu-btn" onclick="abrirSecaoDashboard('resumo')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">📌 Resumo rápido</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Visão geral da loja</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary dash-menu-btn" onclick="abrirSecaoDashboard('hoje')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">📅 Movimento de hoje</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Vendas e formas de pagamento</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary dash-menu-btn" onclick="abrirSecaoDashboard('mes')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">📈 Mês atual</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Faturamento, custo e lucro</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary dash-menu-btn" onclick="abrirSecaoDashboard('vendas')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">🛒 Últimas vendas</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">As vendas mais recentes</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary dash-menu-btn" onclick="abrirSecaoDashboard('pendencias')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">⏳ Pendências</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Caixa, entregas, fiado e estoque</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary dash-menu-btn" id="dash-btn-top" onclick="abrirSecaoDashboard('top')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">🏆 Rankings (Top 5)</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Maiores vendas e vendedores</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary dash-menu-btn" onclick="abrirSecaoDashboard('estoque')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">📦 Estoque por produto</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Quantidades e alertas de mínimo</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel dash-secao hidden" id="dash-secao-resumo" data-dash-secao="resumo">
+          <div class="panel-header">
+            <h3>📌 Resumo rápido</h3>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+          </div>
           <div id="dash-resumo"></div>
         </div>
 
-        <div class="panel" id="dash-hoje-wrap">
+        <div class="panel dash-secao hidden" id="dash-secao-hoje" data-dash-secao="hoje">
           <div class="panel-header">
             <h3>📅 Movimento de hoje</h3>
-            <span id="dash-hoje-data" style="font-size:0.82rem;color:var(--text-muted);"></span>
+            <div class="btn-group">
+              <span id="dash-hoje-data" style="font-size:0.82rem;color:var(--text-muted);align-self:center;"></span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+            </div>
           </div>
           <div class="cards-grid" id="dash-hoje-cards" style="margin-bottom:1rem;"></div>
           <div id="dash-hoje-formas" style="font-size:0.88rem;line-height:1.55;"></div>
         </div>
 
-        <div class="panel" id="dash-mes-wrap">
+        <div class="panel dash-secao hidden" id="dash-secao-mes" data-dash-secao="mes">
           <div class="panel-header">
             <h3>📈 Mês atual</h3>
-            <span id="dash-mes-periodo" style="font-size:0.82rem;color:var(--text-muted);"></span>
+            <div class="btn-group">
+              <span id="dash-mes-periodo" style="font-size:0.82rem;color:var(--text-muted);align-self:center;"></span>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+            </div>
           </div>
           <div class="cards-grid" id="dash-mes-cards"></div>
         </div>
 
-        <div class="panel">
+        <div class="panel dash-secao hidden" id="dash-secao-vendas" data-dash-secao="vendas">
           <div class="panel-header">
             <h3>🛒 Últimas vendas</h3>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="navegarPara('vendas')">Ver histórico</button>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="navegarPara('vendas')">Ver histórico</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -2327,14 +2427,20 @@
           </div>
         </div>
 
-        <div class="panel" id="dash-pendencias-wrap">
-          <div class="panel-header"><h3>⏳ Pendências</h3></div>
+        <div class="panel dash-secao hidden" id="dash-secao-pendencias" data-dash-secao="pendencias">
+          <div class="panel-header">
+            <h3>⏳ Pendências</h3>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+          </div>
           <div id="dash-pendencias"></div>
         </div>
 
-        <div id="dash-top-vendas-wrap" class="hidden">
+        <div class="dash-secao hidden" id="dash-secao-top" data-dash-secao="top">
           <div class="panel">
-            <div class="panel-header"><h3>🏆 Top 5 — Maiores vendas</h3></div>
+            <div class="panel-header">
+              <h3>🏆 Top 5 — Maiores vendas</h3>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+            </div>
             <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.7rem;">As 5 vendas de maior valor (todos os vendedores).</p>
             <div class="table-wrap">
               <table>
@@ -2359,10 +2465,13 @@
           </div>
         </div>
 
-        <div class="panel">
+        <div class="panel dash-secao hidden" id="dash-secao-estoque" data-dash-secao="estoque">
           <div class="panel-header">
-            <h3>📦 Estoque por Produto</h3>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="navegarPara('produtos')">Gerenciar produtos</button>
+            <h3>📦 Estoque por produto</h3>
+            <div class="btn-group">
+              <button type="button" class="btn btn-sm btn-secondary" onclick="navegarPara('produtos')">Gerenciar produtos</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuDashboard()">← Voltar</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table>
@@ -2730,7 +2839,7 @@
             </div>
             <div class="form-grid">
               <div class="form-group">
-                <label>Produto *</label>
+                <label>Produto cadastrado</label>
                 <select id="cart-produto" onchange="atualizarPrecoCart()"></select>
               </div>
               <div class="form-group">
@@ -2744,6 +2853,30 @@
               <div class="form-group" style="justify-content:flex-end;">
                 <label>&nbsp;</label>
                 <button class="btn btn-primary" onclick="adicionarAoCarrinho()">+ Adicionar</button>
+              </div>
+            </div>
+            <div id="grupo-item-avulso-venda" class="hidden" style="margin-top:0.95rem;padding-top:0.85rem;border-top:1px dashed var(--border);">
+              <p style="font-size:0.82rem;font-weight:700;color:var(--primary-dark);margin-bottom:0.55rem;">✏️ Item avulso (sem cadastro)</p>
+              <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.65rem;line-height:1.4;">
+                Digite o nome e o valor na hora. Não precisa estar em Produtos e <strong>não altera o estoque</strong>.
+              </p>
+              <div class="form-grid">
+                <div class="form-group" style="grid-column:1/-1;">
+                  <label>O que é *</label>
+                  <input type="text" id="cart-avulso-nome" placeholder="Ex: frete, serviço, produto avulso..." autocomplete="off" />
+                </div>
+                <div class="form-group">
+                  <label>Quantidade *</label>
+                  <input type="number" id="cart-avulso-qtd" min="1" value="1" />
+                </div>
+                <div class="form-group">
+                  <label>Valor unitário (R$) *</label>
+                  <input type="number" id="cart-avulso-preco" min="0" step="0.01" value="0" placeholder="0,00" />
+                </div>
+                <div class="form-group" style="justify-content:flex-end;">
+                  <label>&nbsp;</label>
+                  <button type="button" class="btn btn-success" onclick="adicionarItemAvulsoAoCarrinho()">+ Adicionar avulso</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3052,10 +3185,67 @@
       </section>
 
       <section id="page-personalizacao" class="page hidden">
-        <div class="panel">
+        <div id="pers-menu" class="panel">
+          <div class="panel-header">
+            <h3>⚙️ Configuração</h3>
+          </div>
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+            Escolha uma opção abaixo. Os formulários abrem só quando você clicar.
+          </p>
+          <div class="pers-menu-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:0.85rem;">
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('pix')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">💳 PIX da loja (cobrança de clientes)</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Chave, Copia e Cola e QR Code</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('aparencia')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">🎨 Aparência (nome e cores)</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Nome exibido e cores do sistema</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('menu')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">☰ Ordem do menu lateral</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Reordenar as telas do menu</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('modulos')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">🧩 Módulos desta loja</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Ativar ou desativar telas da loja</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('barcode')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">📷 Código de barras (câmera)</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Cadastro, venda e movimentação</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('item-avulso')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">✏️ Item avulso na venda</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Digitar nome e valor sem cadastrar produto</span>
+              </span>
+            </button>
+            <button type="button" class="btn btn-secondary pers-menu-btn" onclick="abrirSecaoPersonalizacao('backup')" style="justify-content:flex-start;text-align:left;padding:1rem 1.1rem;min-height:72px;border-radius:14px;border:1.5px solid var(--border);background:#fff;box-shadow:0 2px 10px rgba(26,37,68,0.05);">
+              <span style="display:flex;flex-direction:column;gap:0.25rem;align-items:flex-start;">
+                <strong style="font-size:0.98rem;color:var(--primary-dark);">💾 Backup e restauração</strong>
+                <span style="font-size:0.78rem;color:var(--text-muted);font-weight:500;">Baixar ou restaurar todos os dados da loja</span>
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <!-- PIX -->
+        <div class="panel pers-secao hidden" id="pers-secao-pix" data-pers-secao="pix">
           <div class="panel-header">
             <h3>💳 PIX da loja (cobrança de clientes)</h3>
-            <button type="button" class="btn btn-primary" onclick="salvarPixLoja()">Salvar PIX</button>
+            <div class="btn-group">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+              <button type="button" class="btn btn-primary" onclick="salvarPixLoja()">Salvar PIX</button>
+            </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
             Cadastre a <strong>chave PIX</strong> e o código <strong>PIX Copia e Cola</strong> do banco da sua empresa.
@@ -3085,12 +3275,60 @@
           </div>
         </div>
 
-        <div class="panel">
+        <!-- APARÊNCIA -->
+        <div class="panel pers-secao hidden" id="pers-secao-aparencia" data-pers-secao="aparencia">
           <div class="panel-header">
-            <h3>Ordem do menu lateral</h3>
+            <h3>🎨 Aparência (nome e cores)</h3>
             <div class="btn-group">
-              <button class="btn btn-secondary btn-sm" onclick="restaurarOrdemMenuPadrao()">Ordem padrão</button>
-              <button class="btn btn-primary" onclick="salvarOrdemMenu()">Salvar ordem</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="restaurarPersonalizacaoPadrao()">Restaurar padrão</button>
+              <button type="button" class="btn btn-primary" onclick="salvarPersonalizacao()">Salvar aparência</button>
+            </div>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
+            Defina o <strong>nome exibido</strong> nos comprovantes e as cores principais do sistema.
+          </p>
+          <div class="form-grid">
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Nome da empresa (exibição)</label>
+              <input type="text" id="pers-nome-empresa" placeholder="Ex: Padaria Centro" />
+            </div>
+            <div class="form-group">
+              <label>Cor principal</label>
+              <div style="display:flex;gap:0.45rem;align-items:center;">
+                <input type="color" id="pers-cor-primary" value="#2f3e6b" oninput="previewPersonalizacao()" style="width:48px;height:40px;padding:0;border:1px solid var(--border);border-radius:8px;cursor:pointer;" />
+                <input type="text" id="pers-cor-primary-txt" value="#2f3e6b" onchange="syncCorTxt('primary')" style="flex:1;font-family:ui-monospace,monospace;" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Cor escura</label>
+              <div style="display:flex;gap:0.45rem;align-items:center;">
+                <input type="color" id="pers-cor-primary-dark" value="#1a2544" oninput="previewPersonalizacao()" style="width:48px;height:40px;padding:0;border:1px solid var(--border);border-radius:8px;cursor:pointer;" />
+                <input type="text" id="pers-cor-primary-dark-txt" value="#1a2544" onchange="syncCorTxt('primary-dark')" style="flex:1;font-family:ui-monospace,monospace;" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Cor de destaque</label>
+              <div style="display:flex;gap:0.45rem;align-items:center;">
+                <input type="color" id="pers-cor-accent" value="#c9a84c" oninput="previewPersonalizacao()" style="width:48px;height:40px;padding:0;border:1px solid var(--border);border-radius:8px;cursor:pointer;" />
+                <input type="text" id="pers-cor-accent-txt" value="#c9a84c" onchange="syncCorTxt('accent')" style="flex:1;font-family:ui-monospace,monospace;" />
+              </div>
+            </div>
+            <div class="form-group" style="grid-column:1/-1;">
+              <label>Pré-visualização</label>
+              <div id="pers-preview-bar" style="height:48px;border-radius:12px;background:linear-gradient(90deg,#2f3e6b,#1a2544);box-shadow:0 4px 14px rgba(26,37,68,0.2);"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ORDEM MENU -->
+        <div class="panel pers-secao hidden" id="pers-secao-menu" data-pers-secao="menu">
+          <div class="panel-header">
+            <h3>☰ Ordem do menu lateral</h3>
+            <div class="btn-group">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="restaurarOrdemMenuPadrao()">Ordem padrão</button>
+              <button type="button" class="btn btn-primary" onclick="salvarOrdemMenu()">Salvar ordem</button>
             </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
@@ -3099,21 +3337,29 @@
           <div id="lista-ordem-menu" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
         </div>
 
-        <div class="panel">
+        <!-- MÓDULOS -->
+        <div class="panel pers-secao hidden" id="pers-secao-modulos" data-pers-secao="modulos">
           <div class="panel-header">
-            <h3>Módulos desta loja</h3>
-            <button class="btn btn-primary" onclick="salvarModulosLoja()">Salvar módulos</button>
+            <h3>🧩 Módulos desta loja</h3>
+            <div class="btn-group">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+              <button type="button" class="btn btn-primary" onclick="salvarModulosLoja()">Salvar módulos</button>
+            </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;">
-            Desmarque o que não deve existir nesta loja. Personalização fica sempre só para admin.
+            Desmarque o que não deve existir nesta loja. Configuração fica sempre só para admin.
           </p>
           <div id="lista-modulos-loja" style="display:grid;grid-template-columns:1fr 1fr;gap:0.45rem 0.85rem;"></div>
         </div>
 
-        <div class="panel">
+        <!-- BARCODE -->
+        <div class="panel pers-secao hidden" id="pers-secao-barcode" data-pers-secao="barcode">
           <div class="panel-header">
             <h3>📷 Código de barras (câmera do celular)</h3>
-            <button type="button" class="btn btn-primary" onclick="salvarConfigBarcode()">Salvar</button>
+            <div class="btn-group">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+              <button type="button" class="btn btn-primary" onclick="salvarConfigBarcode()">Salvar</button>
+            </div>
           </div>
           <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
             Ative para ler códigos de barras com a <strong>câmera do celular</strong> no cadastro, na venda e/ou na movimentação de estoque.
@@ -3141,6 +3387,60 @@
                 <span style="font-size:0.82rem;color:var(--text-muted);">Permite ler o código para selecionar o produto na entrada ou saída.</span>
               </span>
             </label>
+          </div>
+        </div>
+
+        <!-- ITEM AVULSO -->
+        <div class="panel pers-secao hidden" id="pers-secao-item-avulso" data-pers-secao="item-avulso">
+          <div class="panel-header">
+            <h3>✏️ Item avulso na venda</h3>
+            <div class="btn-group">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+              <button type="button" class="btn btn-primary" onclick="salvarConfigItemAvulso()">Salvar</button>
+            </div>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.5;">
+            Quando ativo, na <strong>Nova Venda</strong> o vendedor pode digitar o <strong>nome</strong> e o <strong>valor</strong> de um item na hora,
+            sem precisar cadastrar o produto em <strong>Produtos</strong>. Esse item <strong>não mexe no estoque</strong>.
+          </p>
+          <label style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;background:#f8f9fc;border:1px solid var(--border);border-radius:12px;padding:0.85rem 1rem;">
+            <input type="checkbox" id="pers-item-avulso-venda" style="margin-top:0.2rem;width:18px;height:18px;flex-shrink:0;" />
+            <span>
+              <strong style="display:block;color:var(--primary-dark);">Permitir item avulso na venda</strong>
+              <span style="font-size:0.82rem;color:var(--text-muted);">Mostra campos para escrever o que é e o preço, além da lista de produtos cadastrados.</span>
+            </span>
+          </label>
+        </div>
+
+        <!-- BACKUP -->
+        <div class="panel pers-secao hidden" id="pers-secao-backup" data-pers-secao="backup">
+          <div class="panel-header">
+            <h3>💾 Backup e restauração</h3>
+            <div class="btn-group">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="voltarMenuPersonalizacao()">← Voltar</button>
+            </div>
+          </div>
+          <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+            Baixe um arquivo com <strong>todos os dados desta loja</strong> (produtos, clientes, vendas, fiado, estoque, usuários, configurações etc.).
+            Guarde em local seguro. Você pode restaurar depois no mesmo computador ou em outro.
+          </p>
+          <div style="display:flex;flex-direction:column;gap:0.85rem;max-width:520px;">
+            <div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:14px;padding:1rem 1.05rem;">
+              <p style="font-weight:750;color:#065f46;margin-bottom:0.4rem;">⬇️ Baixar backup completo</p>
+              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.45;">
+                Gera um arquivo <code>.json</code> com tudo que está salvo nesta empresa agora.
+              </p>
+              <button type="button" class="btn btn-success" style="width:100%;" onclick="baixarBackupCompleto()">💾 Baixar backup agora</button>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:1rem 1.05rem;">
+              <p style="font-weight:750;color:#92400e;margin-bottom:0.4rem;">⬆️ Restaurar a partir de um arquivo</p>
+              <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.45;">
+                Substitui os dados atuais pelos do backup. <strong>Não dá para desfazer</strong> — faça um backup antes, se precisar.
+              </p>
+              <input type="file" id="backup-restore-file" accept=".json,application/json" style="margin-bottom:0.65rem;width:100%;font-size:0.86rem;" />
+              <button type="button" class="btn btn-warning" style="width:100%;" onclick="restaurarBackupCompleto()">Restaurar backup</button>
+            </div>
+            <p id="backup-info" style="font-size:0.8rem;color:var(--text-muted);line-height:1.45;"></p>
           </div>
         </div>
       </section>
@@ -3498,7 +3798,7 @@
       { id: 'mensal', label: '📈 Resumo mensal' },
       { id: 'logs', label: '📜 Logs' },
       { id: 'usuarios', label: '👤 Usuários e cargos' },
-      { id: 'personalizacao', label: '🎨 Personalização' },
+      { id: 'personalizacao', label: '⚙️ Configuração' },
       { id: 'mensagens-dono', label: '💬 Falar com o suporte / Mensagens' }
     ];
 
@@ -3644,7 +3944,8 @@
         pixBeneficiario: '',
         barcodeCadastro: false,
         barcodeVenda: false,
-        barcodeMovimentacao: false
+        barcodeMovimentacao: false,
+        itemAvulsoVenda: false
       };
     }
 
@@ -3661,7 +3962,8 @@
         pixBeneficiario: p.pixBeneficiario != null ? String(p.pixBeneficiario) : '',
         barcodeCadastro: p.barcodeCadastro === true,
         barcodeVenda: p.barcodeVenda === true,
-        barcodeMovimentacao: p.barcodeMovimentacao === true
+        barcodeMovimentacao: p.barcodeMovimentacao === true,
+        itemAvulsoVenda: p.itemAvulsoVenda === true
       };
     }
 
@@ -3673,6 +3975,9 @@
     }
     function barcodeMovimentacaoAtivo() {
       try { return !!obterPersonalizacao().barcodeMovimentacao; } catch (e) { return false; }
+    }
+    function itemAvulsoVendaAtivo() {
+      try { return !!obterPersonalizacao().itemAvulsoVenda; } catch (e) { return false; }
     }
 
     function obterPixLoja() {
@@ -3884,7 +4189,7 @@
       const canvasId = opts.canvasId || ('pix-qr-' + Date.now());
       if (!pix.copiaCola && !pix.chave) {
         return `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:0.75rem 0.9rem;margin-top:0.65rem;font-size:0.84rem;color:#92400e;">
-          ⚠️ PIX da loja ainda não configurado. Vá em <strong>Personalização</strong> e cadastre a chave / Copia e Cola do banco.
+          ⚠️ PIX da loja ainda não configurado. Vá em <strong>Configuração</strong> e cadastre a chave / Copia e Cola do banco.
         </div>`;
       }
       return `
@@ -3935,8 +4240,70 @@
       if (typeof aplicarMarcaEmpresa === 'function') aplicarMarcaEmpresa();
     }
 
+    function abrirSecaoPersonalizacao(id) {
+      const menu = document.getElementById('pers-menu');
+      if (menu) menu.classList.add('hidden');
+      document.querySelectorAll('.pers-secao').forEach(el => el.classList.add('hidden'));
+      const alvo = document.getElementById('pers-secao-' + id);
+      if (alvo) alvo.classList.remove('hidden');
+      // carrega dados da seção aberta
+      try {
+        if (id === 'pix' && typeof carregarPixLojaNoForm === 'function') carregarPixLojaNoForm();
+        if (id === 'aparencia') {
+          const p = obterPersonalizacao();
+          const nome = document.getElementById('pers-nome-empresa');
+          if (nome) nome.value = p.nomeExibicao || '';
+          const setCor = (colorId, txtId, val) => {
+            const c = document.getElementById(colorId);
+            const t = document.getElementById(txtId);
+            if (c) c.value = val;
+            if (t) t.value = val;
+          };
+          setCor('pers-cor-primary', 'pers-cor-primary-txt', p.primary || '#2f3e6b');
+          setCor('pers-cor-primary-dark', 'pers-cor-primary-dark-txt', p.primaryDark || '#1a2544');
+          setCor('pers-cor-accent', 'pers-cor-accent-txt', p.accent || '#c9a84c');
+          if (typeof previewPersonalizacao === 'function') previewPersonalizacao();
+        }
+        if (id === 'menu' && typeof renderOrdemMenu === 'function') renderOrdemMenu();
+        if (id === 'modulos' && typeof renderModulosLoja === 'function') renderModulosLoja();
+        if (id === 'barcode') {
+          const p = obterPersonalizacao();
+          const elCad = document.getElementById('pers-barcode-cadastro');
+          const elVen = document.getElementById('pers-barcode-venda');
+          const elMov = document.getElementById('pers-barcode-mov');
+          if (elCad) elCad.checked = !!p.barcodeCadastro;
+          if (elVen) elVen.checked = !!p.barcodeVenda;
+          if (elMov) elMov.checked = !!p.barcodeMovimentacao;
+        }
+        if (id === 'item-avulso') {
+          const p = obterPersonalizacao();
+          const el = document.getElementById('pers-item-avulso-venda');
+          if (el) el.checked = !!p.itemAvulsoVenda;
+        }
+        if (id === 'backup') {
+          const info = document.getElementById('backup-info');
+          if (info && empresaAtual) {
+            info.textContent = 'Empresa atual: ' + (empresaAtual.nome || empresaAtual.codigo || '—') +
+              (empresaAtual.codigo ? ' (' + empresaAtual.codigo + ')' : '');
+          }
+        }
+      } catch (e) { console.warn(e); }
+      try {
+        const content = document.querySelector('#page-personalizacao');
+        if (content) content.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e2) {}
+    }
+
+    function voltarMenuPersonalizacao() {
+      document.querySelectorAll('.pers-secao').forEach(el => el.classList.add('hidden'));
+      const menu = document.getElementById('pers-menu');
+      if (menu) menu.classList.remove('hidden');
+    }
+
     function renderPersonalizacao() {
       if (!isAdmin()) return;
+      // Sempre volta ao menu de botões ao abrir a página
+      voltarMenuPersonalizacao();
       // Limpa duplicatas antigas da ordem do menu
       const antes = Array.isArray(estado.ordemMenu) ? estado.ordemMenu.length : 0;
       estado.ordemMenu = ordemMenuAtual();
@@ -3956,6 +4323,19 @@
         if (elCad) elCad.checked = !!p.barcodeCadastro;
         if (elVen) elVen.checked = !!p.barcodeVenda;
         if (elMov) elMov.checked = !!p.barcodeMovimentacao;
+        const elAv = document.getElementById('pers-item-avulso-venda');
+        if (elAv) elAv.checked = !!p.itemAvulsoVenda;
+        const nome = document.getElementById('pers-nome-empresa');
+        if (nome) nome.value = p.nomeExibicao || '';
+        const setCor = (colorId, txtId, val) => {
+          const c = document.getElementById(colorId);
+          const t = document.getElementById(txtId);
+          if (c) c.value = val;
+          if (t) t.value = val;
+        };
+        setCor('pers-cor-primary', 'pers-cor-primary-txt', p.primary || '#2f3e6b');
+        setCor('pers-cor-primary-dark', 'pers-cor-primary-dark-txt', p.primaryDark || '#1a2544');
+        setCor('pers-cor-accent', 'pers-cor-accent-txt', p.accent || '#c9a84c');
       } catch (e) {}
     }
 
@@ -3980,6 +4360,157 @@
       toast('Configuração de código de barras salva!', 'success');
     }
 
+    function salvarConfigItemAvulso() {
+      if (!isAdmin()) { toast('Apenas administradores', 'error'); return; }
+      const prev = obterPersonalizacao();
+      const ativo = !!(document.getElementById('pers-item-avulso-venda') || {}).checked;
+      estado.personalizacao = Object.assign({}, prev, { itemAvulsoVenda: ativo });
+      registrarLog('Configurou item avulso na venda', ativo ? 'ativado' : 'desativado', 'usuario');
+      salvar();
+      atualizarUiItemAvulso();
+      toast(ativo ? 'Item avulso liberado na Nova Venda.' : 'Item avulso desativado.', 'success');
+    }
+
+    function atualizarUiItemAvulso() {
+      const grupo = document.getElementById('grupo-item-avulso-venda');
+      if (!grupo) return;
+      if (itemAvulsoVendaAtivo()) grupo.classList.remove('hidden');
+      else grupo.classList.add('hidden');
+    }
+
+    function montarPayloadBackup() {
+      let snapshot;
+      try {
+        snapshot = JSON.parse(JSON.stringify(estado));
+      } catch (e) {
+        snapshot = estado;
+      }
+      return {
+        tipo: 'site-gestao-backup',
+        versao: 1,
+        geradoEm: new Date().toISOString(),
+        empresa: empresaAtual ? {
+          codigo: empresaAtual.codigo || null,
+          nome: empresaAtual.nome || null
+        } : null,
+        estado: snapshot
+      };
+    }
+
+    function baixarBackupCompleto() {
+      if (!isAdmin()) {
+        toast('Apenas administradores podem baixar o backup', 'error');
+        return;
+      }
+      if (!empresaAtual || !empresaAtual.codigo) {
+        toast('Nenhuma empresa logada', 'error');
+        return;
+      }
+      try {
+        // Garante dados mais recentes gravados localmente
+        try { salvar(true); } catch (e0) {}
+        const payload = montarPayloadBackup();
+        const json = JSON.stringify(payload, null, 2);
+        const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const cod = String(empresaAtual.codigo || 'loja').replace(/[^a-zA-Z0-9_-]+/g, '_');
+        const d = new Date();
+        const stamp = d.getFullYear() +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          String(d.getDate()).padStart(2, '0') + '-' +
+          String(d.getHours()).padStart(2, '0') +
+          String(d.getMinutes()).padStart(2, '0');
+        a.href = url;
+        a.download = 'backup-' + cod + '-' + stamp + '.json';
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          try { a.remove(); URL.revokeObjectURL(url); } catch (e) {}
+        }, 2000);
+        registrarLog('Backup baixado', 'Arquivo ' + a.download, 'usuario');
+        try { salvar(true); } catch (e1) {}
+        const info = document.getElementById('backup-info');
+        if (info) {
+          info.innerHTML = '✅ Backup gerado em ' + new Date().toLocaleString('pt-BR') +
+            ' · arquivo <strong>' + a.download + '</strong>';
+        }
+        toast('Backup baixado!', 'success');
+      } catch (err) {
+        console.warn(err);
+        toast('Falha ao gerar o backup', 'error');
+      }
+    }
+
+    function restaurarBackupCompleto() {
+      if (!isAdmin()) {
+        toast('Apenas administradores podem restaurar backup', 'error');
+        return;
+      }
+      if (!empresaAtual || !empresaAtual.codigo) {
+        toast('Nenhuma empresa logada', 'error');
+        return;
+      }
+      const input = document.getElementById('backup-restore-file');
+      if (!input || !input.files || !input.files[0]) {
+        toast('Escolha o arquivo de backup (.json)', 'error');
+        return;
+      }
+      const file = input.files[0];
+      if (!confirm(
+        'Restaurar este backup?\n\n' +
+        'Arquivo: ' + file.name + '\n\n' +
+        'Os dados atuais desta loja serão SUBSTITUÍDOS pelos do arquivo.\n' +
+        'Faça um backup antes se ainda não tiver.'
+      )) return;
+
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const raw = String(reader.result || '');
+          const data = JSON.parse(raw);
+          let novoEstado = null;
+          if (data && data.tipo === 'site-gestao-backup' && data.estado) {
+            novoEstado = data.estado;
+          } else if (data && typeof data === 'object' && (data.produtos || data.clientes || data.vendas || data.usuarios)) {
+            // Arquivo antigo / só o estado
+            novoEstado = data;
+          } else {
+            toast('Arquivo de backup inválido', 'error');
+            return;
+          }
+          estado = normalizarEstado(novoEstado);
+          salvar(true);
+          registrarLog('Backup restaurado', file.name, 'usuario');
+          try {
+            renderPersonalizacao();
+            if (typeof renderDashboard === 'function') renderDashboard();
+            if (typeof renderProdutos === 'function') renderProdutos();
+            if (typeof renderClientes === 'function') renderClientes();
+            if (typeof aplicarTemaPersonalizacao === 'function') aplicarTemaPersonalizacao();
+            if (typeof aplicarOrdemMenu === 'function') aplicarOrdemMenu();
+            if (typeof atualizarUiBarcode === 'function') atualizarUiBarcode();
+            if (typeof atualizarBadges === 'function') atualizarBadges();
+          } catch (e) { console.warn(e); }
+          const info = document.getElementById('backup-info');
+          if (info) {
+            info.innerHTML = '✅ Backup restaurado de <strong>' + file.name + '</strong> em ' +
+              new Date().toLocaleString('pt-BR');
+          }
+          toast('Backup restaurado com sucesso!', 'success');
+          input.value = '';
+        } catch (err) {
+          console.warn(err);
+          toast('Não foi possível ler o arquivo de backup', 'error');
+        }
+      };
+      reader.onerror = function () {
+        toast('Erro ao ler o arquivo', 'error');
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
     function atualizarUiBarcode() {
       const cad = barcodeCadastroAtivo();
       const ven = barcodeVendaAtivo();
@@ -3990,6 +4521,7 @@
       if (gVen) gVen.style.display = ven ? '' : 'none';
       const gMov = document.getElementById('grupo-mov-barcode');
       if (gMov) gMov.style.display = mov ? '' : 'none';
+      try { if (typeof atualizarUiItemAvulso === 'function') atualizarUiItemAvulso(); } catch (e) {}
     }
 
     // ===================== SCANNER CÓDIGO DE BARRAS (CÂMERA) =====================
@@ -4281,6 +4813,7 @@
       if (overlay) overlay.classList.remove('show');
     }
 
+    function sincronizarCorPersonalizacao(tipo) { syncCorTxt(tipo); }
     function syncCorTxt(tipo) {
       const map = { 'primary': ['pers-cor-primary-txt','pers-cor-primary'], 'primary-dark': ['pers-cor-primary-dark-txt','pers-cor-primary-dark'], 'accent': ['pers-cor-accent-txt','pers-cor-accent'] };
       const ids = map[tipo];
@@ -4313,7 +4846,7 @@
       const prEl = document.getElementById('pers-cor-primary');
       const pdEl = document.getElementById('pers-cor-primary-dark');
       const acEl = document.getElementById('pers-cor-accent');
-      estado.personalizacao = {
+      estado.personalizacao = Object.assign({}, prev, {
         nomeExibicao: nomeEl ? (nomeEl.value || '').trim() : prev.nomeExibicao,
         primary: prEl ? prEl.value : prev.primary,
         primaryDark: pdEl ? pdEl.value : prev.primaryDark,
@@ -4321,7 +4854,7 @@
         pixChave: prev.pixChave,
         pixCopiaCola: prev.pixCopiaCola,
         pixBeneficiario: prev.pixBeneficiario
-      };
+      });
       registrarLog('Editar personalização', 'Cores e nome do sistema', 'usuario');
       salvar();
       aplicarTemaPersonalizacao();
@@ -5981,7 +6514,7 @@
       },
       {
         q: 'Onde coloco minha chave PIX da loja?',
-        a: 'Em **Personalização** (só admin), use o bloco **PIX da loja**. Cole a chave e o código Copia e Cola do banco. Ao escolher PIX no caixa, o QR aparece.'
+        a: 'Em **Configuração** (só admin), use o bloco **PIX da loja**. Cole a chave e o código Copia e Cola do banco. Ao escolher PIX no caixa, o QR aparece.'
       },
       {
         q: 'Como liberar o que cada usuário pode fazer?',
@@ -7296,6 +7829,165 @@
       return { tipo: 'ok', dias, venc, label: 'Vence em ' + dias + ' dia(s)' };
     }
 
+    /** Cache do registro de acesso da empresa logada (plano / vencimento) */
+    let _acessoEmpresaCache = null;
+    let _acessoEmpresaCacheCodigo = null;
+    let _acessoEmpresaCacheAt = 0;
+
+    function limparCacheAcessoEmpresa() {
+      _acessoEmpresaCache = null;
+      _acessoEmpresaCacheCodigo = null;
+      _acessoEmpresaCacheAt = 0;
+    }
+
+    async function atualizarCacheAcessoEmpresa(forcar) {
+      try {
+        if (!empresaAtual || !empresaAtual.codigo) {
+          limparCacheAcessoEmpresa();
+          return null;
+        }
+        const cod = empresaAtual.codigo;
+        const agora = Date.now();
+        if (!forcar && _acessoEmpresaCacheCodigo === cod && _acessoEmpresaCache && (agora - _acessoEmpresaCacheAt) < 60000) {
+          return _acessoEmpresaCache;
+        }
+        const plat = await lerPlataforma();
+        if (plataformaEmModoTeste(plat)) {
+          _acessoEmpresaCache = { modoTeste: true, registro: null, statusInfo: { tipo: 'teste', dias: null, venc: '', label: 'Modo teste' } };
+          _acessoEmpresaCacheCodigo = cod;
+          _acessoEmpresaCacheAt = agora;
+          return _acessoEmpresaCache;
+        }
+        try { await aplicarBloqueioAutomaticoPorVencimento(plat, cod); } catch (e) {}
+        const reg = (plat.acessos && plat.acessos[cod]) ? plat.acessos[cod] : null;
+        const st = statusVencimentoPagamento(reg);
+        _acessoEmpresaCache = { modoTeste: false, registro: reg, statusInfo: st, plat };
+        _acessoEmpresaCacheCodigo = cod;
+        _acessoEmpresaCacheAt = agora;
+        return _acessoEmpresaCache;
+      } catch (e) {
+        console.warn('Cache acesso empresa', e);
+        return null;
+      }
+    }
+
+    function getInfoPlanoSincrono() {
+      if (!_acessoEmpresaCache) return null;
+      return _acessoEmpresaCache;
+    }
+
+    /** Notificações do plano (3, 2, 1 dia antes + vencimento + carência) */
+    function getNotificacoesPlano() {
+      const cache = getInfoPlanoSincrono();
+      if (!cache || cache.modoTeste) return [];
+      const st = cache.statusInfo;
+      if (!st || st.dias == null) return [];
+      const itens = [];
+      const vencTxt = st.venc ? formatarData(st.venc) : '—';
+      const graca = (typeof DIAS_GRACA_BLOQUEIO_PAGAMENTO === 'number') ? DIAS_GRACA_BLOQUEIO_PAGAMENTO : 5;
+      const dias = st.dias;
+
+      if (dias === 3) {
+        itens.push({
+          tipo: 'plano-proximo',
+          titulo: '📅 Plano vence em 3 dias',
+          texto: 'O plano/assinatura da empresa vence em ' + vencTxt + '. Regularize o pagamento para não perder o acesso.',
+          dias: 3
+        });
+      } else if (dias === 2) {
+        itens.push({
+          tipo: 'plano-proximo',
+          titulo: '📅 Plano vence em 2 dias',
+          texto: 'Faltam 2 dias para o vencimento do plano (' + vencTxt + '). Evite bloqueio: quite a mensalidade.',
+          dias: 2
+        });
+      } else if (dias === 1) {
+        itens.push({
+          tipo: 'plano-amanha',
+          titulo: '⚠️ Plano vence amanhã',
+          texto: 'Amanhã (' + vencTxt + ') vence o plano desta empresa. Após o vencimento haverá ' + graca + ' dias de uso antes do bloqueio.',
+          dias: 1
+        });
+      } else if (dias === 0) {
+        itens.push({
+          tipo: 'plano-hoje',
+          titulo: '⚠️ Plano vence HOJE',
+          texto: 'O plano vence hoje (' + vencTxt + '). Se não for pago, você ainda poderá usar por ' + graca + ' dias e depois o acesso será bloqueado.',
+          dias: 0
+        });
+      } else if (dias < 0 && dias > -graca) {
+        const restam = graca - Math.abs(dias);
+        itens.push({
+          tipo: 'plano-vencido',
+          titulo: '🔴 Plano vencido',
+          texto: 'O plano venceu em ' + vencTxt + ' (há ' + Math.abs(dias) + ' dia(s)). Você ainda tem ' + restam +
+            ' dia(s) para usar o sistema. Depois disso o acesso será bloqueado automaticamente.',
+          dias: dias
+        });
+      } else if (dias <= -graca) {
+        itens.push({
+          tipo: 'plano-bloqueio',
+          titulo: '🚫 Plano bloqueado por falta de pagamento',
+          texto: 'O prazo de ' + graca + ' dias após o vencimento acabou. Entre em contato para liberar o acesso novamente.',
+          dias: dias
+        });
+      }
+      return itens;
+    }
+
+    function atualizarBannerPlano() {
+      const ban = document.getElementById('plano-banner');
+      const txt = document.getElementById('plano-banner-texto');
+      if (!ban || !txt) return;
+      const cache = getInfoPlanoSincrono();
+      if (!cache || cache.modoTeste || !empresaAtual) {
+        ban.classList.remove('show', 'aviso');
+        document.body.classList.remove('plano-banner-ativo');
+        return;
+      }
+      const st = cache.statusInfo || {};
+      const graca = (typeof DIAS_GRACA_BLOQUEIO_PAGAMENTO === 'number') ? DIAS_GRACA_BLOQUEIO_PAGAMENTO : 5;
+      const dias = st.dias;
+      // Banner fixo no topo só quando já venceu e ainda está na carência (ou no dia do vencimento)
+      if (dias != null && dias <= 0 && dias > -graca) {
+        const vencTxt = st.venc ? formatarData(st.venc) : '—';
+        const restam = graca - Math.abs(Math.min(dias, 0));
+        // dias === 0 → ainda não "venceu ontem", mas é o dia do vencimento
+        if (dias === 0) {
+          ban.classList.add('aviso');
+          ban.classList.remove('show'); // use show below
+          txt.innerHTML = '⚠️ <strong>Seu plano vence HOJE</strong> (' + vencTxt + '). Se não for pago, você terá <strong>' +
+            graca + ' dias</strong> para continuar usando; depois o acesso será <strong>bloqueado</strong>.';
+        } else {
+          ban.classList.remove('aviso');
+          txt.innerHTML = '🔴 <strong>Plano vencido</strong> em ' + vencTxt + ' (há ' + Math.abs(dias) +
+            ' dia(s)). Você ainda tem <strong>' + restam + ' dia(s)</strong> para usar o sistema. ' +
+            'Após esse prazo o acesso será <strong>bloqueado automaticamente</strong> até a regularização do pagamento.';
+        }
+        ban.classList.add('show');
+        document.body.classList.add('plano-banner-ativo');
+      } else {
+        ban.classList.remove('show', 'aviso');
+        document.body.classList.remove('plano-banner-ativo');
+      }
+    }
+
+    async function sincronizarAvisosPlano(forcar) {
+      try {
+        await atualizarCacheAcessoEmpresa(!!forcar);
+        atualizarBannerPlano();
+        try { if (typeof atualizarBadges === 'function') atualizarBadges(); } catch (e) {}
+        try {
+          const pageNotif = document.getElementById('page-notificacoes');
+          if (pageNotif && !pageNotif.classList.contains('hidden') && typeof renderNotificacoes === 'function') {
+            renderNotificacoes();
+          }
+        } catch (e2) {}
+      } catch (e) {
+        console.warn('sincronizarAvisosPlano', e);
+      }
+    }
+
     async function salvarPagamentoEmpresaDono() {
       if (!donoLogado) return;
       const codigo = normalizarCodigoEmpresa(document.getElementById('dono-empresa-codigo').value);
@@ -8128,6 +8820,7 @@
     }
 
     async function fazerLogout() {
+      try { limparCacheAcessoEmpresa(); atualizarBannerPlano(); } catch (e) {}
       // Se era suporte do dono, volta ao painel (sem log na loja)
       if (sessaoDonoSuporte) {
         await voltarAoPainelDonoDoSuporte();
@@ -8146,6 +8839,9 @@
       sessaoDonoSuporte = false;
       document.body.classList.remove('modo-demo');
       document.body.classList.remove('modo-dono-suporte');
+      document.body.classList.remove('plano-banner-ativo');
+      const banPlano = document.getElementById('plano-banner');
+      if (banPlano) banPlano.classList.remove('show', 'aviso');
       const banSup = document.getElementById('banner-dono-suporte');
       if (banSup) banSup.style.display = 'none';
       const banner = document.getElementById('demo-banner');
@@ -8322,7 +9018,8 @@
       }
     }
 
-    function entrarNoApp() {
+        function entrarNoApp() {
+      try { sincronizarAvisosPlano(true); } catch (e) {}
       try { ligarListenerMensagens(); } catch (e) {}
       document.getElementById('tela-login').classList.add('hidden');
       document.getElementById('app').classList.remove('hidden');
@@ -8351,7 +9048,7 @@
         dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Movimentação de Estoque',
         clientes: 'Clientes', fiado: 'Fiado / Contas a Receber', vendas: 'Histórico de Vendas',
         notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa', 'caixas-fechados': 'Caixas fechados', 'mensagens-dono': 'Falar com o suporte', entregas: 'Entregas',
-        mensal: 'Resumo Mensal', logs: 'Logs de Atividades', usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
+        mensal: 'Resumo Mensal', logs: 'Logs de Atividades', usuarios: 'Usuários e cargos', personalizacao: 'Configuração'
       };
       document.getElementById('page-title').textContent = titles[paginaIni] || paginaIni;
 
@@ -8365,7 +9062,7 @@
       else if (paginaIni === 'clientes') renderClientes();
       else if (paginaIni === 'fiado') renderFiado();
       else if (paginaIni === 'vendas') renderVendasLog();
-      else if (paginaIni === 'notificacoes') renderNotificacoes();
+      else if (paginaIni === 'notificacoes') { try { sincronizarAvisosPlano(false); } catch(e){} renderNotificacoes(); }
       else if (paginaIni === 'entregas') renderEntregas();
       else if (paginaIni === 'mensal') renderResumoMensal();
       else if (paginaIni === 'logs') renderLogs();
@@ -8414,7 +9111,7 @@
         notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa',
         'caixas-fechados': 'Caixas fechados', 'mensagens-dono': 'Falar com o suporte',
         entregas: 'Entregas', mensal: 'Resumo Mensal', logs: 'Logs de Atividades',
-        usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
+        usuarios: 'Usuários e cargos', personalizacao: 'Configuração'
       };
       const t = document.getElementById('page-title');
       if (t) t.textContent = titles[page] || page;
@@ -8425,7 +9122,7 @@
         else if (page === 'clientes') renderClientes();
         else if (page === 'fiado') renderFiado();
         else if (page === 'vendas') renderVendasLog();
-        else if (page === 'notificacoes') renderNotificacoes();
+        else if (page === 'notificacoes') { try { sincronizarAvisosPlano(false); } catch(e){} renderNotificacoes(); }
         else if (page === 'caixa') { if (typeof renderCaixa === 'function') renderCaixa(); }
         else if (page === 'entregas') renderEntregas();
         else if (page === 'mensal') renderResumoMensal();
@@ -8464,7 +9161,7 @@
           entregas: 'Entregas',
           mensal: 'Resumo Mensal',
           logs: 'Logs de Atividades',
-          usuarios: 'Usuários e cargos', personalizacao: 'Personalização'
+          usuarios: 'Usuários e cargos', personalizacao: 'Configuração'
         };
         document.getElementById('page-title').textContent = titles[page] || page;
 
@@ -8481,7 +9178,7 @@
         if (page === 'clientes') renderClientes();
         if (page === 'fiado') renderFiado();
         if (page === 'vendas') renderVendasLog();
-        if (page === 'notificacoes') renderNotificacoes();
+        if (page === 'notificacoes') { try { sincronizarAvisosPlano(false); } catch(e){} renderNotificacoes(); }
         if (page === 'entregas') renderEntregas();
         if (page === 'mensal') renderResumoMensal();
         if (page === 'logs') renderLogs();
@@ -9465,7 +10162,7 @@
       }
 
       const custoUnit = Number(p.custo) || 0;
-      const existente = carrinho.find(i => i.produtoId === produtoId && i.precoUnit === preco);
+      const existente = carrinho.find(i => i.produtoId === produtoId && i.precoUnit === preco && !i.avulso);
       if (existente) {
         existente.qtd += qtd;
         existente.total = existente.qtd * existente.precoUnit;
@@ -9473,12 +10170,52 @@
       } else {
         carrinho.push({
           produtoId, nome: p.nome, unidade: p.unidade || '',
-          qtd, precoUnit: preco, custoUnit, total: qtd * preco
+          qtd, precoUnit: preco, custoUnit, total: qtd * preco, avulso: false
         });
       }
       document.getElementById('cart-qtd').value = 1;
       renderCarrinho();
       toast('Item adicionado!', 'success');
+    }
+
+    function adicionarItemAvulsoAoCarrinho() {
+      if (!itemAvulsoVendaAtivo()) {
+        toast('Item avulso está desativado pelo administrador.', 'error');
+        return;
+      }
+      const nome = (document.getElementById('cart-avulso-nome') || {}).value;
+      const nomeLimpo = String(nome || '').trim();
+      const qtd = parseInt((document.getElementById('cart-avulso-qtd') || {}).value, 10);
+      const preco = parseFloat((document.getElementById('cart-avulso-preco') || {}).value);
+
+      if (!nomeLimpo) { toast('Informe o que é o item', 'error'); return; }
+      if (!qtd || qtd < 1) { toast('Quantidade inválida', 'error'); return; }
+      if (isNaN(preco) || preco < 0) { toast('Valor inválido', 'error'); return; }
+
+      const existente = carrinho.find(i => i.avulso && i.nome === nomeLimpo && i.precoUnit === preco);
+      if (existente) {
+        existente.qtd += qtd;
+        existente.total = existente.qtd * existente.precoUnit;
+      } else {
+        carrinho.push({
+          produtoId: null,
+          nome: nomeLimpo,
+          unidade: '',
+          qtd,
+          precoUnit: preco,
+          custoUnit: 0,
+          total: qtd * preco,
+          avulso: true
+        });
+      }
+      const nomeEl = document.getElementById('cart-avulso-nome');
+      const qtdEl = document.getElementById('cart-avulso-qtd');
+      const precoEl = document.getElementById('cart-avulso-preco');
+      if (nomeEl) nomeEl.value = '';
+      if (qtdEl) qtdEl.value = 1;
+      if (precoEl) precoEl.value = 0;
+      renderCarrinho();
+      toast('Item avulso adicionado!', 'success');
     }
 
     function removerDoCarrinho(idx) {
@@ -9499,15 +10236,20 @@
         document.getElementById('carrinho-total').textContent = 'Total: R$ 0,00';
         return;
       }
-      tbody.innerHTML = carrinho.map((item, idx) => `
+      tbody.innerHTML = carrinho.map((item, idx) => {
+        const tagAvulso = item.avulso
+          ? ' <span class="status aberto" style="font-size:0.65rem;vertical-align:middle;">avulso</span>'
+          : '';
+        const un = (!item.avulso && item.unidade) ? ` <small>(${item.unidade})</small>` : '';
+        return `
         <tr>
-          <td>${item.nome}${item.unidade ? ` <small>(${item.unidade})</small>` : ''}</td>
+          <td>${item.nome}${un}${tagAvulso}</td>
           <td>${item.qtd}</td>
           <td>${formatarMoeda(item.precoUnit)}</td>
           <td>${formatarMoeda(item.total)}</td>
           <td><button class="btn btn-sm btn-danger" onclick="removerDoCarrinho(${idx})">✕</button></td>
-        </tr>
-      `).join('');
+        </tr>`;
+      }).join('');
       const total = carrinho.reduce((s, i) => s + i.total, 0);
       document.getElementById('carrinho-total').textContent = 'Total: ' + formatarMoeda(total);
       if (typeof atualizarPreviewParcelas === 'function') atualizarPreviewParcelas();
@@ -9755,6 +10497,7 @@
       }
 
       for (const item of carrinho) {
+        if (item.avulso || !item.produtoId) continue; // item avulso não usa estoque
         const p = getProduto(item.produtoId);
         if (!p || p.estoque < item.qtd) {
           toast(`Estoque insuficiente de "${item.nome}"`, 'error');
@@ -9780,7 +10523,9 @@
         clienteDocumento,
         itens: carrinho.map(i => ({
           ...i,
-          custoUnit: (i.custoUnit != null) ? Number(i.custoUnit) : (Number(getProduto(i.produtoId)?.custo) || 0)
+          avulso: !!i.avulso,
+          produtoId: i.avulso ? null : i.produtoId,
+          custoUnit: i.avulso ? 0 : ((i.custoUnit != null) ? Number(i.custoUnit) : (Number(getProduto(i.produtoId)?.custo) || 0))
         })),
         total, custoTotal, lucro, pago, valorDevido, forma,
         prazo: forma === 'fiado' ? prazo : null,
@@ -9809,6 +10554,7 @@
       const codigo = opts.codigo || base.codigo || null;
 
       for (const item of (base.itens || [])) {
+        if (item.avulso || !item.produtoId) continue;
         const p = getProduto(item.produtoId);
         if (!p || p.estoque < item.qtd) {
           return { ok: false, erro: `Estoque insuficiente de "${item.nome || 'produto'}"` };
@@ -9816,6 +10562,7 @@
       }
 
       (base.itens || []).forEach(item => {
+        if (item.avulso || !item.produtoId) return; // avulso não baixa estoque
         const p = getProduto(item.produtoId);
         if (!p) return;
         p.estoque -= item.qtd;
@@ -11963,6 +12710,10 @@ function cancelarVendaPendente(id) {
     function getNotificacoes() {
       const hojeStr = hoje();
       const itens = [];
+      // Avisos do plano / assinatura (3, 2, 1 dia antes + vencido)
+      try {
+        getNotificacoesPlano().forEach(n => itens.push(n));
+      } catch (e) {}
       (estado.dividas || []).forEach(d => {
         if (d.status === 'pago') return;
         const cli = getCliente(d.clienteId);
@@ -12020,14 +12771,37 @@ function cancelarVendaPendente(id) {
         container.innerHTML = '<div class="empty"><div class="icon">✅</div>Nenhum aviso no momento. Tudo em dia!</div>';
         return;
       }
-      const classes = { atrasado: 'danger', hoje: 'danger', amanha: 'warning', proximo: 'info' };
+      const classes = {
+        atrasado: 'danger', hoje: 'danger', amanha: 'warning', proximo: 'info',
+        'plano-proximo': 'info', 'plano-amanha': 'warning', 'plano-hoje': 'danger',
+        'plano-vencido': 'danger', 'plano-bloqueio': 'danger'
+      };
       container.innerHTML = lista.map(n => `
         <div class="alert ${classes[n.tipo] || 'info'}"><strong>${n.titulo}:</strong> ${n.texto}</div>
       `).join('');
     }
 
     // ===================== DASHBOARD =====================
+    function abrirSecaoDashboard(id) {
+      const menu = document.getElementById('dash-menu');
+      if (menu) menu.classList.add('hidden');
+      document.querySelectorAll('.dash-secao').forEach(el => el.classList.add('hidden'));
+      const alvo = document.getElementById('dash-secao-' + id);
+      if (alvo) alvo.classList.remove('hidden');
+      try {
+        const page = document.getElementById('page-dashboard');
+        if (page) page.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {}
+    }
+
+    function voltarMenuDashboard() {
+      document.querySelectorAll('.dash-secao').forEach(el => el.classList.add('hidden'));
+      const menu = document.getElementById('dash-menu');
+      if (menu) menu.classList.remove('hidden');
+    }
+
     function renderDashboard() {
+      try { if (typeof voltarMenuDashboard === 'function') voltarMenuDashboard(); } catch (e) {}
       if (!estado.produtos) estado.produtos = [];
       if (!estado.clientes) estado.clientes = [];
       if (!estado.dividas) estado.dividas = [];
@@ -12248,12 +13022,12 @@ function cancelarVendaPendente(id) {
       }
 
       // Top 5 — apenas administradores
-      const topWrap = document.getElementById('dash-top-vendas-wrap');
-      if (topWrap) {
-        if (!isAdmin()) {
-          topWrap.classList.add('hidden');
-        } else {
-          topWrap.classList.remove('hidden');
+      const btnTop = document.getElementById('dash-btn-top');
+      if (btnTop) {
+        if (!isAdmin()) btnTop.classList.add('hidden');
+        else btnTop.classList.remove('hidden');
+      }
+      if (isAdmin()) {
           const vendas = (estado.vendas || []).slice();
 
           const topVendas = vendas
@@ -12307,7 +13081,6 @@ function cancelarVendaPendente(id) {
               }).join('');
             }
           }
-        }
       }
     }
 
