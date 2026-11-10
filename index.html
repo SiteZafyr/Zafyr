@@ -2393,6 +2393,8 @@
       <button class="nav-btn admin-menu admin-only" data-page="produtos">📦 Produtos</button>
       <button class="nav-btn admin-menu" data-page="estoque">📥 Movimentação</button>
       <button class="nav-btn admin-menu" data-page="clientes">👥 Clientes</button>
+      <button class="nav-btn admin-menu" data-page="rh">👔 RH</button>
+      <button class="nav-btn admin-menu" data-page="bate-ponto">⏱️ Bate-ponto</button>
       <button class="nav-btn fiado-menu" data-page="fiado">💰 Fiado <span class="badge hidden" id="badge-fiado">0</span></button>
       <button class="nav-btn admin-menu" data-page="vendas">📋 Histórico de Vendas</button>
       <button class="nav-btn admin-menu" data-page="caixas-fechados">📁 Caixas fechados</button>
@@ -2667,6 +2669,343 @@
             <table>
               <thead><tr><th>Nome</th><th>Telefone</th><th>Documento</th><th>Endereço completo</th><th>Referência</th><th>Ações</th></tr></thead>
               <tbody id="lista-clientes"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- RH -->
+      <section id="page-rh" class="page hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>👔 Recursos Humanos</h3>
+          </div>
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+            Tudo que o RH precisa: funcionários, ponto, férias e pagamentos da equipe.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:0.45rem;margin-bottom:1rem;">
+            <button type="button" class="btn btn-primary btn-sm" id="rh-tab-resumo" onclick="mostrarAbaRh('resumo')">📊 Resumo</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-funcionarios" onclick="mostrarAbaRh('funcionarios')">👥 Funcionários</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-ponto" onclick="mostrarAbaRh('ponto')">📋 Log de pontos</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-ferias" onclick="mostrarAbaRh('ferias')">🏖️ Férias</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-pagamentos" onclick="mostrarAbaRh('pagamentos')">💵 Pagamentos</button>
+          </div>
+        </div>
+
+        <!-- RESUMO RH -->
+        <div id="rh-aba-resumo" class="rh-aba">
+          <div class="cards-grid" id="rh-resumo-cards" style="margin-bottom:1rem;"></div>
+
+          <div class="panel" style="margin-bottom:1rem;">
+            <div class="panel-header">
+              <h3>⏰ Horário de ponto (definido pelo admin)</h3>
+            </div>
+            <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.45;">
+              Entrada depois do horário + tolerância = <strong>atrasado</strong>.
+              Sem ponto entre a abertura e o fechamento = <strong>falta em andamento</strong>.
+              Passou do fechamento sem ponto = <strong>falta</strong> (RH pode aprovar).
+            </p>
+            <div class="form-grid" id="rh-horario-form">
+              <div class="form-group">
+                <label>Abertura (entrada)</label>
+                <input type="time" id="rh-cfg-hora-entrada" />
+              </div>
+              <div class="form-group">
+                <label>Tolerância (minutos)</label>
+                <input type="number" id="rh-cfg-tolerancia" min="0" max="180" step="1" placeholder="10" />
+              </div>
+              <div class="form-group">
+                <label>Fechamento da empresa</label>
+                <input type="time" id="rh-cfg-hora-fechamento" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Dias em que a empresa abre</label>
+                <div id="rh-cfg-dias-abertos" style="display:flex;flex-wrap:wrap;gap:0.55rem 0.85rem;padding:0.45rem 0.15rem;">
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="1" /> Seg</label>
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="2" /> Ter</label>
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="3" /> Qua</label>
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="4" /> Qui</label>
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="5" /> Sex</label>
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="6" /> Sáb</label>
+                  <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.86rem;cursor:pointer;"><input type="checkbox" class="rh-dia-aberto" value="0" /> Dom</label>
+                </div>
+                <small style="font-size:0.75rem;color:var(--text-muted);">Nos dias desmarcados não gera falta automática e o ponto não é exigido.</small>
+              </div>
+              <div class="form-group" style="display:flex;align-items:flex-end;">
+                <button type="button" class="btn btn-primary" id="btn-salvar-horario-rh" onclick="salvarHorarioRh()">Salvar horário</button>
+              </div>
+            </div>
+            <p id="rh-horario-resumo" style="font-size:0.82rem;color:var(--text-muted);margin-top:0.5rem;"></p>
+          </div>
+
+          <div class="panel" style="margin-bottom:1rem;">
+            <div class="panel-header">
+              <h3>🏥 Atestados</h3>
+              <div class="btn-group">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-rh-atestados" onclick="toggleSecaoRh('rh-corpo-atestados','btn-toggle-rh-atestados')">▶ Abrir</button>
+                <button type="button" class="btn btn-primary btn-sm" onclick="abrirModalRhAtestado()">+ Registrar atestado</button>
+              </div>
+            </div>
+            <div id="rh-corpo-atestados" class="hidden">
+              <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:0.75rem;">
+                Funcionário com atestado no período <strong>não conta falta</strong>. Informe a data de retorno.
+                Botões de excluir seguem a permissão <strong>Pode excluir</strong> do módulo RH em Categorias.
+              </p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Funcionário</th>
+                      <th>Início</th>
+                      <th>Retorno</th>
+                      <th>Status</th>
+                      <th>Obs.</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lista-rh-atestados"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-bottom:1rem;">
+            <div class="panel-header">
+              <h3>🚫 Faltas (em andamento / para aprovar)</h3>
+              <div class="btn-group">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-rh-faltas" onclick="toggleSecaoRh('rh-corpo-faltas','btn-toggle-rh-faltas')">▶ Abrir</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="renderRhFaltas()">🔄 Atualizar</button>
+              </div>
+            </div>
+            <div id="rh-corpo-faltas" class="hidden">
+              <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:0.75rem;">
+                Aprovar e justificar usam a permissão de <strong>editar</strong> do RH. Excluir usa a permissão <strong>Pode excluir</strong> em Categorias.
+              </p>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Funcionário</th>
+                      <th>Data</th>
+                      <th>Situação</th>
+                      <th>Obs.</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody id="lista-rh-faltas"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>⚠️ Alertas do RH</h3>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-toggle-rh-alertas" onclick="toggleSecaoRh('rh-corpo-alertas','btn-toggle-rh-alertas')">▶ Abrir</button>
+            </div>
+            <div id="rh-corpo-alertas" class="hidden">
+              <div id="rh-alertas"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FUNCIONÁRIOS -->
+        <div id="rh-aba-funcionarios" class="rh-aba hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Funcionários</h3>
+              <button type="button" class="btn btn-primary" onclick="abrirModalFuncionario()">+ Novo funcionário</button>
+            </div>
+            <div class="form-grid" style="margin-bottom:0.85rem;">
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>🔎 Buscar</label>
+                <input type="text" id="rh-busca-func" placeholder="Nome, CPF, cargo, telefone..." oninput="renderRhFuncionarios()" />
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select id="rh-filtro-status" onchange="renderRhFuncionarios()">
+                  <option value="todos">Todos</option>
+                  <option value="ativo">Ativos</option>
+                  <option value="ferias">Em férias</option>
+                  <option value="afastado">Afastados</option>
+                  <option value="inativo">Inativos</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>Cargo</th>
+                    <th>Telefone</th>
+                    <th>Admissão</th>
+                    <th>Salário</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-rh-funcionarios"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- LOG DE PONTOS (vindo do Bate-ponto) -->
+        <div id="rh-aba-ponto" class="rh-aba hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📋 Log de pontos</h3>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="renderRhLogPontos()">🔄 Atualizar</button>
+            </div>
+            <p style="font-size:0.86rem;color:var(--text-muted);margin-bottom:0.85rem;line-height:1.45;">
+              Registros feitos no módulo <strong>⏱️ Bate-ponto</strong> (entrada e saída automáticas).
+            </p>
+            <div class="form-grid" style="margin-bottom:0.85rem;">
+              <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="rh-ponto-data-filtro" onchange="renderRhLogPontos()" />
+              </div>
+              <div class="form-group">
+                <label>Conta / usuário</label>
+                <select id="rh-ponto-func-filtro" onchange="renderRhLogPontos()">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select id="rh-ponto-status-filtro" onchange="renderRhLogPontos()">
+                  <option value="">Todos</option>
+                  <option value="aberto">Em aberto (sem saída)</option>
+                  <option value="fechado">Fechados</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Conta</th>
+                    <th>Entrada</th>
+                    <th>Saída</th>
+                    <th>Duração</th>
+                    <th>Status</th>
+                    <th>Registrado por</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-rh-ponto"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FÉRIAS -->
+        <div id="rh-aba-ferias" class="rh-aba hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Férias e afastamentos</h3>
+              <button type="button" class="btn btn-primary" onclick="abrirModalRhFerias()">+ Agendar férias</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Funcionário</th>
+                    <th>Início</th>
+                    <th>Fim</th>
+                    <th>Dias</th>
+                    <th>Status</th>
+                    <th>Obs.</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-rh-ferias"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGAMENTOS -->
+        <div id="rh-aba-pagamentos" class="rh-aba hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>Pagamentos e vales</h3>
+              <button type="button" class="btn btn-primary" onclick="abrirModalRhPagamento()">+ Novo pagamento</button>
+            </div>
+            <div class="form-grid" style="margin-bottom:0.85rem;">
+              <div class="form-group">
+                <label>Mês</label>
+                <input type="month" id="rh-pag-mes-filtro" onchange="renderRhPagamentos()" />
+              </div>
+              <div class="form-group">
+                <label>Funcionário</label>
+                <select id="rh-pag-func-filtro" onchange="renderRhPagamentos()">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Funcionário</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Obs.</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-rh-pagamentos"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BATE-PONTO -->
+      <section id="page-bate-ponto" class="page hidden">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>⏱️ Bate-ponto</h3>
+          </div>
+          <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+            O ponto é da <strong>sua conta</strong>. Data e hora entram sozinhas no momento do clique.
+          </p>
+          <div id="bate-ponto-usuario-box" style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;margin-bottom:1rem;padding:0.75rem 1rem;background:#f0f4ff;border:1px solid #d4dcf0;border-radius:12px;max-width:520px;">
+            <span style="font-size:1.35rem;">👤</span>
+            <div>
+              <div style="font-weight:750;color:var(--primary-dark);" id="bate-ponto-nome-usuario">—</div>
+              <div style="font-size:0.8rem;color:var(--text-muted);" id="bate-ponto-papel-usuario">—</div>
+            </div>
+          </div>
+          <div id="bate-ponto-status-box" style="background:#f8f9fc;border:1px solid var(--border);border-radius:14px;padding:1rem 1.1rem;margin-bottom:1rem;max-width:520px;">
+            <p style="color:var(--text-muted);font-size:0.9rem;">Carregando…</p>
+          </div>
+          <div class="btn-group" style="flex-wrap:wrap;gap:0.55rem;margin-bottom:1.25rem;">
+            <button type="button" class="btn btn-success" id="btn-registrar-entrada" onclick="registrarEntradaBatePonto()" style="min-width:180px;padding:0.85rem 1.2rem;font-size:1rem;">
+              ✅ Registrar ponto (entrada)
+            </button>
+            <button type="button" class="btn btn-warning" id="btn-fechar-ponto" onclick="fecharPontoBatePonto()" style="min-width:180px;padding:0.85rem 1.2rem;font-size:1rem;display:none;">
+              🏁 Fechar ponto (saída)
+            </button>
+          </div>
+          <div class="panel-header" style="border-top:1px solid var(--border);padding-top:1rem;margin-top:0.5rem;">
+            <h3 style="font-size:0.98rem;">Seus registros de hoje</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Entrada</th>
+                  <th>Saída</th>
+                  <th>Duração</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="lista-bate-ponto-hoje"></tbody>
             </table>
           </div>
         </div>
@@ -3785,6 +4124,7 @@
           Em cada tela marcada, escolha se o cargo pode <strong>editar</strong> e/ou <strong>excluir</strong> naquela área.
           No <strong>Caixa</strong>: Editar = aprovar venda · Excluir = cancelar venda pendente.
           Em <strong>Entregas</strong>: Editar = marcar como entregue.
+          No <strong>RH</strong>: além de editar/excluir, marque quais abas o cargo vê (Resumo, Funcionários, Ponto, Férias, Pagamentos).
         </p>
         <p id="cargo-admin-aviso" class="hidden" style="font-size:0.8rem;color:var(--warning);margin-top:0.6rem;">
           A categoria Administrador sempre tem acesso às telas ativas da loja e pode editar/excluir em todas.
@@ -3793,6 +4133,280 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="fecharModalCargo()">Cancelar</button>
         <button class="btn btn-primary" onclick="salvarCargo()">Salvar categoria</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FUNCIONÁRIO (RH) -->
+  <div class="modal-overlay" id="modal-funcionario">
+    <div class="modal" style="max-width:min(560px,100%);">
+      <div class="modal-header">
+        <h3 id="modal-funcionario-titulo">Novo funcionário</h3>
+        <button class="modal-close" onclick="fecharModalFuncionario()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="func-id" />
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Nome completo *</label>
+            <input type="text" id="func-nome" placeholder="Nome do funcionário" />
+          </div>
+          <div class="form-group">
+            <label>CPF</label>
+            <input type="text" id="func-cpf" placeholder="000.000.000-00" />
+          </div>
+          <div class="form-group">
+            <label>RG</label>
+            <input type="text" id="func-rg" placeholder="Opcional" />
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="text" id="func-telefone" placeholder="(00) 00000-0000" />
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="func-email" placeholder="email@exemplo.com" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Endereço</label>
+            <input type="text" id="func-endereco" placeholder="Rua, número, bairro..." />
+          </div>
+          <div class="form-group">
+            <label>Cargo / função *</label>
+            <input type="text" id="func-cargo" placeholder="Ex: Vendedor, Caixa, Motorista" />
+          </div>
+          <div class="form-group">
+            <label>Departamento</label>
+            <input type="text" id="func-departamento" placeholder="Ex: Vendas, Estoque, Administrativo" />
+          </div>
+          <div class="form-group">
+            <label>Data de admissão</label>
+            <input type="date" id="func-admissao" />
+          </div>
+          <div class="form-group">
+            <label>Data de nascimento</label>
+            <input type="date" id="func-nascimento" />
+          </div>
+          <div class="form-group">
+            <label>Salário (R$)</label>
+            <input type="number" id="func-salario" step="0.01" min="0" placeholder="0,00" />
+          </div>
+          <div class="form-group">
+            <label>Tipo de contrato</label>
+            <select id="func-contrato">
+              <option value="clt">CLT</option>
+              <option value="pj">PJ</option>
+              <option value="estagio">Estágio</option>
+              <option value="temporario">Temporário</option>
+              <option value="diarista">Diarista</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="func-status">
+              <option value="ativo">Ativo</option>
+              <option value="ferias">Em férias</option>
+              <option value="afastado">Afastado</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Chave PIX / dados bancários</label>
+            <input type="text" id="func-pix" placeholder="PIX ou banco/agência/conta" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Observações</label>
+            <textarea id="func-obs" rows="2" placeholder="Anotações do RH..."></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalFuncionario()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarFuncionario()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PONTO RH -->
+  <div class="modal-overlay" id="modal-rh-ponto">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-rh-ponto-titulo">Registrar ponto</h3>
+        <button class="modal-close" onclick="fecharModalRhPonto()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rh-ponto-id" />
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Funcionário *</label>
+            <select id="rh-ponto-funcionario"></select>
+          </div>
+          <div class="form-group">
+            <label>Data *</label>
+            <input type="date" id="rh-ponto-data" />
+          </div>
+          <div class="form-group">
+            <label>Status *</label>
+            <select id="rh-ponto-status">
+              <option value="presente">Presente</option>
+              <option value="atraso">Atraso</option>
+              <option value="falta">Falta</option>
+              <option value="folga">Folga</option>
+              <option value="atestado">Atestado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Entrada</label>
+            <input type="time" id="rh-ponto-entrada" />
+          </div>
+          <div class="form-group">
+            <label>Saída</label>
+            <input type="time" id="rh-ponto-saida" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Observação</label>
+            <input type="text" id="rh-ponto-obs" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalRhPonto()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarRhPonto()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL FÉRIAS RH -->
+  <div class="modal-overlay" id="modal-rh-ferias">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-rh-ferias-titulo">Agendar férias</h3>
+        <button class="modal-close" onclick="fecharModalRhFerias()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rh-ferias-id" />
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Funcionário *</label>
+            <select id="rh-ferias-funcionario"></select>
+          </div>
+          <div class="form-group">
+            <label>Início *</label>
+            <input type="date" id="rh-ferias-inicio" onchange="calcularDiasFeriasRh()" />
+          </div>
+          <div class="form-group">
+            <label>Fim *</label>
+            <input type="date" id="rh-ferias-fim" onchange="calcularDiasFeriasRh()" />
+          </div>
+          <div class="form-group">
+            <label>Dias</label>
+            <input type="number" id="rh-ferias-dias" min="1" readonly />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="rh-ferias-status">
+              <option value="agendada">Agendada</option>
+              <option value="gozada">Gozada</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Observação</label>
+            <input type="text" id="rh-ferias-obs" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalRhFerias()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarRhFerias()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PAGAMENTO RH -->
+  <div class="modal-overlay" id="modal-rh-pagamento">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-rh-pagamento-titulo">Novo pagamento</h3>
+        <button class="modal-close" onclick="fecharModalRhPagamento()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rh-pag-id" />
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Funcionário *</label>
+            <select id="rh-pag-funcionario"></select>
+          </div>
+          <div class="form-group">
+            <label>Data *</label>
+            <input type="date" id="rh-pag-data" />
+          </div>
+          <div class="form-group">
+            <label>Tipo *</label>
+            <select id="rh-pag-tipo">
+              <option value="salario">Salário</option>
+              <option value="adiantamento">Adiantamento</option>
+              <option value="vale">Vale</option>
+              <option value="bonus">Bônus / comissão</option>
+              <option value="rescisao">Rescisão</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Valor (R$) *</label>
+            <input type="number" id="rh-pag-valor" step="0.01" min="0" placeholder="0,00" />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select id="rh-pag-status">
+              <option value="pago">Pago</option>
+              <option value="pendente">Pendente</option>
+            </select>
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Observação</label>
+            <input type="text" id="rh-pag-obs" placeholder="Opcional" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalRhPagamento()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarRhPagamento()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ATESTADO RH -->
+  <div class="modal-overlay" id="modal-rh-atestado">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-rh-atestado-titulo">Registrar atestado</h3>
+        <button class="modal-close" onclick="fecharModalRhAtestado()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rh-atestado-id" />
+        <div class="form-grid">
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Funcionário / conta *</label>
+            <select id="rh-atestado-usuario"></select>
+          </div>
+          <div class="form-group">
+            <label>Início do atestado *</label>
+            <input type="date" id="rh-atestado-inicio" />
+          </div>
+          <div class="form-group">
+            <label>Data de retorno *</label>
+            <input type="date" id="rh-atestado-fim" />
+          </div>
+          <div class="form-group" style="grid-column:1/-1;">
+            <label>Observação</label>
+            <input type="text" id="rh-atestado-obs" placeholder="CID, médico, observações..." />
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="fecharModalRhAtestado()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarRhAtestado()">Salvar atestado</button>
       </div>
     </div>
   </div>
@@ -3889,6 +4503,8 @@
       { id: 'produtos', label: '📦 Produtos' },
       { id: 'estoque', label: '📥 Movimentação de estoque' },
       { id: 'clientes', label: '👥 Clientes' },
+      { id: 'rh', label: '👔 RH (funcionários, férias, log de pontos)' },
+      { id: 'bate-ponto', label: '⏱️ Bate-ponto (entrada e saída)' },
       { id: 'fiado', label: '💰 Fiado / Contas a receber' },
       { id: 'vendas', label: '📋 Histórico de vendas' },
       { id: 'caixas-fechados', label: '📁 Caixas fechados' },
@@ -3912,6 +4528,8 @@
         'produtos',
         'estoque',
         'clientes',
+        'rh',
+        'bate-ponto',
         'fiado',
         'vendas',
         'caixas-fechados',
@@ -4975,10 +5593,20 @@
 
 
     /** Módulos que aceitam permissão de editar e/ou excluir */
+    /** Abas internas do módulo RH (liberadas por categoria) */
+    const RH_ABAS = [
+      { id: 'resumo', label: '📊 Resumo' },
+      { id: 'funcionarios', label: '👥 Funcionários' },
+      { id: 'ponto', label: '📋 Log de pontos' },
+      { id: 'ferias', label: '🏖️ Férias' },
+      { id: 'pagamentos', label: '💵 Pagamentos' }
+    ];
+
     const MODULOS_COM_ACOES = {
       produtos: { editar: true, excluir: true },
       estoque: { editar: true, excluir: false },
       clientes: { editar: true, excluir: true },
+      rh: { editar: true, excluir: true, abasRh: true },
       fiado: { editar: true, excluir: true },
       vendas: { editar: false, excluir: true },
       venda: { pagamento: true },
@@ -4999,6 +5627,10 @@
         if ('excluir' in def) row.excluir = opts.excluir != null ? !!opts.excluir : false;
         if (def.pagamento) {
           row.pagamento = opts.pagamento != null ? !!opts.pagamento : false;
+        }
+        if (def.abasRh) {
+          row.abas = {};
+          RH_ABAS.forEach(a => { row.abas[a.id] = true; });
         }
         out[pid] = row;
       });
@@ -5202,9 +5834,38 @@
           else if (prev && prev.pagamento === true) defPag = true;
           row.pagamento = !!defPag;
         }
+        // Abas do RH: se nunca configurou, libera todas
+        if (def.abasRh) {
+          const abasPrev = (prev && prev.abas && typeof prev.abas === 'object') ? prev.abas : null;
+          row.abas = {};
+          RH_ABAS.forEach(a => {
+            if (abasPrev && typeof abasPrev[a.id] === 'boolean') {
+              row.abas[a.id] = abasPrev[a.id];
+            } else {
+              row.abas[a.id] = true;
+            }
+          });
+        }
         acoes[pid] = row;
       });
       return acoes;
+    }
+
+    /** Verifica se o usuário atual pode ver uma aba do RH */
+    function podeAbaRh(abaId) {
+      if (!usuarioAtual) return false;
+      if (!temPermissao('rh')) return false;
+      if (usuarioAtual.papel === 'admin') return true;
+      const cargo = getCargo(usuarioAtual.papel);
+      if (!cargo) return true;
+      const acoes = normalizarAcoesCargo(cargo);
+      const rh = acoes.rh;
+      if (!rh || !rh.abas) return true;
+      return rh.abas[abaId] !== false;
+    }
+
+    function abasRhLiberadas() {
+      return RH_ABAS.filter(a => podeAbaRh(a.id)).map(a => a.id);
     }
 
     /** Pode cadastrar/editar naquele módulo (ex.: 'produtos', 'clientes', 'fiado') */
@@ -6189,12 +6850,27 @@
       const base = {
         produtos: [], clientes: [], dividas: [], movimentacoes: [],
         usuarios: [], vendas: [], logs: [], historicoMensal: [], cargos: [],
+        funcionarios: [], rhPonto: [], rhFerias: [], rhPagamentos: [], batePonto: [],
         ultimoZeroMensal: 0, ultimaVenda: null
       };
       const e = { ...base, ...(data || {}) };
-      ['produtos','clientes','dividas','movimentacoes','usuarios','vendas','vendasPendentes','logs','historicoMensal','cargos'].forEach(k => {
+      ['produtos','clientes','dividas','movimentacoes','usuarios','vendas','vendasPendentes','logs','historicoMensal','cargos','funcionarios','rhPonto','rhFerias','rhPagamentos','batePonto','rhAtestados','rhFaltas'].forEach(k => {
         if (!Array.isArray(e[k])) e[k] = e[k] ? Object.values(e[k]) : [];
       });
+      // Migra registros antigos de rhPonto manuais para o log unificado, se batePonto vazio
+      if ((!e.batePonto || !e.batePonto.length) && Array.isArray(e.rhPonto) && e.rhPonto.length) {
+        e.batePonto = e.rhPonto.map(p => ({
+          id: p.id || uid(),
+          funcionarioId: p.funcionarioId || '',
+          dataEntrada: p.data || '',
+          horaEntrada: p.entrada || '',
+          dataSaida: p.saida ? (p.data || '') : '',
+          horaSaida: p.saida || '',
+          status: p.saida ? 'fechado' : (p.status === 'falta' || p.status === 'folga' || p.status === 'atestado' ? 'fechado' : 'aberto'),
+          registradoPor: p.obs || 'migrado',
+          criadoEm: p.criadoEm || null
+        }));
+      }
       if (typeof e.ultimoZeroMensal !== 'number') e.ultimoZeroMensal = Number(e.ultimoZeroMensal) || 0;
       e.produtos = e.produtos.map(p => ({
         ...p,
@@ -9476,7 +10152,7 @@
       if (el) el.classList.remove('hidden');
       const titles = {
         dashboard: 'Dashboard', produtos: 'Produtos', estoque: 'Movimentação de Estoque',
-        clientes: 'Clientes', fiado: 'Fiado / Contas a Receber', vendas: 'Histórico de Vendas',
+        clientes: 'Clientes', rh: 'RH — Recursos Humanos', 'bate-ponto': 'Bate-ponto', fiado: 'Fiado / Contas a Receber', vendas: 'Histórico de Vendas',
         notificacoes: 'Notificações', venda: 'Nova Venda', caixa: 'Caixa',
         'caixas-fechados': 'Caixas fechados', 'mensagens-dono': 'Falar com o suporte',
         entregas: 'Entregas', mensal: 'Resumo Mensal', logs: 'Logs de Atividades',
@@ -9489,6 +10165,8 @@
         else if (page === 'produtos') renderProdutos();
         else if (page === 'estoque') { preencherSelectProdutos('mov-produto'); renderHistoricoEstoque(); }
         else if (page === 'clientes') renderClientes();
+        else if (page === 'rh') renderRh();
+        else if (page === 'bate-ponto') renderBatePonto();
         else if (page === 'fiado') renderFiado();
         else if (page === 'vendas') renderVendasLog();
         else if (page === 'notificacoes') { try { sincronizarAvisosPlano(false); } catch(e){} renderNotificacoes(); }
@@ -9520,6 +10198,8 @@
           produtos: 'Produtos',
           estoque: 'Movimentação de Estoque',
           clientes: 'Clientes',
+          rh: 'RH — Recursos Humanos',
+          'bate-ponto': 'Bate-ponto',
           fiado: 'Fiado / Contas a Receber',
           vendas: 'Histórico de Vendas',
           notificacoes: 'Notificações',
@@ -9545,6 +10225,8 @@
           try { atualizarUiBarcode(); } catch (e) {}
         }
         if (page === 'clientes') renderClientes();
+        if (page === 'rh') renderRh();
+        if (page === 'bate-ponto') renderBatePonto();
         if (page === 'fiado') renderFiado();
         if (page === 'vendas') renderVendasLog();
         if (page === 'notificacoes') { try { sincronizarAvisosPlano(false); } catch(e){} renderNotificacoes(); }
@@ -9735,6 +10417,21 @@
               Forma de pagamento e valor pago
             </label>`);
           }
+          // Sub-abas do RH
+          if (def.abasRh) {
+            const abas = (a.abas && typeof a.abas === 'object') ? a.abas : {};
+            const abasHtml = RH_ABAS.map(ab => {
+              const on = abas[ab.id] !== false;
+              return `<label style="display:flex;align-items:center;gap:0.28rem;cursor:${dis ? 'default' : 'pointer'};min-width:140px;">
+              <input type="checkbox" class="cargo-acao-rh-aba" data-mod="rh" data-aba="${ab.id}" ${on ? 'checked' : ''} ${dis} />
+              ${ab.label}
+            </label>`;
+            }).join('');
+            partes.push(`<div style="width:100%;margin-top:0.25rem;">
+              <div style="font-size:0.75rem;font-weight:700;color:var(--primary-dark);margin-bottom:0.3rem;">Abas do RH liberadas</div>
+              <div style="display:flex;flex-wrap:wrap;gap:0.4rem 0.75rem;">${abasHtml}</div>
+            </div>`);
+          }
           if (partes.length) {
             sub = `<div class="cargo-acoes-mod" data-mod="${p.id}" style="margin:0.15rem 0 0.45rem 1.55rem;display:flex;flex-wrap:wrap;gap:0.55rem 0.9rem;font-size:0.78rem;color:var(--text-muted);">
             ${partes.join('\n            ')}
@@ -9762,6 +10459,10 @@
           // ao liberar a tela, editar vem marcado por padrão
           if (!inp.checked) inp.checked = true;
         }
+        // ao liberar RH, marca todas as abas por padrão
+        else if (chk.checked && inp.classList.contains('cargo-acao-rh-aba')) {
+          inp.checked = true;
+        }
         // pagamento não marca sozinho — admin decide (exceto caixa, onde já vem no padrão do cargo)
       });
     }
@@ -9779,6 +10480,13 @@
         if ('editar' in def) row.editar = edEl ? !!edEl.checked : false;
         if ('excluir' in def) row.excluir = exEl ? !!exEl.checked : false;
         if (def.pagamento) row.pagamento = pagEl ? !!pagEl.checked : false;
+        if (def.abasRh) {
+          row.abas = {};
+          RH_ABAS.forEach(ab => {
+            const el = document.querySelector('.cargo-acao-rh-aba[data-aba="' + ab.id + '"]');
+            row.abas[ab.id] = el ? !!el.checked : true;
+          });
+        }
         acoes[pid] = row;
       });
       return acoes;
@@ -12844,6 +13552,1306 @@ function cancelarVendaPendente(id) {
         </div>
       `;
       mostrarComprovanteParaImpressao(htmlNota, { titulo: '🚚 Nota de entrega' });
+    }
+
+    // ===================== RH =====================
+    let _rhAbaAtual = 'resumo';
+
+    function garantirArraysRh() {
+      if (!Array.isArray(estado.funcionarios)) estado.funcionarios = [];
+      if (!Array.isArray(estado.rhPonto)) estado.rhPonto = [];
+      if (!Array.isArray(estado.rhFerias)) estado.rhFerias = [];
+      if (!Array.isArray(estado.rhPagamentos)) estado.rhPagamentos = [];
+      if (!Array.isArray(estado.batePonto)) estado.batePonto = [];
+    }
+
+    function getFuncionario(id) {
+      garantirArraysRh();
+      return (estado.funcionarios || []).find(f => f.id === id) || null;
+    }
+
+    function nomeFuncionario(id) {
+      const f = getFuncionario(id);
+      return f ? f.nome : 'Funcionário removido';
+    }
+
+    function preencherSelectsRhFuncionarios() {
+      garantirArraysRh();
+      const ativos = (estado.funcionarios || []).slice().sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
+      const optsTodos = '<option value="">Todos</option>' + ativos.map(f =>
+        '<option value="' + f.id + '">' + escaparHtmlSimples(f.nome) + '</option>'
+      ).join('');
+      const optsReq = ativos.map(f =>
+        '<option value="' + f.id + '">' + escaparHtmlSimples(f.nome) + '</option>'
+      ).join('');
+      ['rh-ponto-func-filtro', 'rh-pag-func-filtro'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const prev = el.value;
+        el.innerHTML = optsTodos;
+        if (prev) el.value = prev;
+      });
+      ['rh-ponto-funcionario', 'rh-ferias-funcionario', 'rh-pag-funcionario'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const prev = el.value;
+        el.innerHTML = (optsReq || '<option value="">Nenhum funcionário cadastrado</option>');
+        if (prev) el.value = prev;
+      });
+    }
+
+    function mostrarAbaRh(aba) {
+      const liberadas = abasRhLiberadas();
+      // Se a aba pedida não está liberada, cai na primeira liberada
+      if (!liberadas.includes(aba)) {
+        aba = liberadas[0] || 'resumo';
+      }
+      _rhAbaAtual = aba || 'resumo';
+      RH_ABAS.forEach(ab => {
+        const a = ab.id;
+        const pode = liberadas.includes(a);
+        const el = document.getElementById('rh-aba-' + a);
+        if (el) el.classList.toggle('hidden', !pode || a !== _rhAbaAtual);
+        const tab = document.getElementById('rh-tab-' + a);
+        if (tab) {
+          tab.style.display = pode ? '' : 'none';
+          tab.classList.toggle('btn-primary', pode && a === _rhAbaAtual);
+          tab.classList.toggle('btn-secondary', !pode || a !== _rhAbaAtual);
+        }
+      });
+      if (!liberadas.length) {
+        const box = document.getElementById('rh-alertas');
+        if (box) box.innerHTML = '<div class="alert warning">Nenhuma aba do RH foi liberada para o seu cargo. Peça ao administrador.</div>';
+        return;
+      }
+      if (_rhAbaAtual === 'resumo') renderRhResumo();
+      if (_rhAbaAtual === 'funcionarios') renderRhFuncionarios();
+      if (_rhAbaAtual === 'ponto') { preencherSelectsRhFuncionarios(); renderRhLogPontos(); }
+      if (_rhAbaAtual === 'ferias') { preencherSelectsRhFuncionarios(); renderRhFerias(); }
+      if (_rhAbaAtual === 'pagamentos') { preencherSelectsRhFuncionarios(); renderRhPagamentos(); }
+    }
+
+    function renderRh() {
+      garantirArraysRh();
+      const dataFiltro = document.getElementById('rh-ponto-data-filtro');
+      if (dataFiltro && !dataFiltro.value) dataFiltro.value = hoje();
+      const mesFiltro = document.getElementById('rh-pag-mes-filtro');
+      if (mesFiltro && !mesFiltro.value) {
+        const d = new Date();
+        mesFiltro.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+      }
+      preencherSelectsRhFuncionarios();
+      // Garante que a aba atual seja uma liberada
+      const liberadas = abasRhLiberadas();
+      if (!liberadas.includes(_rhAbaAtual)) _rhAbaAtual = liberadas[0] || 'resumo';
+      mostrarAbaRh(_rhAbaAtual || 'resumo');
+    }
+
+    function statusFuncLabel(st) {
+      return ({ ativo: 'Ativo', ferias: 'Em férias', afastado: 'Afastado', inativo: 'Inativo' })[st] || st || '—';
+    }
+    function statusFuncClass(st) {
+      if (st === 'ativo') return 'ok';
+      if (st === 'ferias') return 'admin';
+      if (st === 'afastado') return 'aberto';
+      if (st === 'inativo') return 'baixo';
+      return 'aberto';
+    }
+
+    function garantirRhConfig() {
+      if (!estado.rhConfig || typeof estado.rhConfig !== 'object') {
+        estado.rhConfig = {
+          horaEntrada: '08:00',
+          toleranciaMin: 10,
+          horaFechamento: '18:00',
+          diasAbertos: [1, 2, 3, 4, 5]
+        };
+      }
+      if (!estado.rhConfig.horaEntrada) estado.rhConfig.horaEntrada = '08:00';
+      if (estado.rhConfig.toleranciaMin == null || isNaN(Number(estado.rhConfig.toleranciaMin))) {
+        estado.rhConfig.toleranciaMin = 10;
+      }
+      // Migra limiteFalta antigo → horaFechamento
+      if (!estado.rhConfig.horaFechamento) {
+        estado.rhConfig.horaFechamento = estado.rhConfig.limiteFalta && estado.rhConfig.limiteFalta !== '00:00'
+          ? estado.rhConfig.limiteFalta
+          : '18:00';
+      }
+      if (!Array.isArray(estado.rhConfig.diasAbertos) || !estado.rhConfig.diasAbertos.length) {
+        estado.rhConfig.diasAbertos = [1, 2, 3, 4, 5];
+      } else {
+        estado.rhConfig.diasAbertos = estado.rhConfig.diasAbertos
+          .map(n => Number(n))
+          .filter(n => n >= 0 && n <= 6);
+        if (!estado.rhConfig.diasAbertos.length) estado.rhConfig.diasAbertos = [1, 2, 3, 4, 5];
+      }
+      return estado.rhConfig;
+    }
+
+    function empresaAbertaNaData(dataStr) {
+      const cfg = garantirRhConfig();
+      let d;
+      try {
+        if (dataStr) {
+          const p = String(dataStr).split('-');
+          d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+        } else {
+          d = new Date();
+        }
+      } catch (e) {
+        d = new Date();
+      }
+      const dow = d.getDay();
+      return (cfg.diasAbertos || []).map(Number).includes(dow);
+    }
+
+    function rotuloDiasAbertos(dias) {
+      const map = { 0: 'Dom', 1: 'Seg', 2: 'Ter', 3: 'Qua', 4: 'Qui', 5: 'Sex', 6: 'Sáb' };
+      const arr = (dias || []).map(Number).filter(n => n >= 0 && n <= 6);
+      if (!arr.length) return 'nenhum';
+      const ordem = [1, 2, 3, 4, 5, 6, 0];
+      return ordem.filter(n => arr.includes(n)).map(n => map[n]).join(', ');
+    }
+
+    function toggleSecaoRh(corpoId, btnId) {
+      const corpo = document.getElementById(corpoId);
+      const btn = document.getElementById(btnId);
+      if (!corpo) return;
+      const aberto = !corpo.classList.contains('hidden');
+      if (aberto) {
+        corpo.classList.add('hidden');
+        if (btn) btn.textContent = '▶ Abrir';
+      } else {
+        corpo.classList.remove('hidden');
+        if (btn) btn.textContent = '▼ Fechar';
+        if (corpoId === 'rh-corpo-atestados') renderRhAtestados();
+        if (corpoId === 'rh-corpo-faltas') renderRhFaltas();
+        if (corpoId === 'rh-corpo-alertas') {
+          // reusa o trecho de alertas do resumo
+          try { renderRhResumo(); } catch (e) {}
+        }
+      }
+    }
+
+    function garantirRhAtestados() {
+      if (!Array.isArray(estado.rhAtestados)) estado.rhAtestados = [];
+      if (!Array.isArray(estado.rhFaltas)) estado.rhFaltas = [];
+    }
+
+    function horaParaMinutos(hhmm) {
+      const s = String(hhmm || '');
+      const m = s.match(/^(\d{1,2}):(\d{2})/);
+      if (!m) return null;
+      return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+    }
+
+    /** Avalia se a hora de entrada está no horário ou atrasada */
+    function avaliarPontualidadeEntrada(horaEntrada) {
+      const cfg = garantirRhConfig();
+      const minEnt = horaParaMinutos(horaEntrada);
+      const minEsp = horaParaMinutos(cfg.horaEntrada);
+      if (minEnt == null || minEsp == null) {
+        return { pontualidade: 'no-horario', minutosAtraso: 0 };
+      }
+      const limite = minEsp + (Number(cfg.toleranciaMin) || 0);
+      if (minEnt <= limite) {
+        return { pontualidade: 'no-horario', minutosAtraso: 0 };
+      }
+      return { pontualidade: 'atrasado', minutosAtraso: minEnt - minEsp };
+    }
+
+    function usuariosQueDevemBaterPonto() {
+      const lista = Array.isArray(estado.usuarios) ? estado.usuarios : [];
+      return lista.slice();
+    }
+
+    function pontosDeHoje() {
+      garantirBatePonto();
+      const hojeStr = hoje();
+      return (estado.batePonto || []).filter(p => p.dataEntrada === hojeStr);
+    }
+
+    function idsComPontoHoje() {
+      const set = new Set();
+      pontosDeHoje().forEach(p => {
+        if (p.usuarioId) set.add(String(p.usuarioId));
+      });
+      return set;
+    }
+
+    function atestadoAtivoNaData(usuarioId, dataStr) {
+      garantirRhAtestados();
+      const d = dataStr || hoje();
+      return (estado.rhAtestados || []).find(a => {
+        if (String(a.usuarioId) !== String(usuarioId)) return false;
+        if (a.status === 'cancelado') return false;
+        const ini = a.inicio || '';
+        const fim = a.fim || '';
+        if (!ini || !fim) return false;
+        return d >= ini && d <= fim;
+      }) || null;
+    }
+
+    function emFeriasHoje(usuarioId, dataStr) {
+      const d = dataStr || hoje();
+      // Férias do cadastro RH (funcionarios) por nome/id se houver vínculo — usa rhFerias
+      return (estado.rhFerias || []).some(fe => {
+        if (fe.status === 'cancelada') return false;
+        if (fe.status !== 'agendada' && fe.status !== 'gozada') return false;
+        // rhFerias liga a funcionarioId do cadastro RH; também aceita usuarioId se gravado
+        if (fe.usuarioId && String(fe.usuarioId) === String(usuarioId)) {
+          return d >= (fe.inicio || '') && d <= (fe.fim || '');
+        }
+        return false;
+      });
+    }
+
+    function contagemFeriasHoje() {
+      const d = hoje();
+      let n = 0;
+      // Cadastro RH status ferias
+      (estado.funcionarios || []).forEach(f => {
+        if (f.status === 'ferias') n++;
+      });
+      // Períodos de férias ativos
+      (estado.rhFerias || []).forEach(fe => {
+        if (fe.status === 'cancelada') return;
+        if (d >= (fe.inicio || '') && d <= (fe.fim || '')) n++;
+      });
+      // evita double-count simplificando: usa só períodos ativos OU status, prioriza períodos
+      const porPeriodo = (estado.rhFerias || []).filter(fe =>
+        fe.status !== 'cancelada' && d >= (fe.inicio || '') && d <= (fe.fim || '')
+      ).length;
+      const porStatus = (estado.funcionarios || []).filter(f => f.status === 'ferias').length;
+      return Math.max(porPeriodo, porStatus);
+    }
+
+    function contagemAtestadosHoje() {
+      garantirRhAtestados();
+      const d = hoje();
+      return (estado.rhAtestados || []).filter(a =>
+        a.status !== 'cancelado' && d >= (a.inicio || '') && d <= (a.fim || '')
+      ).length;
+    }
+
+    /** Sincroniza faltas do dia com base no horário da empresa */
+    function sincronizarFaltasHoje() {
+      garantirRhAtestados();
+      garantirBatePonto();
+      const cfg = garantirRhConfig();
+      const hojeStr = hoje();
+      // Empresa fechada neste dia da semana: não gera falta
+      if (!empresaAbertaNaData(hojeStr)) return;
+      const agoraMin = horaParaMinutos(agoraHoraLocal());
+      const minEntrada = horaParaMinutos(cfg.horaEntrada);
+      const minFecha = horaParaMinutos(cfg.horaFechamento);
+      if (agoraMin == null || minEntrada == null || minFecha == null) return;
+      // Antes da abertura: não gera falta
+      if (agoraMin < minEntrada) return;
+
+      const comPonto = idsComPontoHoje();
+      const usuarios = usuariosQueDevemBaterPonto();
+      const aposFechamento = agoraMin >= minFecha;
+
+      usuarios.forEach(u => {
+        const userKey = String(u.id || u.login || '');
+        if (!userKey) return;
+        if (comPonto.has(userKey)) return;
+        if (atestadoAtivoNaData(userKey, hojeStr)) return;
+        // Já tem falta registrada hoje?
+        let falta = (estado.rhFaltas || []).find(f =>
+          String(f.usuarioId) === userKey && f.data === hojeStr && f.status !== 'cancelada'
+        );
+        const novoStatus = aposFechamento ? 'pendente' : 'em_andamento';
+        if (falta) {
+          // Não sobrescreve se já aprovada/justificada
+          if (falta.status === 'aprovada' || falta.status === 'justificada') return;
+          if (falta.status !== novoStatus) {
+            falta.status = novoStatus;
+          }
+        } else {
+          estado.rhFaltas.unshift({
+            id: uid(),
+            usuarioId: userKey,
+            usuarioNome: u.nome || u.login || userKey,
+            data: hojeStr,
+            status: novoStatus,
+            obs: '',
+            criadoEm: new Date().toISOString()
+          });
+        }
+      });
+    }
+
+    function preencherFormHorarioRh() {
+      const cfg = garantirRhConfig();
+      const he = document.getElementById('rh-cfg-hora-entrada');
+      const tol = document.getElementById('rh-cfg-tolerancia');
+      const hf = document.getElementById('rh-cfg-hora-fechamento');
+      if (he) he.value = cfg.horaEntrada || '08:00';
+      if (tol) tol.value = cfg.toleranciaMin != null ? cfg.toleranciaMin : 10;
+      if (hf) hf.value = cfg.horaFechamento || '18:00';
+      const diasSet = new Set((cfg.diasAbertos || []).map(Number));
+      document.querySelectorAll('.rh-dia-aberto').forEach(chk => {
+        chk.checked = diasSet.has(Number(chk.value));
+      });
+      const resumo = document.getElementById('rh-horario-resumo');
+      if (resumo) {
+        resumo.textContent = 'Abertura ' + (cfg.horaEntrada || '08:00') +
+          ' · tolerância ' + (cfg.toleranciaMin || 0) + ' min · fechamento ' +
+          (cfg.horaFechamento || '18:00') +
+          ' · dias: ' + rotuloDiasAbertos(cfg.diasAbertos) +
+          '. Sem ponto nesse intervalo = falta em andamento; após o fechamento = falta para aprovar.';
+      }
+      const podeCfg = isAdmin() || podeEditarModulo('rh');
+      [he, tol, hf].forEach(el => { if (el) el.disabled = !podeCfg; });
+      document.querySelectorAll('.rh-dia-aberto').forEach(chk => { chk.disabled = !podeCfg; });
+      const btn = document.getElementById('btn-salvar-horario-rh');
+      if (btn) btn.style.display = podeCfg ? '' : 'none';
+    }
+
+    function salvarHorarioRh() {
+      if (!isAdmin() && !podeEditarModulo('rh')) {
+        toast('Sem permissão para alterar o horário', 'error');
+        return;
+      }
+      const cfg = garantirRhConfig();
+      const he = (document.getElementById('rh-cfg-hora-entrada')?.value || '').trim();
+      const tol = parseInt(document.getElementById('rh-cfg-tolerancia')?.value, 10);
+      const hf = (document.getElementById('rh-cfg-hora-fechamento')?.value || '').trim();
+      if (!he) { toast('Informe o horário de abertura', 'error'); return; }
+      if (!hf) { toast('Informe o horário de fechamento', 'error'); return; }
+      const dias = Array.from(document.querySelectorAll('.rh-dia-aberto:checked')).map(el => Number(el.value));
+      if (!dias.length) { toast('Marque pelo menos um dia em que a empresa abre', 'error'); return; }
+      cfg.horaEntrada = he;
+      cfg.toleranciaMin = isNaN(tol) ? 0 : Math.max(0, Math.min(180, tol));
+      cfg.horaFechamento = hf;
+      cfg.diasAbertos = dias;
+      estado.rhConfig = cfg;
+      registrarLog('Configurar horário de ponto', he + '–' + hf + ' · tol. ' + cfg.toleranciaMin + ' min · dias ' + rotuloDiasAbertos(dias), 'rh');
+      salvar();
+      preencherFormHorarioRh();
+      sincronizarFaltasHoje();
+      renderRhResumo();
+      toast('Horário de ponto salvo!', 'success');
+    }
+
+    function preencherSelectUsuariosRh(selectId, incluirVazio) {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      const prev = sel.value;
+      const users = usuariosQueDevemBaterPonto().slice()
+        .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
+      let html = incluirVazio ? '<option value="">Selecione…</option>' : '';
+      html += users.map(u =>
+        '<option value="' + escaparHtmlSimples(String(u.id || u.login || '')) + '">' +
+        escaparHtmlSimples(u.nome || u.login || '—') +
+        (u.login ? ' (@' + escaparHtmlSimples(u.login) + ')' : '') +
+        '</option>'
+      ).join('');
+      sel.innerHTML = html || '<option value="">Nenhum usuário</option>';
+      if (prev) sel.value = prev;
+    }
+
+    function renderRhAtestados() {
+      garantirRhAtestados();
+      const tbody = document.getElementById('lista-rh-atestados');
+      if (!tbody) return;
+      const d = hoje();
+      const lista = (estado.rhAtestados || []).slice().sort((a, b) => String(b.inicio || '').localeCompare(String(a.inicio || '')));
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty"><div class="icon">🏥</div>Nenhum atestado registrado.</td></tr>';
+        return;
+      }
+      const podeEx = podeExcluirModulo('rh') || isAdmin();
+      tbody.innerHTML = lista.map(a => {
+        const ativo = a.status !== 'cancelado' && d >= (a.inicio || '') && d <= (a.fim || '');
+        const futuro = a.status !== 'cancelado' && d < (a.inicio || '');
+        const st = a.status === 'cancelado' ? 'Cancelado' : (ativo ? 'Em atestado' : (futuro ? 'Agendado' : 'Encerrado'));
+        const cls = a.status === 'cancelado' ? 'baixo' : (ativo ? 'aberto' : (futuro ? 'admin' : 'ok'));
+        return '<tr>' +
+          '<td><strong>' + escaparHtmlSimples(a.usuarioNome || '—') + '</strong></td>' +
+          '<td>' + formatarData(a.inicio) + '</td>' +
+          '<td>' + formatarData(a.fim) + '</td>' +
+          '<td><span class="status ' + cls + '">' + st + '</span></td>' +
+          '<td style="font-size:0.82rem;">' + escaparHtmlSimples(a.obs || '—') + '</td>' +
+          '<td class="actions-cell">' +
+            (podeEx ? '<button class="btn btn-sm btn-danger" onclick="excluirRhAtestado(\'' + a.id + '\')">🗑️</button>' : '') +
+          '</td></tr>';
+      }).join('');
+    }
+
+    function abrirModalRhAtestado() {
+      if (!exigirPodeEditar('rh') && !isAdmin()) return;
+      preencherSelectUsuariosRh('rh-atestado-usuario', true);
+      document.getElementById('rh-atestado-id').value = '';
+      document.getElementById('rh-atestado-inicio').value = hoje();
+      document.getElementById('rh-atestado-fim').value = '';
+      document.getElementById('rh-atestado-obs').value = '';
+      document.getElementById('modal-rh-atestado').classList.add('show');
+    }
+    function fecharModalRhAtestado() {
+      document.getElementById('modal-rh-atestado').classList.remove('show');
+    }
+
+    function salvarRhAtestado() {
+      if (!exigirPodeEditar('rh') && !isAdmin()) return;
+      garantirRhAtestados();
+      const usuarioId = document.getElementById('rh-atestado-usuario')?.value || '';
+      const inicio = document.getElementById('rh-atestado-inicio')?.value || '';
+      const fim = document.getElementById('rh-atestado-fim')?.value || '';
+      const obs = (document.getElementById('rh-atestado-obs')?.value || '').trim();
+      if (!usuarioId) { toast('Selecione o funcionário', 'error'); return; }
+      if (!inicio || !fim) { toast('Informe início e data de retorno', 'error'); return; }
+      if (fim < inicio) { toast('A data de retorno deve ser após o início', 'error'); return; }
+      const u = (estado.usuarios || []).find(x => String(x.id || x.login) === String(usuarioId));
+      const nome = u ? (u.nome || u.login) : usuarioId;
+      estado.rhAtestados.unshift({
+        id: uid(),
+        usuarioId,
+        usuarioNome: nome,
+        inicio,
+        fim,
+        obs,
+        status: 'ativo',
+        criadoEm: new Date().toISOString(),
+        criadoPor: usuarioAtual ? usuarioAtual.nome : '—'
+      });
+      // Remove faltas do período coberto pelo atestado
+      estado.rhFaltas = (estado.rhFaltas || []).filter(f => {
+        if (String(f.usuarioId) !== String(usuarioId)) return true;
+        if (!f.data) return true;
+        if (f.data >= inicio && f.data <= fim) return false;
+        return true;
+      });
+      registrarLog('Registrar atestado', nome + ' · ' + formatarData(inicio) + ' até ' + formatarData(fim), 'rh');
+      salvar();
+      fecharModalRhAtestado();
+      renderRhAtestados();
+      renderRhFaltas();
+      renderRhResumo();
+      toast('Atestado registrado — faltas do período foram desconsideradas', 'success');
+    }
+
+    function excluirRhAtestado(id) {
+      if (!exigirPodeExcluir('rh') && !isAdmin()) return;
+      if (!confirm('Remover este atestado?')) return;
+      garantirRhAtestados();
+      estado.rhAtestados = estado.rhAtestados.filter(a => a.id !== id);
+      registrarLog('Excluir atestado', id, 'rh');
+      salvar();
+      renderRhAtestados();
+      renderRhResumo();
+      toast('Atestado removido');
+    }
+
+    function renderRhFaltas() {
+      garantirRhAtestados();
+      sincronizarFaltasHoje();
+      const tbody = document.getElementById('lista-rh-faltas');
+      if (!tbody) return;
+      const lista = (estado.rhFaltas || []).slice()
+        .filter(f => f.status !== 'cancelada')
+        .sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty"><div class="icon">✅</div>Nenhuma falta em andamento ou pendente.</td></tr>';
+        return;
+      }
+      const labels = {
+        em_andamento: 'Falta em andamento',
+        pendente: 'Falta (aguardar aprovação)',
+        aprovada: 'Falta aprovada',
+        justificada: 'Justificada'
+      };
+      const classes = {
+        em_andamento: 'aberto',
+        pendente: 'baixo',
+        aprovada: 'baixo',
+        justificada: 'ok'
+      };
+      const podeEd = podeEditarModulo('rh') || isAdmin();
+      const podeEx = podeExcluirModulo('rh') || isAdmin();
+      tbody.innerHTML = lista.map(f => {
+        const st = f.status || 'pendente';
+        let acoes = '';
+        if (podeEd && (st === 'em_andamento' || st === 'pendente')) {
+          acoes =
+            '<button class="btn btn-sm btn-success" onclick="aprovarRhFalta(\'' + f.id + '\')" title="Confirmar falta">Aprovar falta</button> ' +
+            '<button class="btn btn-sm btn-secondary" onclick="justificarRhFalta(\'' + f.id + '\')" title="Justificar / dispensar">Justificar</button>';
+        }
+        if (podeEx) {
+          acoes += (acoes ? ' ' : '') + '<button class="btn btn-sm btn-danger" onclick="cancelarRhFalta(\'' + f.id + '\')" title="Excluir registro">🗑️</button>';
+        }
+        return '<tr>' +
+          '<td><strong>' + escaparHtmlSimples(f.usuarioNome || '—') + '</strong></td>' +
+          '<td>' + formatarData(f.data) + '</td>' +
+          '<td><span class="status ' + (classes[st] || 'aberto') + '">' + (labels[st] || st) + '</span></td>' +
+          '<td style="font-size:0.82rem;">' + escaparHtmlSimples(f.obs || '—') + '</td>' +
+          '<td class="actions-cell">' + acoes + '</td></tr>';
+      }).join('');
+    }
+
+    function aprovarRhFalta(id) {
+      if (!exigirPodeEditar('rh') && !isAdmin()) return;
+      const f = (estado.rhFaltas || []).find(x => x.id === id);
+      if (!f) return;
+      f.status = 'aprovada';
+      f.aprovadoPor = usuarioAtual ? usuarioAtual.nome : '—';
+      f.aprovadoEm = new Date().toISOString();
+      registrarLog('Aprovar falta', (f.usuarioNome || '') + ' · ' + formatarData(f.data), 'rh');
+      salvar();
+      renderRhFaltas();
+      renderRhResumo();
+      toast('Falta aprovada', 'success');
+    }
+
+    function justificarRhFalta(id) {
+      if (!exigirPodeEditar('rh') && !isAdmin()) return;
+      const f = (estado.rhFaltas || []).find(x => x.id === id);
+      if (!f) return;
+      const motivo = prompt('Motivo da justificativa (opcional):', f.obs || '');
+      if (motivo === null) return;
+      f.status = 'justificada';
+      f.obs = (motivo || '').trim();
+      f.aprovadoPor = usuarioAtual ? usuarioAtual.nome : '—';
+      f.aprovadoEm = new Date().toISOString();
+      registrarLog('Justificar falta', (f.usuarioNome || '') + ' · ' + formatarData(f.data), 'rh');
+      salvar();
+      renderRhFaltas();
+      renderRhResumo();
+      toast('Falta justificada — não conta como falta', 'success');
+    }
+
+    function cancelarRhFalta(id) {
+      if (!isAdmin() && !podeExcluirModulo('rh')) {
+        if (typeof exigirPodeExcluir === 'function') { if (!exigirPodeExcluir('rh')) return; }
+        else { toast('Sem permissão para excluir', 'error'); return; }
+      }
+      if (!confirm('Remover este registro de falta?')) return;
+      estado.rhFaltas = (estado.rhFaltas || []).filter(x => x.id !== id);
+      salvar();
+      renderRhFaltas();
+      renderRhResumo();
+      toast('Registro removido');
+    }
+
+    function renderRhResumo() {
+      garantirArraysRh();
+      garantirBatePonto();
+      garantirRhAtestados();
+      const cfg = garantirRhConfig();
+      preencherFormHorarioRh();
+      sincronizarFaltasHoje();
+
+      const usuarios = usuariosQueDevemBaterPonto();
+      const totalFunc = usuarios.length;
+      const pontosHoje = pontosDeHoje();
+      const comPonto = pontosHoje.length;
+      const atrasados = pontosHoje.filter(p => p.pontualidade === 'atrasado').length;
+      const ferias = contagemFeriasHoje();
+      const atestados = contagemAtestadosHoje();
+
+      const cards = document.getElementById('rh-resumo-cards');
+      if (cards) {
+        cards.innerHTML =
+          '<div class="stat-card success"><div class="label">Funcionários</div><div class="value">' + totalFunc + '</div><div class="sub">contas na equipe</div></div>' +
+          '<div class="stat-card info"><div class="label">Ponto batido</div><div class="value">' + comPonto + '</div><div class="sub">hoje</div></div>' +
+          '<div class="stat-card warning"><div class="label">Atrasados</div><div class="value">' + atrasados + '</div><div class="sub">após ' + (cfg.horaEntrada || '—') + ' + ' + (cfg.toleranciaMin || 0) + ' min</div></div>' +
+          '<div class="stat-card"><div class="label">Em férias</div><div class="value">' + ferias + '</div><div class="sub">hoje</div></div>' +
+          '<div class="stat-card warning"><div class="label">Em atestado</div><div class="value">' + atestados + '</div><div class="sub">não contam falta</div></div>';
+      }
+
+      renderRhAtestados();
+      renderRhFaltas();
+
+      const alertas = [];
+      const hojeStr = hoje();
+      pontosHoje.filter(p => p.pontualidade === 'atrasado').forEach(p => {
+        alertas.push({
+          tipo: 'warning',
+          texto: '⏰ <strong>' + escaparHtmlSimples(nomeNoLogPonto(p)) + '</strong> atrasado às ' +
+            (p.horaEntrada || '—') + (p.minutosAtraso ? ' (' + p.minutosAtraso + ' min)' : '')
+        });
+      });
+      (estado.rhFaltas || []).filter(f => f.data === hojeStr && (f.status === 'em_andamento' || f.status === 'pendente')).forEach(f => {
+        alertas.push({
+          tipo: f.status === 'pendente' ? 'warning' : 'info',
+          texto: (f.status === 'pendente' ? '🚫' : '⏳') + ' <strong>' + escaparHtmlSimples(f.usuarioNome || '—') + '</strong> — ' +
+            (f.status === 'pendente' ? 'falta aguardando aprovação' : 'falta em andamento (ainda no horário da empresa)')
+        });
+      });
+      (estado.rhAtestados || []).filter(a => a.status !== 'cancelado' && hojeStr >= (a.inicio || '') && hojeStr <= (a.fim || '')).forEach(a => {
+        alertas.push({
+          tipo: 'info',
+          texto: '🏥 <strong>' + escaparHtmlSimples(a.usuarioNome || '—') + '</strong> em atestado até ' + formatarData(a.fim)
+        });
+      });
+
+      const box = document.getElementById('rh-alertas');
+      if (box) {
+        if (!alertas.length) {
+          box.innerHTML = '<div class="alert success">✅ Nenhum alerta no momento.</div>';
+        } else {
+          box.innerHTML = alertas.map(a => '<div class="alert ' + a.tipo + '">' + a.texto + '</div>').join('');
+        }
+      }
+    }
+
+    function renderRhFuncionarios() {
+      garantirArraysRh();
+      const busca = (document.getElementById('rh-busca-func')?.value || '').toLowerCase().trim();
+      const st = document.getElementById('rh-filtro-status')?.value || 'todos';
+      let lista = (estado.funcionarios || []).slice();
+      if (st !== 'todos') lista = lista.filter(f => f.status === st);
+      if (busca) {
+        lista = lista.filter(f =>
+          (f.nome || '').toLowerCase().includes(busca) ||
+          (f.cpf || '').includes(busca) ||
+          (f.cargo || '').toLowerCase().includes(busca) ||
+          (f.telefone || '').includes(busca) ||
+          (f.departamento || '').toLowerCase().includes(busca)
+        );
+      }
+      lista.sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || '')));
+      const tbody = document.getElementById('lista-rh-funcionarios');
+      if (!tbody) return;
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">👥</div>Nenhum funcionário encontrado.</td></tr>';
+        return;
+      }
+      const podeEd = podeEditarModulo('rh');
+      const podeEx = podeExcluirModulo('rh');
+      tbody.innerHTML = lista.map(f => `
+        <tr>
+          <td><strong>${escaparHtmlSimples(f.nome || '—')}</strong>${f.cpf ? '<br><small>' + escaparHtmlSimples(f.cpf) + '</small>' : ''}</td>
+          <td>${escaparHtmlSimples(f.cargo || '—')}${f.departamento ? '<br><small style="color:var(--text-muted)">' + escaparHtmlSimples(f.departamento) + '</small>' : ''}</td>
+          <td>${escaparHtmlSimples(f.telefone || '—')}</td>
+          <td>${f.dataAdmissao ? formatarData(f.dataAdmissao) : '—'}</td>
+          <td>${formatarMoeda(f.salario || 0)}</td>
+          <td><span class="status ${statusFuncClass(f.status)}">${statusFuncLabel(f.status)}</span></td>
+          <td class="actions-cell">
+            ${podeEd ? '<button class="btn btn-sm btn-secondary" onclick="abrirModalFuncionario(\'' + f.id + '\')">✏️</button>' : ''}
+            ${podeEx ? '<button class="btn btn-sm btn-danger" onclick="excluirFuncionario(\'' + f.id + '\')">🗑️</button>' : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function abrirModalFuncionario(id) {
+      if (!exigirPodeEditar('rh')) return;
+      const titulo = document.getElementById('modal-funcionario-titulo');
+      document.getElementById('func-id').value = id || '';
+      const f = id ? getFuncionario(id) : null;
+      if (titulo) titulo.textContent = f ? 'Editar funcionário' : 'Novo funcionário';
+      document.getElementById('func-nome').value = f ? (f.nome || '') : '';
+      document.getElementById('func-cpf').value = f ? (f.cpf || '') : '';
+      document.getElementById('func-rg').value = f ? (f.rg || '') : '';
+      document.getElementById('func-telefone').value = f ? (f.telefone || '') : '';
+      document.getElementById('func-email').value = f ? (f.email || '') : '';
+      document.getElementById('func-endereco').value = f ? (f.endereco || '') : '';
+      document.getElementById('func-cargo').value = f ? (f.cargo || '') : '';
+      document.getElementById('func-departamento').value = f ? (f.departamento || '') : '';
+      document.getElementById('func-admissao').value = f ? (f.dataAdmissao || '') : '';
+      document.getElementById('func-nascimento').value = f ? (f.dataNascimento || '') : '';
+      document.getElementById('func-salario').value = f && f.salario != null ? f.salario : '';
+      document.getElementById('func-contrato').value = f ? (f.tipoContrato || 'clt') : 'clt';
+      document.getElementById('func-status').value = f ? (f.status || 'ativo') : 'ativo';
+      document.getElementById('func-pix').value = f ? (f.pix || '') : '';
+      document.getElementById('func-obs').value = f ? (f.obs || '') : '';
+      document.getElementById('modal-funcionario').classList.add('show');
+    }
+
+    function fecharModalFuncionario() {
+      document.getElementById('modal-funcionario').classList.remove('show');
+    }
+
+    function salvarFuncionario() {
+      if (!exigirPodeEditar('rh')) return;
+      garantirArraysRh();
+      const id = document.getElementById('func-id').value;
+      const nome = (document.getElementById('func-nome').value || '').trim();
+      const cargo = (document.getElementById('func-cargo').value || '').trim();
+      if (!nome) { toast('Informe o nome do funcionário', 'error'); return; }
+      if (!cargo) { toast('Informe o cargo / função', 'error'); return; }
+      const dados = {
+        nome,
+        cpf: (document.getElementById('func-cpf').value || '').trim(),
+        rg: (document.getElementById('func-rg').value || '').trim(),
+        telefone: (document.getElementById('func-telefone').value || '').trim(),
+        email: (document.getElementById('func-email').value || '').trim(),
+        endereco: (document.getElementById('func-endereco').value || '').trim(),
+        cargo,
+        departamento: (document.getElementById('func-departamento').value || '').trim(),
+        dataAdmissao: document.getElementById('func-admissao').value || '',
+        dataNascimento: document.getElementById('func-nascimento').value || '',
+        salario: parseFloat(document.getElementById('func-salario').value) || 0,
+        tipoContrato: document.getElementById('func-contrato').value || 'clt',
+        status: document.getElementById('func-status').value || 'ativo',
+        pix: (document.getElementById('func-pix').value || '').trim(),
+        obs: (document.getElementById('func-obs').value || '').trim()
+      };
+      if (id) {
+        const f = getFuncionario(id);
+        if (!f) return;
+        Object.assign(f, dados);
+        registrarLog('Editar funcionário', nome + ' · ' + cargo, 'rh');
+      } else {
+        estado.funcionarios.unshift(Object.assign({ id: uid(), criadoEm: new Date().toISOString() }, dados));
+        registrarLog('Novo funcionário', nome + ' · ' + cargo, 'rh');
+      }
+      salvar();
+      fecharModalFuncionario();
+      renderRhFuncionarios();
+      renderRhResumo();
+      preencherSelectsRhFuncionarios();
+      toast('Funcionário salvo!', 'success');
+    }
+
+    function excluirFuncionario(id) {
+      if (!exigirPodeExcluir('rh')) return;
+      const f = getFuncionario(id);
+      if (!f) return;
+      if (!confirm('Excluir o funcionário "' + (f.nome || '') + '"?\nRegistros de ponto, férias e pagamentos ligados a ele permanecem no histórico.')) return;
+      estado.funcionarios = estado.funcionarios.filter(x => x.id !== id);
+      registrarLog('Excluir funcionário', f.nome || id, 'rh');
+      salvar();
+      renderRhFuncionarios();
+      renderRhResumo();
+      preencherSelectsRhFuncionarios();
+      toast('Funcionário excluído');
+    }
+
+    // --- Bate-ponto + Log RH ---
+    function garantirBatePonto() {
+      if (!Array.isArray(estado.batePonto)) estado.batePonto = [];
+    }
+
+    function agoraHoraLocal() {
+      const d = new Date();
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+
+    function formatarDataHoraPonto(data, hora) {
+      if (!data && !hora) return '—';
+      return (data ? formatarData(data) : '—') + (hora ? ' · ' + hora : '');
+    }
+
+    function duracaoPontoMinutos(p) {
+      if (!p || !p.dataEntrada || !p.horaEntrada || !p.dataSaida || !p.horaSaida) return null;
+      try {
+        const a = new Date(p.dataEntrada + 'T' + p.horaEntrada + ':00');
+        const b = new Date(p.dataSaida + 'T' + p.horaSaida + ':00');
+        const diff = Math.round((b - a) / 60000);
+        return isNaN(diff) ? null : diff;
+      } catch (e) { return null; }
+    }
+
+    function formatarDuracaoMin(min) {
+      if (min == null || min < 0) return '—';
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      if (h <= 0) return m + ' min';
+      return h + 'h ' + String(m).padStart(2, '0') + 'min';
+    }
+
+    function idUsuarioBatePonto() {
+      if (!usuarioAtual) return '';
+      // Prioriza id do usuário do sistema (bate com estado.usuarios)
+      if (usuarioAtual.id != null && usuarioAtual.id !== '') return String(usuarioAtual.id);
+      if (usuarioAtual.login) return String(usuarioAtual.login);
+      return String(usuarioAtual.nome || '');
+    }
+
+    function nomeUsuarioBatePonto() {
+      if (!usuarioAtual) return '—';
+      return usuarioAtual.nome || usuarioAtual.login || 'Usuário';
+    }
+
+    function pontoAbertoDoUsuario(userId) {
+      garantirBatePonto();
+      const uidKey = userId || idUsuarioBatePonto();
+      if (!uidKey) return null;
+      return (estado.batePonto || []).find(p =>
+        p.status === 'aberto' &&
+        (String(p.usuarioId || '') === String(uidKey) ||
+         (!p.usuarioId && p.funcionarioId && String(p.funcionarioId) === String(uidKey)))
+      ) || null;
+    }
+
+    function renderBatePonto() {
+      garantirBatePonto();
+      const nomeEl = document.getElementById('bate-ponto-nome-usuario');
+      const papelEl = document.getElementById('bate-ponto-papel-usuario');
+      if (nomeEl) nomeEl.textContent = nomeUsuarioBatePonto();
+      if (papelEl) {
+        const papel = usuarioAtual ? (typeof papelLabel === 'function' ? papelLabel(usuarioAtual.papel) : usuarioAtual.papel) : '—';
+        const login = usuarioAtual && usuarioAtual.login ? '@' + usuarioAtual.login : '';
+        papelEl.textContent = (papel || '—') + (login ? ' · ' + login : '');
+      }
+      atualizarPainelBatePonto();
+    }
+
+    function atualizarPainelBatePonto() {
+      garantirBatePonto();
+      const userId = idUsuarioBatePonto();
+      const box = document.getElementById('bate-ponto-status-box');
+      const btnEnt = document.getElementById('btn-registrar-entrada');
+      const btnSai = document.getElementById('btn-fechar-ponto');
+      const tbody = document.getElementById('lista-bate-ponto-hoje');
+
+      if (!userId) {
+        if (box) box.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">Faça login para bater o ponto.</p>';
+        if (btnEnt) btnEnt.style.display = 'none';
+        if (btnSai) btnSai.style.display = 'none';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="empty">Sem usuário logado.</td></tr>';
+        return;
+      }
+
+      const aberto = pontoAbertoDoUsuario(userId);
+      if (btnEnt) btnEnt.style.display = aberto ? 'none' : '';
+      if (btnSai) btnSai.style.display = aberto ? '' : 'none';
+
+      const cfg = garantirRhConfig();
+      if (box) {
+        if (aberto) {
+          const atrasoTxt = aberto.pontualidade === 'atrasado'
+            ? (' <span class="status aberto">Atrasado' + (aberto.minutosAtraso ? ' · ' + aberto.minutosAtraso + ' min' : '') + '</span>')
+            : ' <span class="status ok">No horário</span>';
+          box.innerHTML =
+            '<div style="font-weight:750;color:var(--primary-dark);margin-bottom:0.35rem;">🟡 Ponto em aberto' + atrasoTxt + '</div>' +
+            '<p style="font-size:0.9rem;line-height:1.5;margin:0;">Entrada em <strong>' + formatarDataHoraPonto(aberto.dataEntrada, aberto.horaEntrada) + '</strong>.<br>' +
+            'Quando terminar, toque em <strong>Fechar ponto</strong> — a saída será marcada com a data e hora de agora.</p>';
+        } else {
+          const pontAgora = avaliarPontualidadeEntrada(agoraHoraLocal());
+          const aviso = pontAgora.pontualidade === 'atrasado'
+            ? ('<br><span style="color:#b45309;">Se registrar agora, entrará como <strong>atrasado</strong> (horário ' + (cfg.horaEntrada || '—') + ', tolerância ' + (cfg.toleranciaMin || 0) + ' min).</span>')
+            : ('<br><span style="color:#047857;">Dentro do horário esperado (' + (cfg.horaEntrada || '—') + ' + ' + (cfg.toleranciaMin || 0) + ' min).</span>');
+          box.innerHTML =
+            '<div style="font-weight:750;color:var(--primary-dark);margin-bottom:0.35rem;">🟢 Pronto para registrar</div>' +
+            '<p style="font-size:0.9rem;line-height:1.5;margin:0;">Toque em <strong>Registrar ponto</strong> para marcar a <strong>entrada</strong> na sua conta (<strong>' +
+            escaparHtmlSimples(nomeUsuarioBatePonto()) + '</strong>).' + aviso + '</p>';
+        }
+      }
+
+      const hojeStr = hoje();
+      const lista = (estado.batePonto || [])
+        .filter(p => String(p.usuarioId || '') === String(userId) && (p.dataEntrada === hojeStr || p.dataSaida === hojeStr))
+        .slice()
+        .sort((a, b) => String(b.dataEntrada + b.horaEntrada).localeCompare(String(a.dataEntrada + a.horaEntrada)));
+      if (tbody) {
+        if (!lista.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty"><div class="icon">⏱️</div>Nenhum registro seu hoje.</td></tr>';
+        } else {
+          tbody.innerHTML = lista.map(p => {
+            const min = duracaoPontoMinutos(p);
+            const pontBadge = p.pontualidade === 'atrasado'
+              ? ' <span class="status aberto">Atrasado</span>'
+              : (p.horaEntrada ? ' <span class="status ok">No horário</span>' : '');
+            return '<tr>' +
+              '<td>' + formatarDataHoraPonto(p.dataEntrada, p.horaEntrada) + pontBadge + '</td>' +
+              '<td>' + (p.status === 'fechado' ? formatarDataHoraPonto(p.dataSaida, p.horaSaida) : '—') + '</td>' +
+              '<td>' + formatarDuracaoMin(min) + '</td>' +
+              '<td><span class="status ' + (p.status === 'fechado' ? 'pago' : 'aberto') + '">' + (p.status === 'fechado' ? 'Fechado' : 'Em aberto') + '</span></td>' +
+              '</tr>';
+          }).join('');
+        }
+      }
+    }
+
+    function registrarEntradaBatePonto() {
+      if (!temPermissao('bate-ponto') && !isAdmin()) {
+        toast('Sem permissão de bate-ponto', 'error');
+        return;
+      }
+      if (!usuarioAtual) { toast('Faça login para bater o ponto', 'error'); return; }
+      garantirBatePonto();
+      const userId = idUsuarioBatePonto();
+      if (pontoAbertoDoUsuario(userId)) {
+        toast('Já existe um ponto em aberto. Feche o ponto antes de registrar outra entrada.', 'error');
+        return;
+      }
+      const agora = new Date();
+      const data = hoje();
+      const hora = agoraHoraLocal();
+      const nome = nomeUsuarioBatePonto();
+      const pont = avaliarPontualidadeEntrada(hora);
+      estado.batePonto.unshift({
+        id: uid(),
+        usuarioId: userId,
+        usuarioNome: nome,
+        usuarioLogin: usuarioAtual.login || '',
+        dataEntrada: data,
+        horaEntrada: hora,
+        dataSaida: '',
+        horaSaida: '',
+        status: 'aberto',
+        pontualidade: pont.pontualidade,
+        minutosAtraso: pont.minutosAtraso || 0,
+        registradoPor: nome,
+        criadoEm: agora.toISOString()
+      });
+      const tagAtraso = pont.pontualidade === 'atrasado'
+        ? (' · ATRASADO (' + pont.minutosAtraso + ' min)')
+        : ' · no horário';
+      // Se tinha falta em andamento/pendente hoje, remove (bateu ponto)
+      if (Array.isArray(estado.rhFaltas)) {
+        estado.rhFaltas = estado.rhFaltas.filter(f => {
+          if (String(f.usuarioId) !== String(userId) || f.data !== data) return true;
+          if (f.status === 'aprovada' || f.status === 'justificada') return true;
+          return false;
+        });
+      }
+      registrarLog('Bate-ponto entrada', nome + ' · ' + formatarData(data) + ' ' + hora + tagAtraso, 'rh');
+      salvar();
+      atualizarPainelBatePonto();
+      if (pont.pontualidade === 'atrasado') {
+        toast('Entrada registrada às ' + hora + ' — atrasado em ' + pont.minutosAtraso + ' min', 'warning');
+      } else {
+        toast('Entrada registrada: ' + formatarData(data) + ' às ' + hora + ' (no horário)', 'success');
+      }
+    }
+
+    function fecharPontoBatePonto() {
+      if (!temPermissao('bate-ponto') && !isAdmin()) {
+        toast('Sem permissão de bate-ponto', 'error');
+        return;
+      }
+      if (!usuarioAtual) { toast('Faça login para fechar o ponto', 'error'); return; }
+      garantirBatePonto();
+      const userId = idUsuarioBatePonto();
+      const aberto = pontoAbertoDoUsuario(userId);
+      if (!aberto) {
+        toast('Não há ponto em aberto para fechar.', 'error');
+        return;
+      }
+      const data = hoje();
+      const hora = agoraHoraLocal();
+      const nome = nomeUsuarioBatePonto();
+      aberto.dataSaida = data;
+      aberto.horaSaida = hora;
+      aberto.status = 'fechado';
+      aberto.fechadoPor = nome;
+      aberto.fechadoEm = new Date().toISOString();
+      registrarLog('Bate-ponto saída', nome + ' · ' + formatarData(data) + ' ' + hora, 'rh');
+      salvar();
+      atualizarPainelBatePonto();
+      toast('Saída registrada: ' + formatarData(data) + ' às ' + hora, 'success');
+    }
+
+    function nomeNoLogPonto(p) {
+      if (!p) return '—';
+      if (p.usuarioNome) return p.usuarioNome;
+      if (p.usuarioLogin) return p.usuarioLogin;
+      if (p.funcionarioId) return nomeFuncionario(p.funcionarioId);
+      return p.registradoPor || '—';
+    }
+
+    /** Log de pontos no RH (registros do bate-ponto por conta de usuário) */
+    function renderRhLogPontos() {
+      garantirArraysRh();
+      garantirBatePonto();
+      // Preenche filtro com nomes únicos das contas que bateram ponto
+      const selFunc = document.getElementById('rh-ponto-func-filtro');
+      if (selFunc) {
+        const prev = selFunc.value;
+        const mapa = {};
+        (estado.batePonto || []).forEach(p => {
+          const key = p.usuarioId || p.funcionarioId || p.usuarioNome || '';
+          if (!key) return;
+          mapa[key] = nomeNoLogPonto(p);
+        });
+        const opts = Object.keys(mapa).sort((a, b) => String(mapa[a]).localeCompare(String(mapa[b])));
+        selFunc.innerHTML = '<option value="">Todos</option>' +
+          opts.map(k => '<option value="' + escaparHtmlSimples(k) + '">' + escaparHtmlSimples(mapa[k]) + '</option>').join('');
+        if (prev) selFunc.value = prev;
+      }
+      const dataF = document.getElementById('rh-ponto-data-filtro')?.value || '';
+      const funcF = document.getElementById('rh-ponto-func-filtro')?.value || '';
+      const stF = document.getElementById('rh-ponto-status-filtro')?.value || '';
+      let lista = (estado.batePonto || []).slice();
+      if (dataF) {
+        lista = lista.filter(p => p.dataEntrada === dataF || p.dataSaida === dataF);
+      }
+      if (funcF) {
+        lista = lista.filter(p =>
+          String(p.usuarioId || '') === String(funcF) ||
+          String(p.funcionarioId || '') === String(funcF) ||
+          String(p.usuarioNome || '') === String(funcF)
+        );
+      }
+      if (stF) lista = lista.filter(p => p.status === stF);
+      lista.sort((a, b) => {
+        const ka = String(a.dataEntrada || '') + String(a.horaEntrada || '');
+        const kb = String(b.dataEntrada || '') + String(b.horaEntrada || '');
+        return kb.localeCompare(ka);
+      });
+      const tbody = document.getElementById('lista-rh-ponto');
+      if (!tbody) return;
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">📋</div>Nenhum ponto registrado ainda. Use o menu <strong>Bate-ponto</strong>.</td></tr>';
+        return;
+      }
+      const podeEx = podeExcluirModulo('rh');
+      tbody.innerHTML = lista.map(p => {
+        const min = duracaoPontoMinutos(p);
+        const nome = nomeNoLogPonto(p);
+        const pontHtml = p.pontualidade === 'atrasado'
+          ? '<br><span class="status aberto">Atrasado' + (p.minutosAtraso ? ' · ' + p.minutosAtraso + ' min' : '') + '</span>'
+          : (p.horaEntrada ? '<br><span class="status ok">No horário</span>' : '');
+        return '<tr>' +
+          '<td><strong>' + escaparHtmlSimples(nome) + '</strong>' +
+            (p.usuarioLogin ? '<br><small style="color:var(--text-muted)">@' + escaparHtmlSimples(p.usuarioLogin) + '</small>' : '') +
+          '</td>' +
+          '<td>' + formatarDataHoraPonto(p.dataEntrada, p.horaEntrada) + pontHtml + '</td>' +
+          '<td>' + (p.status === 'fechado' ? formatarDataHoraPonto(p.dataSaida, p.horaSaida) : '—') + '</td>' +
+          '<td>' + formatarDuracaoMin(min) + '</td>' +
+          '<td><span class="status ' + (p.status === 'fechado' ? 'pago' : 'aberto') + '">' + (p.status === 'fechado' ? 'Fechado' : 'Em aberto') + '</span></td>' +
+          '<td style="font-size:0.82rem;">' + escaparHtmlSimples(p.registradoPor || nome) + '</td>' +
+          '<td class="actions-cell">' +
+            (podeEx ? '<button class="btn btn-sm btn-danger" onclick="excluirBatePontoLog(\'' + p.id + '\')">🗑️</button>' : '') +
+          '</td></tr>';
+      }).join('');
+    }
+
+    function excluirBatePontoLog(id) {
+      if (!exigirPodeExcluir('rh')) return;
+      if (!confirm('Excluir este registro do log de pontos?')) return;
+      garantirBatePonto();
+      estado.batePonto = estado.batePonto.filter(x => x.id !== id);
+      registrarLog('Excluir log de ponto', id, 'rh');
+      salvar();
+      renderRhLogPontos();
+      renderRhResumo();
+      toast('Registro excluído do log');
+    }
+
+    // compat: chamadas antigas
+    function renderRhPonto() { renderRhLogPontos(); }
+
+    // --- Férias ---
+    function calcularDiasFeriasRh() {
+      const ini = document.getElementById('rh-ferias-inicio')?.value;
+      const fim = document.getElementById('rh-ferias-fim')?.value;
+      const el = document.getElementById('rh-ferias-dias');
+      if (!el) return;
+      if (!ini || !fim) { el.value = ''; return; }
+      const d = diasEntre(ini, fim);
+      el.value = d >= 0 ? (d + 1) : '';
+    }
+
+    function renderRhFerias() {
+      garantirArraysRh();
+      let lista = (estado.rhFerias || []).slice();
+      lista.sort((a, b) => String(b.inicio || '').localeCompare(String(a.inicio || '')));
+      const tbody = document.getElementById('lista-rh-ferias');
+      if (!tbody) return;
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">🏖️</div>Nenhuma férias agendada.</td></tr>';
+        return;
+      }
+      const labels = { agendada: 'Agendada', gozada: 'Gozada', cancelada: 'Cancelada' };
+      const classes = { agendada: 'admin', gozada: 'ok', cancelada: 'baixo' };
+      const podeEd = podeEditarModulo('rh');
+      const podeEx = podeExcluirModulo('rh');
+      tbody.innerHTML = lista.map(fe => `
+        <tr>
+          <td><strong>${escaparHtmlSimples(nomeFuncionario(fe.funcionarioId))}</strong></td>
+          <td>${formatarData(fe.inicio)}</td>
+          <td>${formatarData(fe.fim)}</td>
+          <td>${fe.dias != null ? fe.dias : '—'}</td>
+          <td><span class="status ${classes[fe.status] || 'aberto'}">${labels[fe.status] || fe.status}</span></td>
+          <td style="font-size:0.82rem;">${escaparHtmlSimples(fe.obs || '—')}</td>
+          <td class="actions-cell">
+            ${podeEd ? '<button class="btn btn-sm btn-secondary" onclick="abrirModalRhFerias(\'' + fe.id + '\')">✏️</button>' : ''}
+            ${podeEx ? '<button class="btn btn-sm btn-danger" onclick="excluirRhFerias(\'' + fe.id + '\')">🗑️</button>' : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function abrirModalRhFerias(id) {
+      if (!exigirPodeEditar('rh')) return;
+      preencherSelectsRhFuncionarios();
+      const fe = id ? (estado.rhFerias || []).find(x => x.id === id) : null;
+      document.getElementById('rh-ferias-id').value = id || '';
+      document.getElementById('modal-rh-ferias-titulo').textContent = fe ? 'Editar férias' : 'Agendar férias';
+      document.getElementById('rh-ferias-funcionario').value = fe ? (fe.funcionarioId || '') : '';
+      document.getElementById('rh-ferias-inicio').value = fe ? (fe.inicio || '') : '';
+      document.getElementById('rh-ferias-fim').value = fe ? (fe.fim || '') : '';
+      document.getElementById('rh-ferias-dias').value = fe && fe.dias != null ? fe.dias : '';
+      document.getElementById('rh-ferias-status').value = fe ? (fe.status || 'agendada') : 'agendada';
+      document.getElementById('rh-ferias-obs').value = fe ? (fe.obs || '') : '';
+      if (!fe) calcularDiasFeriasRh();
+      document.getElementById('modal-rh-ferias').classList.add('show');
+    }
+    function fecharModalRhFerias() { document.getElementById('modal-rh-ferias').classList.remove('show'); }
+
+    function salvarRhFerias() {
+      if (!exigirPodeEditar('rh')) return;
+      garantirArraysRh();
+      const id = document.getElementById('rh-ferias-id').value;
+      const funcionarioId = document.getElementById('rh-ferias-funcionario').value;
+      const inicio = document.getElementById('rh-ferias-inicio').value;
+      const fim = document.getElementById('rh-ferias-fim').value;
+      const status = document.getElementById('rh-ferias-status').value || 'agendada';
+      if (!funcionarioId) { toast('Selecione o funcionário', 'error'); return; }
+      if (!inicio || !fim) { toast('Informe início e fim', 'error'); return; }
+      if (fim < inicio) { toast('A data fim deve ser após o início', 'error'); return; }
+      calcularDiasFeriasRh();
+      const dias = parseInt(document.getElementById('rh-ferias-dias').value, 10) || (diasEntre(inicio, fim) + 1);
+      const dados = {
+        funcionarioId, inicio, fim, dias, status,
+        obs: (document.getElementById('rh-ferias-obs').value || '').trim()
+      };
+      if (id) {
+        const fe = estado.rhFerias.find(x => x.id === id);
+        if (fe) Object.assign(fe, dados);
+        registrarLog('Editar férias', nomeFuncionario(funcionarioId), 'rh');
+      } else {
+        estado.rhFerias.unshift(Object.assign({ id: uid() }, dados));
+        registrarLog('Agendar férias', nomeFuncionario(funcionarioId) + ' · ' + formatarData(inicio), 'rh');
+      }
+      // Atualiza status do funcionário se férias em andamento
+      const f = getFuncionario(funcionarioId);
+      if (f && status === 'agendada') {
+        const h = hoje();
+        if (inicio <= h && fim >= h) f.status = 'ferias';
+      }
+      if (f && status === 'gozada' && f.status === 'ferias') f.status = 'ativo';
+      salvar();
+      fecharModalRhFerias();
+      renderRhFerias();
+      renderRhResumo();
+      renderRhFuncionarios();
+      toast('Férias salvas!', 'success');
+    }
+
+    function excluirRhFerias(id) {
+      if (!exigirPodeExcluir('rh')) return;
+      if (!confirm('Excluir este período de férias?')) return;
+      estado.rhFerias = (estado.rhFerias || []).filter(x => x.id !== id);
+      registrarLog('Excluir férias', id, 'rh');
+      salvar();
+      renderRhFerias();
+      renderRhResumo();
+      toast('Registro excluído');
+    }
+
+    // --- Pagamentos ---
+    function renderRhPagamentos() {
+      garantirArraysRh();
+      const mes = document.getElementById('rh-pag-mes-filtro')?.value || '';
+      const funcF = document.getElementById('rh-pag-func-filtro')?.value || '';
+      let lista = (estado.rhPagamentos || []).slice();
+      if (mes) lista = lista.filter(p => String(p.data || '').slice(0, 7) === mes);
+      if (funcF) lista = lista.filter(p => p.funcionarioId === funcF);
+      lista.sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
+      const tbody = document.getElementById('lista-rh-pagamentos');
+      if (!tbody) return;
+      if (!lista.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty"><div class="icon">💵</div>Nenhum pagamento neste filtro.</td></tr>';
+        return;
+      }
+      const tipos = { salario: 'Salário', adiantamento: 'Adiantamento', vale: 'Vale', bonus: 'Bônus', rescisao: 'Rescisão', outro: 'Outro' };
+      const podeEd = podeEditarModulo('rh');
+      const podeEx = podeExcluirModulo('rh');
+      tbody.innerHTML = lista.map(p => `
+        <tr>
+          <td>${formatarData(p.data)}</td>
+          <td><strong>${escaparHtmlSimples(nomeFuncionario(p.funcionarioId))}</strong></td>
+          <td>${tipos[p.tipo] || p.tipo || '—'}</td>
+          <td><strong>${formatarMoeda(p.valor)}</strong></td>
+          <td><span class="status ${p.status === 'pago' ? 'pago' : 'aberto'}">${p.status === 'pago' ? 'Pago' : 'Pendente'}</span></td>
+          <td style="font-size:0.82rem;">${escaparHtmlSimples(p.obs || '—')}</td>
+          <td class="actions-cell">
+            ${podeEd && p.status !== 'pago' ? '<button class="btn btn-sm btn-success" onclick="marcarRhPagamentoPago(\'' + p.id + '\')">✅</button>' : ''}
+            ${podeEd ? '<button class="btn btn-sm btn-secondary" onclick="abrirModalRhPagamento(\'' + p.id + '\')">✏️</button>' : ''}
+            ${podeEx ? '<button class="btn btn-sm btn-danger" onclick="excluirRhPagamento(\'' + p.id + '\')">🗑️</button>' : ''}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function abrirModalRhPagamento(id) {
+      if (!exigirPodeEditar('rh')) return;
+      preencherSelectsRhFuncionarios();
+      const p = id ? (estado.rhPagamentos || []).find(x => x.id === id) : null;
+      document.getElementById('rh-pag-id').value = id || '';
+      document.getElementById('modal-rh-pagamento-titulo').textContent = p ? 'Editar pagamento' : 'Novo pagamento';
+      document.getElementById('rh-pag-funcionario').value = p ? (p.funcionarioId || '') : '';
+      document.getElementById('rh-pag-data').value = p ? (p.data || hoje()) : hoje();
+      document.getElementById('rh-pag-tipo').value = p ? (p.tipo || 'salario') : 'salario';
+      document.getElementById('rh-pag-valor').value = p && p.valor != null ? p.valor : '';
+      document.getElementById('rh-pag-status').value = p ? (p.status || 'pago') : 'pago';
+      document.getElementById('rh-pag-obs').value = p ? (p.obs || '') : '';
+      // Se novo e funcionário já escolhido no filtro, pré-preenche salário
+      if (!p) {
+        const sel = document.getElementById('rh-pag-funcionario');
+        if (sel) {
+          sel.onchange = function () {
+            const f = getFuncionario(sel.value);
+            if (f && document.getElementById('rh-pag-tipo').value === 'salario') {
+              document.getElementById('rh-pag-valor').value = f.salario || '';
+            }
+          };
+        }
+      }
+      document.getElementById('modal-rh-pagamento').classList.add('show');
+    }
+    function fecharModalRhPagamento() { document.getElementById('modal-rh-pagamento').classList.remove('show'); }
+
+    function salvarRhPagamento() {
+      if (!exigirPodeEditar('rh')) return;
+      garantirArraysRh();
+      const id = document.getElementById('rh-pag-id').value;
+      const funcionarioId = document.getElementById('rh-pag-funcionario').value;
+      const data = document.getElementById('rh-pag-data').value;
+      const tipo = document.getElementById('rh-pag-tipo').value || 'salario';
+      const valor = parseFloat(document.getElementById('rh-pag-valor').value) || 0;
+      const status = document.getElementById('rh-pag-status').value || 'pago';
+      if (!funcionarioId) { toast('Selecione o funcionário', 'error'); return; }
+      if (!data) { toast('Informe a data', 'error'); return; }
+      if (valor <= 0) { toast('Informe um valor válido', 'error'); return; }
+      const dados = {
+        funcionarioId, data, tipo, valor, status,
+        obs: (document.getElementById('rh-pag-obs').value || '').trim()
+      };
+      if (id) {
+        const p = estado.rhPagamentos.find(x => x.id === id);
+        if (p) Object.assign(p, dados);
+        registrarLog('Editar pagamento RH', nomeFuncionario(funcionarioId) + ' · ' + formatarMoeda(valor), 'rh');
+      } else {
+        estado.rhPagamentos.unshift(Object.assign({ id: uid() }, dados));
+        registrarLog('Pagamento RH', nomeFuncionario(funcionarioId) + ' · ' + tipo + ' · ' + formatarMoeda(valor), 'rh');
+      }
+      salvar();
+      fecharModalRhPagamento();
+      renderRhPagamentos();
+      renderRhResumo();
+      toast('Pagamento salvo!', 'success');
+    }
+
+    function marcarRhPagamentoPago(id) {
+      if (!exigirPodeEditar('rh')) return;
+      const p = (estado.rhPagamentos || []).find(x => x.id === id);
+      if (!p) return;
+      p.status = 'pago';
+      registrarLog('Marcar pagamento RH pago', nomeFuncionario(p.funcionarioId) + ' · ' + formatarMoeda(p.valor), 'rh');
+      salvar();
+      renderRhPagamentos();
+      renderRhResumo();
+      toast('Marcado como pago!', 'success');
+    }
+
+    function excluirRhPagamento(id) {
+      if (!exigirPodeExcluir('rh')) return;
+      if (!confirm('Excluir este pagamento?')) return;
+      estado.rhPagamentos = (estado.rhPagamentos || []).filter(x => x.id !== id);
+      registrarLog('Excluir pagamento RH', id, 'rh');
+      salvar();
+      renderRhPagamentos();
+      renderRhResumo();
+      toast('Pagamento excluído');
     }
 
     // ===================== FIADO =====================
