@@ -135,23 +135,47 @@
       letter-spacing: 0.02em;
       margin-bottom: 2rem;
       backdrop-filter: blur(8px);
+      white-space: nowrap;
+      max-width: 100%;
     }
 
-    .login-brand-badge span {
+    /* Bolinha dourada — só o primeiro span (não o texto do badge) */
+    .login-brand-badge > span:first-child {
       width: 8px;
       height: 8px;
+      min-width: 8px;
       border-radius: 50%;
       background: #c9a84c;
       box-shadow: 0 0 10px rgba(201,168,76,0.7);
+      flex-shrink: 0;
+    }
+
+    .login-brand-badge #login-txt-badge {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
 
     .login-brand h2 {
-      font-size: clamp(1.85rem, 3.2vw, 2.55rem);
+      font-size: clamp(1.7rem, 2.8vw, 2.35rem);
       font-weight: 800;
-      line-height: 1.15;
+      line-height: 1.2;
       letter-spacing: -0.04em;
       margin-bottom: 1rem;
-      max-width: 420px;
+      max-width: 540px;
+      overflow-wrap: normal;
+      word-break: normal;
+    }
+
+    /* Cada linha do título (separada por Enter no formulário) */
+    .login-brand h2 .login-titulo-linha {
+      display: inline;
+    }
+    @media (min-width: 900px) {
+      .login-brand h2 .login-titulo-linha {
+        white-space: nowrap;
+      }
     }
 
     .login-brand h2 em {
@@ -595,6 +619,7 @@
     .login-erro.show { display: block; }
 
     .login-hint {
+      display: none !important;
       margin-top: 1.25rem;
       padding-top: 1rem;
       border-top: 1px solid #eef0f5;
@@ -1740,26 +1765,26 @@
       <!-- Painel de marca (desktop) -->
       <aside class="login-brand" aria-hidden="true">
         <div class="login-brand-top">
-          <div class="login-brand-badge"><span></span> Sistema multi-empresa</div>
-          <h2>Controle total do seu<br><em>negócio</em>, em um só lugar</h2>
-          <p class="lead">Estoque, clientes, vendas, fiado e entregas — sincronizado e pronto para o dia a dia da sua equipe.</p>
-          <ul class="login-brand-features">
-            <li><i>📦</i> Estoque e produtos em tempo real</li>
-            <li><i>🛒</i> Vendas com caixa e código de barras</li>
-            <li><i>💰</i> Fiado, parcelas e cobranças</li>
-            <li><i>🚚</i> Entregas e equipe com permissões</li>
+          <div class="login-brand-badge"><span></span> <span id="login-txt-badge">Sistema multi-empresa</span></div>
+          <h2 id="login-txt-titulo">Controle total do seu<br><em>negócio</em>, em um só lugar</h2>
+          <p class="lead" id="login-txt-lead">Estoque, clientes, vendas, fiado e entregas — sincronizado e pronto para o dia a dia da sua equipe.</p>
+          <ul class="login-brand-features" id="login-txt-features">
+            <li><i>📦</i> <span>Estoque e produtos em tempo real</span></li>
+            <li><i>🛒</i> <span>Vendas com caixa e código de barras</span></li>
+            <li><i>💰</i> <span>Fiado, parcelas e cobranças</span></li>
+            <li><i>🚚</i> <span>Entregas e equipe com permissões</span></li>
           </ul>
         </div>
-        <div class="login-brand-footer">Site de Gestão · acesso seguro por empresa</div>
+        <div class="login-brand-footer" id="login-txt-footer">Site de Gestão · acesso seguro por empresa</div>
       </aside>
 
       <!-- Painel do formulário -->
       <div class="login-panel">
     <div class="login-box">
       <div class="logo">
-        <div class="logo-icon">✦</div>
-        <h1>Bem-vindo de volta</h1>
-        <p>Acesse sua empresa ou explore a demonstração</p>
+        <div class="logo-icon" id="login-txt-logo-icon">✦</div>
+        <h1 id="login-txt-box-titulo">Bem-vindo de volta</h1>
+        <p id="login-txt-box-subtitulo">Acesse sua empresa ou explore a demonstração</p>
       </div>
 
       <!-- Abas Login / Criar / Assinar (PIX) -->
@@ -1790,9 +1815,6 @@
         <button type="button" class="btn btn-demo" onclick="iniciarDemonstracao()">
           👀 Ver demonstração — sem criar conta
         </button>
-        <p style="font-size:0.72rem;color:#9ca3af;text-align:center;margin-top:0.55rem;line-height:1.4;">
-          Dados de exemplo. Nada é gravado de forma definitiva.
-        </p>
       </div>
 
       <!-- FORMULÁRIO CRIAR EMPRESA -->
@@ -1906,7 +1928,8 @@
         </div>
       </div>
 
-      <div class="login-hint">
+      <!-- Rodapé de licença/sync oculto para a tela inicial não precisar rolar -->
+      <div class="login-hint" style="display:none !important;" aria-hidden="true">
         <span id="login-licenca-msg"><strong>Licença:</strong> modo teste — cadastro livre por enquanto.</span><br>
         Contas bloqueadas não entram até serem liberadas de novo.
         <br><br>
@@ -1937,6 +1960,7 @@
         <button type="button" class="nav-btn" data-dono-page="lojas" onclick="mostrarPaginaDono('lojas')">🏪 Lojas e acesso</button>
         <button type="button" class="nav-btn" data-dono-page="mensagens" onclick="mostrarPaginaDono('mensagens')">💬 Mensagens <span class="badge hidden" id="badge-dono-msg">0</span></button>
         <button type="button" class="nav-btn" data-dono-page="pix" onclick="mostrarPaginaDono('pix')">⚙️ Config. PIX</button>
+        <button type="button" class="nav-btn" data-dono-page="login" onclick="mostrarPaginaDono('login')">✏️ Textos do login</button>
       </nav>
       <div class="sidebar-footer">
         <button class="btn-logout" onclick="sairAreaDono()">🚪 Sair do painel</button>
@@ -2271,9 +2295,86 @@
           </div>
         </section>
 
+        <!-- TEXTOS DO LOGIN -->
+        <section id="dono-page-login" class="dono-page hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>✏️ Textos da tela de login</h3>
+            </div>
+            <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
+              Personalize o que aparece na tela de entrada (painel esquerdo e caixa de login).
+              Use <strong>Visualizar</strong> para ver como fica <em>antes</em> de salvar.
+              No título, use <code>*texto*</code> para destacar em dourado (ex.: Controle do seu *negócio*).
+            </p>
+            <div class="form-grid">
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Badge (selo pequeno no topo)</label>
+                <input type="text" id="dono-login-badge" placeholder="Sistema multi-empresa" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Título principal (painel esquerdo)</label>
+                <textarea id="dono-login-titulo" rows="3" placeholder="Controle total do seu *negócio*,&#10;em um só lugar na *zafyr* por *49,99* mensal" style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:inherit;resize:vertical;line-height:1.4;"></textarea>
+                <small style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;display:block;line-height:1.4;">
+                  Use <strong>Enter</strong> para quebrar a linha no ponto que quiser (ex.: depois de “negócio,” e antes de “em”).
+                  Destaque dourado com <code>*texto*</code>.
+                </small>
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Texto de apoio (abaixo do título)</label>
+                <textarea id="dono-login-lead" rows="2" placeholder="Estoque, clientes, vendas..." style="width:100%;padding:0.65rem 0.8rem;border:1.5px solid var(--border);border-radius:10px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Destaque 1 (ícone + texto)</label>
+                <input type="text" id="dono-login-feat1" placeholder="📦 Estoque e produtos em tempo real" />
+              </div>
+              <div class="form-group">
+                <label>Destaque 2</label>
+                <input type="text" id="dono-login-feat2" placeholder="🛒 Vendas com caixa e código de barras" />
+              </div>
+              <div class="form-group">
+                <label>Destaque 3</label>
+                <input type="text" id="dono-login-feat3" placeholder="💰 Fiado, parcelas e cobranças" />
+              </div>
+              <div class="form-group">
+                <label>Destaque 4</label>
+                <input type="text" id="dono-login-feat4" placeholder="🚚 Entregas e equipe com permissões" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Rodapé do painel esquerdo</label>
+                <input type="text" id="dono-login-footer" placeholder="Site de Gestão · acesso seguro por empresa" />
+              </div>
+              <div class="form-group">
+                <label>Ícone da caixa de login</label>
+                <input type="text" id="dono-login-logo-icon" placeholder="✦" maxlength="4" />
+              </div>
+              <div class="form-group">
+                <label>Título da caixa de login</label>
+                <input type="text" id="dono-login-box-titulo" placeholder="Bem-vindo de volta" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
+                <label>Subtítulo da caixa de login</label>
+                <input type="text" id="dono-login-box-subtitulo" placeholder="Acesse sua empresa ou explore a demonstração" />
+              </div>
+            </div>
+            <div class="btn-group" style="margin-top:1.1rem;flex-wrap:wrap;gap:0.5rem;">
+              <button type="button" class="btn btn-secondary" onclick="previewTextosLoginDono()">👁️ Visualizar</button>
+              <button type="button" class="btn btn-primary" onclick="salvarTextosLoginDono()">💾 Salvar textos do login</button>
+              <button type="button" class="btn btn-warning" onclick="restaurarTextosLoginPadraoDono()">↺ Restaurar padrão</button>
+            </div>
+            <p id="dono-login-msg" style="font-size:0.82rem;color:var(--text-muted);margin-top:0.75rem;line-height:1.45;"></p>
+          </div>
+        </section>
+
       </div>
     </div>
   </div><!-- /app-dono -->
+
+  <!-- Barra flutuante da pré-visualização real da tela de login -->
+  <div id="login-preview-toolbar" class="hidden" style="position:fixed;top:0;left:0;right:0;z-index:10070;display:none;align-items:center;justify-content:center;gap:0.55rem;flex-wrap:wrap;padding:0.65rem 0.85rem;background:rgba(15,20,36,0.94);backdrop-filter:blur(10px);border-bottom:1px solid rgba(255,255,255,0.1);box-shadow:0 8px 28px rgba(0,0,0,0.35);">
+    <span style="color:#fff;font-weight:750;font-size:0.9rem;margin-right:0.35rem;">👁️ Pré-visualização real da tela de login</span>
+    <button type="button" class="btn btn-secondary btn-sm" onclick="fecharPreviewTextosLogin()">Fechar</button>
+    <button type="button" class="btn btn-primary btn-sm" onclick="salvarTextosLoginDono();fecharPreviewTextosLogin(true);">💾 Salvar estes textos</button>
+  </div>
 
   <!-- ===================== APP ===================== -->
   <div id="app" class="hidden" style="display:contents;">
@@ -5373,6 +5474,247 @@
     let modoDemo = false;
 
     /** Dados da plataforma (chaves + status das empresas) — nuvem + local */
+    function loginTextosPadrao() {
+      return {
+        badge: 'Sistema multi-empresa',
+        titulo: 'Controle total do seu *negócio*,\nem um só lugar',
+        lead: 'Estoque, clientes, vendas, fiado e entregas — sincronizado e pronto para o dia a dia da sua equipe.',
+        feat1: '📦 Estoque e produtos em tempo real',
+        feat2: '🛒 Vendas com caixa e código de barras',
+        feat3: '💰 Fiado, parcelas e cobranças',
+        feat4: '🚚 Entregas e equipe com permissões',
+        footer: 'Site de Gestão · acesso seguro por empresa',
+        logoIcon: '✦',
+        boxTitulo: 'Bem-vindo de volta',
+        boxSubtitulo: 'Acesse sua empresa ou explore a demonstração'
+      };
+    }
+
+    function normalizarLoginTextos(v) {
+      const pad = loginTextosPadrao();
+      if (!v || typeof v !== 'object') return pad;
+      const out = { ...pad };
+      Object.keys(pad).forEach(k => {
+        if (v[k] != null && String(v[k]).trim() !== '') out[k] = String(v[k]);
+      });
+      return out;
+    }
+
+    /** Converte *destaque* em <em> e quebras de linha em <br> (texto escapado).
+     *  Cada linha vira um bloco que tenta não quebrar no meio (nowrap em telas largas).
+     */
+    function formatarTituloLoginHtml(texto) {
+      const raw = String(texto || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const linhas = raw.split('\n');
+      return linhas.map((linha, idx) => {
+        const esc = String(linha || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        const comDestaque = esc.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+        // span por linha: em desktop evita quebra automática no meio da frase
+        return '<span class="login-titulo-linha">' + comDestaque + (comDestaque ? '' : '&nbsp;') + '</span>' +
+          (idx < linhas.length - 1 ? '<br>' : '');
+      }).join('');
+    }
+
+    function escaparHtmlSimples(s) {
+      return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function separarIconeTextoFeature(linha) {
+      const t = String(linha || '').trim();
+      if (!t) return { icon: '•', texto: '' };
+      // Primeiro “token” se for emoji/símbolo curto
+      const m = t.match(/^(\S{1,4})\s+(.+)$/u);
+      if (m) return { icon: m[1], texto: m[2] };
+      return { icon: '•', texto: t };
+    }
+
+    let _loginTextosCache = null;
+
+    function aplicarTextosLogin(textos) {
+      const t = normalizarLoginTextos(textos);
+      _loginTextosCache = t;
+      const setTxt = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+      };
+      setTxt('login-txt-badge', t.badge);
+      const tit = document.getElementById('login-txt-titulo');
+      if (tit) tit.innerHTML = formatarTituloLoginHtml(t.titulo);
+      setTxt('login-txt-lead', t.lead);
+      setTxt('login-txt-footer', t.footer);
+      const logoIcon = document.getElementById('login-txt-logo-icon');
+      if (logoIcon) logoIcon.textContent = t.logoIcon || '✦';
+      setTxt('login-txt-box-titulo', t.boxTitulo);
+      setTxt('login-txt-box-subtitulo', t.boxSubtitulo);
+      const ul = document.getElementById('login-txt-features');
+      if (ul) {
+        const feats = [t.feat1, t.feat2, t.feat3, t.feat4].filter(x => String(x || '').trim());
+        ul.innerHTML = feats.map(f => {
+          const { icon, texto } = separarIconeTextoFeature(f);
+          return '<li><i>' + escaparHtmlSimples(icon) + '</i> <span>' + escaparHtmlSimples(texto) + '</span></li>';
+        }).join('');
+      }
+    }
+
+    async function carregarEAplicarTextosLogin() {
+      try {
+        const plat = await lerPlataforma();
+        aplicarTextosLogin(plat.loginTextos);
+      } catch (e) {
+        aplicarTextosLogin(loginTextosPadrao());
+      }
+    }
+
+    function lerTextosLoginDoFormulario() {
+      const val = (id) => {
+        const el = document.getElementById(id);
+        return el ? String(el.value || '').trim() : '';
+      };
+      return normalizarLoginTextos({
+        badge: val('dono-login-badge'),
+        titulo: val('dono-login-titulo'),
+        lead: val('dono-login-lead'),
+        feat1: val('dono-login-feat1'),
+        feat2: val('dono-login-feat2'),
+        feat3: val('dono-login-feat3'),
+        feat4: val('dono-login-feat4'),
+        footer: val('dono-login-footer'),
+        logoIcon: val('dono-login-logo-icon') || '✦',
+        boxTitulo: val('dono-login-box-titulo'),
+        boxSubtitulo: val('dono-login-box-subtitulo')
+      });
+    }
+
+    function preencherFormTextosLogin(textos) {
+      const t = normalizarLoginTextos(textos);
+      const set = (id, v) => {
+        const el = document.getElementById(id);
+        if (el) el.value = v != null ? v : '';
+      };
+      set('dono-login-badge', t.badge);
+      set('dono-login-titulo', t.titulo);
+      set('dono-login-lead', t.lead);
+      set('dono-login-feat1', t.feat1);
+      set('dono-login-feat2', t.feat2);
+      set('dono-login-feat3', t.feat3);
+      set('dono-login-feat4', t.feat4);
+      set('dono-login-footer', t.footer);
+      set('dono-login-logo-icon', t.logoIcon);
+      set('dono-login-box-titulo', t.boxTitulo);
+      set('dono-login-box-subtitulo', t.boxSubtitulo);
+      const msg = document.getElementById('dono-login-msg');
+      if (msg) msg.textContent = '';
+    }
+
+    async function carregarTextosLoginNoPainel() {
+      if (!donoLogado) return;
+      const plat = await lerPlataforma();
+      preencherFormTextosLogin(plat.loginTextos);
+    }
+
+    let _loginPreviewAtivo = false;
+    let _loginPreviewBackup = null;
+
+    /** Prévia 100% real: usa a própria tela de login (mesmo visual) */
+    function previewTextosLoginDono() {
+      if (!donoLogado) return;
+      const t = lerTextosLoginDoFormulario();
+      _loginPreviewBackup = _loginTextosCache ? Object.assign({}, _loginTextosCache) : loginTextosPadrao();
+      _loginPreviewAtivo = true;
+
+      // Aplica os textos do formulário na tela real de login
+      aplicarTextosLogin(t);
+      try { setModoDonoUI(false); } catch (e) {}
+      try { mostrarAbaLogin(); } catch (e) {}
+
+      // Esconde o painel do dono e mostra a tela de login de verdade
+      const appDono = document.getElementById('app-dono');
+      if (appDono) {
+        appDono.classList.add('hidden');
+        appDono.style.display = 'none';
+      }
+      const tela = document.getElementById('tela-login');
+      if (tela) {
+        tela.classList.remove('hidden');
+        tela.style.display = '';
+      }
+
+      // Barra de ações da prévia
+      const bar = document.getElementById('login-preview-toolbar');
+      if (bar) {
+        bar.classList.remove('hidden');
+        bar.style.display = 'flex';
+      }
+      // Empurra um pouco o conteúdo para a barra não cobrir o badge
+      if (tela) tela.style.paddingTop = '52px';
+
+      toast('Prévia real da tela de login — o visual é o mesmo que o visitante vê.', 'success');
+    }
+
+    function fecharPreviewTextosLogin(manterTextos) {
+      _loginPreviewAtivo = false;
+      const bar = document.getElementById('login-preview-toolbar');
+      if (bar) {
+        bar.classList.add('hidden');
+        bar.style.display = 'none';
+      }
+      const tela = document.getElementById('tela-login');
+      if (tela) {
+        tela.classList.add('hidden');
+        tela.style.display = 'none';
+        tela.style.paddingTop = '';
+      }
+
+      // Volta ao painel do dono
+      const appDono = document.getElementById('app-dono');
+      if (appDono) {
+        appDono.classList.remove('hidden');
+        appDono.style.display = '';
+      }
+
+      // Se não salvou, restaura os textos que estavam aplicados antes da prévia
+      if (!manterTextos && _loginPreviewBackup) {
+        aplicarTextosLogin(_loginPreviewBackup);
+      }
+      _loginPreviewBackup = null;
+
+      try { mostrarPaginaDono('login'); } catch (e) {}
+    }
+
+    async function salvarTextosLoginDono() {
+      if (!donoLogado) return;
+      const textos = lerTextosLoginDoFormulario();
+      const plat = await lerPlataforma();
+      plat.loginTextos = textos;
+      await salvarPlataforma(plat);
+      aplicarTextosLogin(textos);
+      _loginPreviewBackup = Object.assign({}, textos);
+      const msg = document.getElementById('dono-login-msg');
+      if (msg) msg.innerHTML = '✅ Textos salvos. Já aparecem na tela de login (e para quem abrir o site).';
+      toast('Textos do login salvos!', 'success');
+    }
+
+    async function restaurarTextosLoginPadraoDono() {
+      if (!donoLogado) return;
+      if (!confirm('Restaurar os textos padrão da tela de login?')) return;
+      const pad = loginTextosPadrao();
+      preencherFormTextosLogin(pad);
+      const plat = await lerPlataforma();
+      plat.loginTextos = pad;
+      await salvarPlataforma(plat);
+      aplicarTextosLogin(pad);
+      const msg = document.getElementById('dono-login-msg');
+      if (msg) msg.textContent = 'Textos restaurados para o padrão.';
+      toast('Textos padrão restaurados', 'success');
+    }
+
     function platPadrao() {
       return {
         chaves: {},
@@ -5388,7 +5730,8 @@
           beneficiario: '',
           valorPadrao: '',
           instrucao: 'Envie o comprovante após o pagamento. O código de liberação será gerado após a confirmação.'
-        }
+        },
+        loginTextos: loginTextosPadrao()
       };
     }
 
@@ -5407,7 +5750,8 @@
         configPix: {
           ...base.configPix,
           ...(v.configPix && typeof v.configPix === 'object' ? v.configPix : {})
-        }
+        },
+        loginTextos: normalizarLoginTextos(v.loginTextos)
       };
     }
 
@@ -6154,14 +6498,27 @@
       if (panel) panel.classList.toggle('modo-dono', !!ativo);
       const tabs = document.querySelector('.login-tabs');
       if (tabs) tabs.style.display = ativo ? 'none' : '';
-      const logoH = document.querySelector('.login-box .logo h1');
-      const logoP = document.querySelector('.login-box .logo p');
+      const logoH = document.getElementById('login-txt-box-titulo') || document.querySelector('.login-box .logo h1');
+      const logoP = document.getElementById('login-txt-box-subtitulo') || document.querySelector('.login-box .logo p');
       if (ativo) {
         if (logoH) logoH.textContent = 'Painel do dono';
         if (logoP) logoP.textContent = 'Códigos, empresas, pagamentos e acesso';
       } else {
-        if (logoH) logoH.textContent = 'Bem-vindo de volta';
-        if (logoP) logoP.textContent = 'Acesse sua empresa ou explore a demonstração';
+        // Restaura textos personalizados (ou padrão) da tela de login
+        try {
+          const cache = (typeof _loginTextosCache === 'object' && _loginTextosCache) ? _loginTextosCache : null;
+          if (cache) {
+            if (logoH) logoH.textContent = cache.boxTitulo || 'Bem-vindo de volta';
+            if (logoP) logoP.textContent = cache.boxSubtitulo || 'Acesse sua empresa ou explore a demonstração';
+          } else {
+            if (logoH) logoH.textContent = 'Bem-vindo de volta';
+            if (logoP) logoP.textContent = 'Acesse sua empresa ou explore a demonstração';
+            try { carregarEAplicarTextosLogin(); } catch (e2) {}
+          }
+        } catch (e) {
+          if (logoH) logoH.textContent = 'Bem-vindo de volta';
+          if (logoP) logoP.textContent = 'Acesse sua empresa ou explore a demonstração';
+        }
       }
     }
 
@@ -6962,7 +7319,7 @@
     }
 
     function mostrarPaginaDono(page) {
-      const pages = ['resumo', 'pedidos', 'codigos', 'empresas', 'lojas', 'mensagens', 'pix'];
+      const pages = ['resumo', 'pedidos', 'codigos', 'empresas', 'lojas', 'mensagens', 'pix', 'login'];
       if (!pages.includes(page)) page = 'resumo';
       pages.forEach(p => {
         const el = document.getElementById('dono-page-' + p);
@@ -6978,7 +7335,8 @@
         empresas: 'Empresas',
         lojas: 'Lojas e acesso',
         pix: 'Configuração PIX',
-        mensagens: 'Mensagens dos clientes'
+        mensagens: 'Mensagens dos clientes',
+        login: 'Textos do login'
       };
       const t = document.getElementById('dono-page-title');
       if (t) t.textContent = titles[page] || 'Painel do dono';
@@ -6995,6 +7353,9 @@
       }
       if (page === 'mensagens') {
         try { renderMensagensDono(); } catch (e) {}
+      }
+      if (page === 'login') {
+        try { carregarTextosLoginNoPainel(); } catch (e) {}
       }
       try { renderPainelDono(); } catch (e) {}
     }
@@ -8516,6 +8877,10 @@
 
     // ===================== LOGIN / SESSÃO =====================
     async function fazerLogin() {
+      if (_loginPreviewAtivo) {
+        toast('Você está na pré-visualização. Feche ou salve os textos do login.', 'error');
+        return;
+      }
       const codigoRaw = document.getElementById('login-empresa').value;
       const codigo = normalizarCodigoEmpresa(codigoRaw);
       const login = document.getElementById('login-usuario').value.trim().toLowerCase();
@@ -8915,6 +9280,10 @@
     }
 
     function iniciarDemonstracao() {
+      if (_loginPreviewAtivo) {
+        toast('Você está na pré-visualização. Feche ou salve os textos do login.', 'error');
+        return;
+      }
       modoDemo = true;
       desligarListenerEmpresa();
       estado = dadosDemoIniciais();
@@ -13357,6 +13726,7 @@ function cancelarVendaPendente(id) {
     // ===================== INIT =====================
     async function init() {
       await carregar();
+      try { await carregarEAplicarTextosLogin(); } catch (e) {}
       const temSessao = await verificarSessao();
       if (!temSessao) {
         document.getElementById('tela-login').classList.remove('hidden');
