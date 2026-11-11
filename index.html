@@ -2687,6 +2687,7 @@
             <button type="button" class="btn btn-primary btn-sm" id="rh-tab-resumo" onclick="mostrarAbaRh('resumo')">📊 Resumo</button>
             <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-funcionarios" onclick="mostrarAbaRh('funcionarios')">👥 Funcionários</button>
             <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-ponto" onclick="mostrarAbaRh('ponto')">📋 Log de pontos</button>
+            <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-faltas" onclick="mostrarAbaRh('faltas')">🚫 Faltas</button>
             <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-ferias" onclick="mostrarAbaRh('ferias')">🏖️ Férias</button>
             <button type="button" class="btn btn-secondary btn-sm" id="rh-tab-pagamentos" onclick="mostrarAbaRh('pagamentos')">💵 Pagamentos</button>
           </div>
@@ -2895,6 +2896,78 @@
                   </tr>
                 </thead>
                 <tbody id="lista-rh-ponto"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- FALTAS -->
+        <div id="rh-aba-faltas" class="rh-aba hidden">
+          <div class="panel">
+            <div class="panel-header">
+              <h3>🚫 Faltas do mês</h3>
+              <div class="btn-group">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="renderRhFaltasMes()">🔄 Atualizar</button>
+              </div>
+            </div>
+            <p style="font-size:0.86rem;color:var(--text-muted);margin-bottom:0.9rem;line-height:1.5;">
+              Veja as faltas do mês selecionado. Você pode <strong>justificar</strong> (não conta como falta) ou <strong>apagar</strong> o registro.
+            </p>
+            <div class="form-grid" style="margin-bottom:0.9rem;">
+              <div class="form-group">
+                <label>Mês</label>
+                <input type="month" id="rh-faltas-mes-filtro" onchange="renderRhFaltasMes()" />
+              </div>
+              <div class="form-group">
+                <label>Situação</label>
+                <select id="rh-faltas-status-filtro" onchange="renderRhFaltasMes()">
+                  <option value="todos">Todas</option>
+                  <option value="em_andamento">Em andamento</option>
+                  <option value="pendente">Pendentes</option>
+                  <option value="aprovada">Aprovadas</option>
+                  <option value="justificada">Justificadas</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🔎 Buscar funcionário</label>
+                <input type="text" id="rh-faltas-busca" placeholder="Nome..." oninput="renderRhFaltasMes()" />
+              </div>
+            </div>
+            <div class="cards-grid" id="rh-faltas-mes-cards" style="margin-bottom:1rem;"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Funcionário</th>
+                    <th>Data</th>
+                    <th>Situação</th>
+                    <th>Justificativa / Obs.</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-rh-faltas-mes"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h3>📝 Faltas com justificativa (mês)</h3>
+            </div>
+            <p style="font-size:0.84rem;color:var(--text-muted);margin-bottom:0.75rem;line-height:1.45;">
+              Lista só das faltas <strong>justificadas</strong> no mês — não contam como falta no resumo.
+            </p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Funcionário</th>
+                    <th>Data</th>
+                    <th>Justificativa</th>
+                    <th>Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="lista-rh-faltas-justificadas"></tbody>
               </table>
             </div>
           </div>
@@ -5598,6 +5671,7 @@
       { id: 'resumo', label: '📊 Resumo' },
       { id: 'funcionarios', label: '👥 Funcionários' },
       { id: 'ponto', label: '📋 Log de pontos' },
+      { id: 'faltas', label: '🚫 Faltas' },
       { id: 'ferias', label: '🏖️ Férias' },
       { id: 'pagamentos', label: '💵 Pagamentos' }
     ];
@@ -13627,6 +13701,7 @@ function cancelarVendaPendente(id) {
       if (_rhAbaAtual === 'resumo') renderRhResumo();
       if (_rhAbaAtual === 'funcionarios') renderRhFuncionarios();
       if (_rhAbaAtual === 'ponto') { preencherSelectsRhFuncionarios(); renderRhLogPontos(); }
+      if (_rhAbaAtual === 'faltas') { renderRhFaltasMes(); }
       if (_rhAbaAtual === 'ferias') { preencherSelectsRhFuncionarios(); renderRhFerias(); }
       if (_rhAbaAtual === 'pagamentos') { preencherSelectsRhFuncionarios(); renderRhPagamentos(); }
     }
@@ -14101,6 +14176,7 @@ function cancelarVendaPendente(id) {
       registrarLog('Aprovar falta', (f.usuarioNome || '') + ' · ' + formatarData(f.data), 'rh');
       salvar();
       renderRhFaltas();
+      try { renderRhFaltasMes(); } catch (e) {}
       renderRhResumo();
       toast('Falta aprovada', 'success');
     }
@@ -14118,6 +14194,7 @@ function cancelarVendaPendente(id) {
       registrarLog('Justificar falta', (f.usuarioNome || '') + ' · ' + formatarData(f.data), 'rh');
       salvar();
       renderRhFaltas();
+      try { renderRhFaltasMes(); } catch (e) {}
       renderRhResumo();
       toast('Falta justificada — não conta como falta', 'success');
     }
@@ -14131,8 +14208,116 @@ function cancelarVendaPendente(id) {
       estado.rhFaltas = (estado.rhFaltas || []).filter(x => x.id !== id);
       salvar();
       renderRhFaltas();
+      try { renderRhFaltasMes(); } catch (e) {}
       renderRhResumo();
       toast('Registro removido');
+    }
+
+    function mesAtualISO() {
+      const d = new Date();
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+
+    /** Aba Faltas: lista do mês com apagar e justificativa */
+    function renderRhFaltasMes() {
+      garantirRhAtestados();
+      try { sincronizarFaltasHoje(); } catch (e) {}
+      const mesEl = document.getElementById('rh-faltas-mes-filtro');
+      if (mesEl && !mesEl.value) mesEl.value = mesAtualISO();
+      const mes = (mesEl && mesEl.value) ? mesEl.value : mesAtualISO();
+      const stF = (document.getElementById('rh-faltas-status-filtro') && document.getElementById('rh-faltas-status-filtro').value) || 'todos';
+      const buscaEl = document.getElementById('rh-faltas-busca');
+      const busca = ((buscaEl && buscaEl.value) || '').toLowerCase().trim();
+
+      let lista = (estado.rhFaltas || []).slice().filter(f => {
+        if (f.status === 'cancelada') return false;
+        const data = String(f.data || '');
+        if (!data.startsWith(mes)) return false;
+        return true;
+      });
+
+      const cards = document.getElementById('rh-faltas-mes-cards');
+      if (cards) {
+        const total = lista.length;
+        const just = lista.filter(f => f.status === 'justificada').length;
+        const aprov = lista.filter(f => f.status === 'aprovada').length;
+        const pend = lista.filter(f => f.status === 'pendente' || f.status === 'em_andamento').length;
+        cards.innerHTML =
+          '<div class="stat-card warning"><div class="label">Faltas no mês</div><div class="value">' + total + '</div><div class="sub">' + mes + '</div></div>' +
+          '<div class="stat-card danger"><div class="label">Pendentes / em andamento</div><div class="value">' + pend + '</div></div>' +
+          '<div class="stat-card"><div class="label">Aprovadas</div><div class="value">' + aprov + '</div></div>' +
+          '<div class="stat-card success"><div class="label">Justificadas</div><div class="value">' + just + '</div><div class="sub">não contam falta</div></div>';
+      }
+
+      let filtrada = lista.slice();
+      if (stF !== 'todos') filtrada = filtrada.filter(f => (f.status || 'pendente') === stF);
+      if (busca) {
+        filtrada = filtrada.filter(f => (f.usuarioNome || '').toLowerCase().includes(busca));
+      }
+      filtrada.sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
+
+      const labels = {
+        em_andamento: 'Falta em andamento',
+        pendente: 'Falta (aguardar aprovação)',
+        aprovada: 'Falta aprovada',
+        justificada: 'Justificada'
+      };
+      const classes = {
+        em_andamento: 'aberto',
+        pendente: 'baixo',
+        aprovada: 'baixo',
+        justificada: 'ok'
+      };
+      const podeEd = podeEditarModulo('rh') || isAdmin();
+      const podeEx = podeExcluirModulo('rh') || isAdmin();
+
+      const tbody = document.getElementById('lista-rh-faltas-mes');
+      if (tbody) {
+        if (!filtrada.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty"><div class="icon">✅</div>Nenhuma falta neste filtro no mês.</td></tr>';
+        } else {
+          tbody.innerHTML = filtrada.map(f => {
+            const st = f.status || 'pendente';
+            let acoes = '';
+            if (podeEd && (st === 'em_andamento' || st === 'pendente' || st === 'aprovada')) {
+              acoes += '<button class="btn btn-sm btn-secondary" onclick="justificarRhFalta(\'' + f.id + '\')" title="Justificar">📝 Justificar</button> ';
+            }
+            if (podeEd && (st === 'em_andamento' || st === 'pendente')) {
+              acoes += '<button class="btn btn-sm btn-success" onclick="aprovarRhFalta(\'' + f.id + '\')" title="Confirmar falta">Aprovar</button> ';
+            }
+            if (podeEx) {
+              acoes += '<button class="btn btn-sm btn-danger" onclick="cancelarRhFalta(\'' + f.id + '\')" title="Apagar">🗑️ Apagar</button>';
+            }
+            return '<tr>' +
+              '<td><strong>' + escaparHtmlSimples(f.usuarioNome || '—') + '</strong></td>' +
+              '<td>' + formatarData(f.data) + '</td>' +
+              '<td><span class="status ' + (classes[st] || 'aberto') + '">' + (labels[st] || st) + '</span></td>' +
+              '<td style="font-size:0.82rem;">' + escaparHtmlSimples(f.obs || '—') + '</td>' +
+              '<td class="actions-cell">' + (acoes || '—') + '</td></tr>';
+          }).join('');
+        }
+      }
+
+      const justLista = lista.filter(f => f.status === 'justificada')
+        .sort((a, b) => String(b.data || '').localeCompare(String(a.data || '')));
+      const tbodyJ = document.getElementById('lista-rh-faltas-justificadas');
+      if (tbodyJ) {
+        if (!justLista.length) {
+          tbodyJ.innerHTML = '<tr><td colspan="4" class="empty"><div class="icon">📝</div>Nenhuma falta justificada neste mês.</td></tr>';
+        } else {
+          tbodyJ.innerHTML = justLista.map(f => {
+            let acoes = '';
+            if (podeEx) {
+              acoes = '<button class="btn btn-sm btn-danger" onclick="cancelarRhFalta(\'' + f.id + '\')" title="Apagar">🗑️ Apagar</button>';
+            }
+            return '<tr>' +
+              '<td><strong>' + escaparHtmlSimples(f.usuarioNome || '—') + '</strong></td>' +
+              '<td>' + formatarData(f.data) + '</td>' +
+              '<td style="font-size:0.86rem;">' + escaparHtmlSimples(f.obs || '—') + '</td>' +
+              '<td class="actions-cell">' + (acoes || '—') + '</td></tr>';
+          }).join('');
+        }
+      }
     }
 
 
