@@ -14135,6 +14135,121 @@ function cancelarVendaPendente(id) {
       toast('Registro removido');
     }
 
+
+    /** Zera o contador de um card do resumo RH (admin ou quem edita RH) */
+    function zerarCardRh(tipo) {
+      if (!(typeof isAdmin === 'function' && isAdmin()) && !(typeof podeEditarModulo === 'function' && podeEditarModulo('rh'))) {
+        toast('Sem permissão para zerar este card', 'error');
+        return;
+      }
+      garantirBatePonto();
+      garantirRhAtestados();
+      garantirArraysRh();
+      const hojeStr = hoje();
+
+      if (tipo === 'funcionarios') {
+        if (!confirm('Limpar a lista de funcionários do cadastro RH?\\nLogins de usuários NÃO são apagados.')) return;
+        const qtd = (estado.funcionarios || []).length;
+        estado.funcionarios = [];
+        registrarLog('Zerar card RH', 'Funcionários · ' + qtd + ' removido(s)', 'rh');
+        salvar();
+        try { renderRhFuncionarios(); } catch (e) {}
+        try { preencherSelectsRhFuncionarios(); } catch (e) {}
+        renderRhResumo();
+        toast('Lista de funcionários limpa', 'success');
+        return;
+      }
+
+      if (tipo === 'ponto') {
+        if (!confirm('Fechar todos os pontos em aberto de hoje?')) return;
+        let n = 0;
+        const hora = agoraHoraLocal();
+        (estado.batePonto || []).forEach(p => {
+          if (p.dataEntrada === hojeStr && p.status === 'aberto') {
+            p.dataSaida = hojeStr;
+            p.horaSaida = hora;
+            p.status = 'fechado';
+            p.fechadoPor = (usuarioAtual && usuarioAtual.nome) || 'Sistema';
+            p.fechadoEm = new Date().toISOString();
+            p.fechadoPorZerar = true;
+            n++;
+          }
+        });
+        registrarLog('Zerar card RH', 'Ponto batido · fechou ' + n + ' ponto(s) aberto(s)', 'rh');
+        salvar();
+        try { atualizarPainelBatePonto(); } catch (e) {}
+        try { renderRhLogPontos(); } catch (e) {}
+        renderRhResumo();
+        toast(n ? (n + ' ponto(s) fechado(s)') : 'Nenhum ponto em aberto', 'success');
+        return;
+      }
+
+      if (tipo === 'atrasados') {
+        if (!confirm('Remover a marca de atraso dos pontos de hoje?')) return;
+        let n = 0;
+        (estado.batePonto || []).forEach(p => {
+          if (p.dataEntrada === hojeStr && p.pontualidade === 'atrasado') {
+            p.pontualidade = 'no_horario';
+            p.minutosAtraso = 0;
+            n++;
+          }
+        });
+        registrarLog('Zerar card RH', 'Atrasados · limpou marca em ' + n + ' ponto(s)', 'rh');
+        salvar();
+        try { renderRhLogPontos(); } catch (e) {}
+        renderRhResumo();
+        toast(n ? (n + ' atraso(s) removido(s)') : 'Nenhum atraso hoje', 'success');
+        return;
+      }
+
+      if (tipo === 'ferias') {
+        if (!confirm('Cancelar períodos de férias ativos hoje e tirar status “em férias” do cadastro?')) return;
+        let n = 0;
+        (estado.rhFerias || []).forEach(fe => {
+          if (fe.status === 'cancelada') return;
+          if (hojeStr >= (fe.inicio || '') && hojeStr <= (fe.fim || '')) {
+            fe.status = 'cancelada';
+            fe.canceladoEm = new Date().toISOString();
+            fe.canceladoPorZerar = true;
+            n++;
+          }
+        });
+        (estado.funcionarios || []).forEach(f => {
+          if (f.status === 'ferias') {
+            f.status = 'ativo';
+            n++;
+          }
+        });
+        registrarLog('Zerar card RH', 'Em férias · cancelou/ajustou ' + n + ' registro(s)', 'rh');
+        salvar();
+        try { renderRhFerias(); } catch (e) {}
+        try { renderRhFuncionarios(); } catch (e) {}
+        renderRhResumo();
+        toast('Férias ativas de hoje canceladas', 'success');
+        return;
+      }
+
+      if (tipo === 'atestado') {
+        if (!confirm('Cancelar atestados ativos de hoje?')) return;
+        let n = 0;
+        (estado.rhAtestados || []).forEach(a => {
+          if (a.status === 'cancelado') return;
+          if (hojeStr >= (a.inicio || '') && hojeStr <= (a.fim || '')) {
+            a.status = 'cancelado';
+            a.canceladoEm = new Date().toISOString();
+            a.canceladoPorZerar = true;
+            n++;
+          }
+        });
+        registrarLog('Zerar card RH', 'Em atestado · cancelou ' + n + ' atestado(s)', 'rh');
+        salvar();
+        try { renderRhAtestados(); } catch (e) {}
+        renderRhResumo();
+        toast(n ? (n + ' atestado(s) cancelado(s)') : 'Nenhum atestado ativo hoje', 'success');
+        return;
+      }
+    }
+
     function renderRhResumo() {
       garantirArraysRh();
       garantirBatePonto();
@@ -14146,19 +14261,25 @@ function cancelarVendaPendente(id) {
       const usuarios = usuariosQueDevemBaterPonto();
       const totalFunc = usuarios.length;
       const pontosHoje = pontosDeHoje();
-      const comPonto = pontosHoje.length;
+      // Só conta quem está com ponto em aberto agora (entrada sem saída)
+      const pontosAbertos = pontosHoje.filter(p => p.status === 'aberto');
+      const comPonto = pontosAbertos.length;
       const atrasados = pontosHoje.filter(p => p.pontualidade === 'atrasado').length;
       const ferias = contagemFeriasHoje();
       const atestados = contagemAtestadosHoje();
+      const podeZerar = (typeof isAdmin === 'function' && isAdmin()) || (typeof podeEditarModulo === 'function' && podeEditarModulo('rh'));
+      const btnZerar = (acao, titulo) => podeZerar
+        ? ('<button type="button" class="btn btn-sm btn-secondary" style="margin-top:0.45rem;font-size:0.72rem;padding:0.22rem 0.55rem;" onclick="event.stopPropagation();' + acao + '" title="' + titulo + '">Zerar</button>')
+        : '';
 
       const cards = document.getElementById('rh-resumo-cards');
       if (cards) {
         cards.innerHTML =
-          '<div class="stat-card success"><div class="label">Funcionários</div><div class="value">' + totalFunc + '</div><div class="sub">contas na equipe</div></div>' +
-          '<div class="stat-card info"><div class="label">Ponto batido</div><div class="value">' + comPonto + '</div><div class="sub">hoje</div></div>' +
-          '<div class="stat-card warning"><div class="label">Atrasados</div><div class="value">' + atrasados + '</div><div class="sub">após ' + (cfg.horaEntrada || '—') + ' + ' + (cfg.toleranciaMin || 0) + ' min</div></div>' +
-          '<div class="stat-card"><div class="label">Em férias</div><div class="value">' + ferias + '</div><div class="sub">hoje</div></div>' +
-          '<div class="stat-card warning"><div class="label">Em atestado</div><div class="value">' + atestados + '</div><div class="sub">não contam falta</div></div>';
+          '<div class="stat-card success"><div class="label">Funcionários</div><div class="value">' + totalFunc + '</div><div class="sub">contas na equipe</div>' + btnZerar('zerarCardRh(\'funcionarios\')', 'Limpa a lista de funcionários do cadastro RH') + '</div>' +
+          '<div class="stat-card info"><div class="label">Ponto batido</div><div class="value">' + comPonto + '</div><div class="sub">em aberto agora</div>' + btnZerar('zerarCardRh(\'ponto\')', 'Fecha todos os pontos abertos de hoje') + '</div>' +
+          '<div class="stat-card warning"><div class="label">Atrasados</div><div class="value">' + atrasados + '</div><div class="sub">após ' + (cfg.horaEntrada || '—') + ' + ' + (cfg.toleranciaMin || 0) + ' min</div>' + btnZerar('zerarCardRh(\'atrasados\')', 'Remove a marca de atraso dos pontos de hoje') + '</div>' +
+          '<div class="stat-card"><div class="label">Em férias</div><div class="value">' + ferias + '</div><div class="sub">hoje</div>' + btnZerar('zerarCardRh(\'ferias\')', 'Cancela férias ativas de hoje') + '</div>' +
+          '<div class="stat-card warning"><div class="label">Em atestado</div><div class="value">' + atestados + '</div><div class="sub">não contam falta</div>' + btnZerar('zerarCardRh(\'atestado\')', 'Cancela atestados ativos de hoje') + '</div>';
       }
 
       renderRhAtestados();
@@ -14504,6 +14625,7 @@ function cancelarVendaPendente(id) {
       registrarLog('Bate-ponto entrada', nome + ' · ' + formatarData(data) + ' ' + hora + tagAtraso, 'rh');
       salvar();
       atualizarPainelBatePonto();
+      try { renderRhResumo(); } catch (e) {}
       if (pont.pontualidade === 'atrasado') {
         toast('Entrada registrada às ' + hora + ' — atrasado em ' + pont.minutosAtraso + ' min', 'warning');
       } else {
@@ -14535,6 +14657,7 @@ function cancelarVendaPendente(id) {
       registrarLog('Bate-ponto saída', nome + ' · ' + formatarData(data) + ' ' + hora, 'rh');
       salvar();
       atualizarPainelBatePonto();
+      try { renderRhResumo(); } catch (e) {}
       toast('Saída registrada: ' + formatarData(data) + ' às ' + hora, 'success');
     }
 
