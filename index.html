@@ -3045,7 +3045,8 @@
             <h3>⏱️ Bate-ponto</h3>
           </div>
           <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:1rem;line-height:1.5;">
-            O ponto é da <strong>sua conta</strong>. Data e hora entram sozinhas no momento do clique.
+            O ponto é da <strong>sua conta</strong>. Para registrar a <strong>entrada</strong>, é obrigatório tirar uma <strong>selfie</strong>.
+            Data e hora entram sozinhas no momento da confirmação.
           </p>
           <div id="bate-ponto-usuario-box" style="display:flex;align-items:center;gap:0.65rem;flex-wrap:wrap;margin-bottom:1rem;padding:0.75rem 1rem;background:#f0f4ff;border:1px solid #d4dcf0;border-radius:12px;max-width:520px;">
             <span style="font-size:1.35rem;">👤</span>
@@ -3058,8 +3059,8 @@
             <p style="color:var(--text-muted);font-size:0.9rem;">Carregando…</p>
           </div>
           <div class="btn-group" style="flex-wrap:wrap;gap:0.55rem;margin-bottom:1.25rem;">
-            <button type="button" class="btn btn-success" id="btn-registrar-entrada" onclick="registrarEntradaBatePonto()" style="min-width:180px;padding:0.85rem 1.2rem;font-size:1rem;">
-              ✅ Registrar ponto (entrada)
+            <button type="button" class="btn btn-success" id="btn-registrar-entrada" onclick="abrirModalSelfiePonto()" style="min-width:180px;padding:0.85rem 1.2rem;font-size:1rem;">
+              📷 Selfie e registrar entrada
             </button>
             <button type="button" class="btn btn-warning" id="btn-fechar-ponto" onclick="fecharPontoBatePonto()" style="min-width:180px;padding:0.85rem 1.2rem;font-size:1rem;display:none;">
               🏁 Fechar ponto (saída)
@@ -3072,6 +3073,7 @@
             <table>
               <thead>
                 <tr>
+                  <th>Selfie</th>
                   <th>Entrada</th>
                   <th>Saída</th>
                   <th>Duração</th>
@@ -4488,6 +4490,36 @@
   <div id="print-area" aria-hidden="true"></div>
 
   <!-- Scanner de código de barras (câmera) -->
+
+  <!-- Selfie obrigatória para bate-ponto -->
+  <div class="modal-overlay" id="modal-selfie-ponto" style="z-index:220;">
+    <div class="modal" style="max-width:min(440px,100%);">
+      <div class="modal-header">
+        <h3>📷 Selfie para bater o ponto</h3>
+        <button type="button" class="modal-close" onclick="fecharModalSelfiePonto()">×</button>
+      </div>
+      <div class="modal-body" style="padding:0.9rem;">
+        <p id="selfie-ponto-status" style="font-size:0.86rem;color:var(--text-muted);margin-bottom:0.65rem;line-height:1.45;">
+          Posicione o rosto na câmera frontal e toque em <strong>Tirar selfie</strong>.
+        </p>
+        <div id="selfie-ponto-video-wrap" style="position:relative;width:100%;background:#0f1424;border-radius:14px;overflow:hidden;min-height:240px;">
+          <video id="selfie-ponto-video" playsinline muted autoplay style="width:100%;display:block;max-height:55vh;object-fit:cover;transform:scaleX(-1);"></video>
+          <canvas id="selfie-ponto-canvas" style="display:none;"></canvas>
+          <img id="selfie-ponto-preview" alt="Selfie" style="display:none;width:100%;max-height:55vh;object-fit:cover;transform:scaleX(-1);" />
+        </div>
+        <p style="font-size:0.76rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.4;">
+          A selfie fica salva no registro do ponto. Use HTTPS (ou o app) e permita o acesso à câmera.
+        </p>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap;gap:0.45rem;">
+        <button type="button" class="btn btn-secondary" onclick="fecharModalSelfiePonto()">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-selfie-capturar" onclick="capturarSelfiePonto()">📸 Tirar selfie</button>
+        <button type="button" class="btn btn-secondary hidden" id="btn-selfie-refazer" onclick="refazerSelfiePonto()">↺ Tirar de novo</button>
+        <button type="button" class="btn btn-success hidden" id="btn-selfie-confirmar" onclick="confirmarSelfieERegistrarPonto()">✅ Confirmar e registrar ponto</button>
+      </div>
+    </div>
+  </div>
+
   <div id="barcode-scanner-overlay" class="modal-overlay" style="z-index:210;" onclick="if(event.target===this)fecharScannerBarcode()">
     <div class="modal" style="max-width:min(480px,100%);">
       <div class="modal-header">
@@ -14709,7 +14741,7 @@ function cancelarVendaPendente(id) {
         if (box) box.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">Faça login para bater o ponto.</p>';
         if (btnEnt) btnEnt.style.display = 'none';
         if (btnSai) btnSai.style.display = 'none';
-        if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="empty">Sem usuário logado.</td></tr>';
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="empty">Sem usuário logado.</td></tr>';
         return;
       }
 
@@ -14746,14 +14778,18 @@ function cancelarVendaPendente(id) {
         .sort((a, b) => String(b.dataEntrada + b.horaEntrada).localeCompare(String(a.dataEntrada + a.horaEntrada)));
       if (tbody) {
         if (!lista.length) {
-          tbody.innerHTML = '<tr><td colspan="4" class="empty"><div class="icon">⏱️</div>Nenhum registro seu hoje.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" class="empty"><div class="icon">⏱️</div>Nenhum registro seu hoje.</td></tr>';
         } else {
           tbody.innerHTML = lista.map(p => {
             const min = duracaoPontoMinutos(p);
             const pontBadge = p.pontualidade === 'atrasado'
               ? ' <span class="status aberto">Atrasado</span>'
               : (p.horaEntrada ? ' <span class="status ok">No horário</span>' : '');
+            const foto = p.fotoEntrada
+              ? '<img src="' + p.fotoEntrada + '" alt="Selfie" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid var(--border);cursor:pointer;" onclick="verSelfiePonto(this.src)" />'
+              : '<span style="color:var(--text-muted);font-size:0.78rem;">—</span>';
             return '<tr>' +
+              '<td>' + foto + '</td>' +
               '<td>' + formatarDataHoraPonto(p.dataEntrada, p.horaEntrada) + pontBadge + '</td>' +
               '<td>' + (p.status === 'fechado' ? formatarDataHoraPonto(p.dataSaida, p.horaSaida) : '—') + '</td>' +
               '<td>' + formatarDuracaoMin(min) + '</td>' +
@@ -14764,12 +14800,195 @@ function cancelarVendaPendente(id) {
       }
     }
 
-    function registrarEntradaBatePonto() {
+    let _selfiePontoStream = null;
+    let _selfiePontoDataUrl = null;
+
+    function setSelfiePontoStatus(msg) {
+      const el = document.getElementById('selfie-ponto-status');
+      if (el) el.innerHTML = msg;
+    }
+
+    async function pararCameraSelfiePonto() {
+      try {
+        if (_selfiePontoStream) {
+          _selfiePontoStream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} });
+        }
+      } catch (e) {}
+      _selfiePontoStream = null;
+      const video = document.getElementById('selfie-ponto-video');
+      if (video) {
+        try { video.pause(); } catch (e) {}
+        try { video.srcObject = null; } catch (e) {}
+      }
+    }
+
+    function resetUiSelfiePonto() {
+      _selfiePontoDataUrl = null;
+      const video = document.getElementById('selfie-ponto-video');
+      const img = document.getElementById('selfie-ponto-preview');
+      const btnCap = document.getElementById('btn-selfie-capturar');
+      const btnRef = document.getElementById('btn-selfie-refazer');
+      const btnOk = document.getElementById('btn-selfie-confirmar');
+      if (video) video.style.display = 'block';
+      if (img) { img.style.display = 'none'; img.removeAttribute('src'); }
+      if (btnCap) btnCap.classList.remove('hidden');
+      if (btnRef) btnRef.classList.add('hidden');
+      if (btnOk) btnOk.classList.add('hidden');
+    }
+
+    async function abrirModalSelfiePonto() {
       if (!temPermissao('bate-ponto') && !isAdmin()) {
         toast('Sem permissão de bate-ponto', 'error');
         return;
       }
       if (!usuarioAtual) { toast('Faça login para bater o ponto', 'error'); return; }
+      garantirBatePonto();
+      const userId = idUsuarioBatePonto();
+      if (pontoAbertoDoUsuario(userId)) {
+        toast('Já existe um ponto em aberto. Feche o ponto antes de registrar outra entrada.', 'error');
+        return;
+      }
+      if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        toast('A câmera exige conexão segura (HTTPS).', 'error');
+        return;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        toast('Este aparelho/navegador não permite câmera.', 'error');
+        return;
+      }
+
+      resetUiSelfiePonto();
+      const modal = document.getElementById('modal-selfie-ponto');
+      if (modal) modal.classList.add('show');
+      setSelfiePontoStatus('Pedindo acesso à câmera frontal…');
+
+      try {
+        await pararCameraSelfiePonto();
+        _selfiePontoStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: 'user' },
+            width: { ideal: 720 },
+            height: { ideal: 720 }
+          }
+        });
+        const video = document.getElementById('selfie-ponto-video');
+        if (!video) throw new Error('Vídeo não encontrado');
+        video.srcObject = _selfiePontoStream;
+        await video.play();
+        setSelfiePontoStatus('Posicione o <strong>rosto</strong> e toque em <strong>Tirar selfie</strong>.');
+      } catch (e) {
+        console.error(e);
+        setSelfiePontoStatus('Não foi possível abrir a câmera. Verifique a permissão e tente de novo.');
+        toast('Não foi possível acessar a câmera', 'error');
+      }
+    }
+
+    async function fecharModalSelfiePonto() {
+      await pararCameraSelfiePonto();
+      resetUiSelfiePonto();
+      const modal = document.getElementById('modal-selfie-ponto');
+      if (modal) modal.classList.remove('show');
+    }
+
+    function capturarSelfiePonto() {
+      const video = document.getElementById('selfie-ponto-video');
+      const canvas = document.getElementById('selfie-ponto-canvas');
+      const img = document.getElementById('selfie-ponto-preview');
+      if (!video || !canvas || !img) return;
+      if (!video.videoWidth) {
+        toast('Aguarde a câmera carregar', 'error');
+        return;
+      }
+      // Redimensiona para não estourar o armazenamento
+      const maxW = 320;
+      const scale = Math.min(1, maxW / video.videoWidth);
+      const w = Math.round(video.videoWidth * scale);
+      const h = Math.round(video.videoHeight * scale);
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      // espelha horizontalmente (como a prévia)
+      ctx.translate(w, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, w, h);
+      let dataUrl = '';
+      try {
+        dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      } catch (e) {
+        toast('Falha ao capturar a selfie', 'error');
+        return;
+      }
+      if (!dataUrl || dataUrl.length < 100) {
+        toast('Selfie inválida. Tente de novo.', 'error');
+        return;
+      }
+      _selfiePontoDataUrl = dataUrl;
+      img.src = dataUrl;
+      img.style.display = 'block';
+      video.style.display = 'none';
+      const btnCap = document.getElementById('btn-selfie-capturar');
+      const btnRef = document.getElementById('btn-selfie-refazer');
+      const btnOk = document.getElementById('btn-selfie-confirmar');
+      if (btnCap) btnCap.classList.add('hidden');
+      if (btnRef) btnRef.classList.remove('hidden');
+      if (btnOk) btnOk.classList.remove('hidden');
+      setSelfiePontoStatus('Selfie capturada. Confira e toque em <strong>Confirmar e registrar ponto</strong>.');
+      // pode liberar a câmera após capturar
+      pararCameraSelfiePonto();
+    }
+
+    async function refazerSelfiePonto() {
+      resetUiSelfiePonto();
+      setSelfiePontoStatus('Reabrindo a câmera…');
+      try {
+        await pararCameraSelfiePonto();
+        _selfiePontoStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: {
+            facingMode: { ideal: 'user' },
+            width: { ideal: 720 },
+            height: { ideal: 720 }
+          }
+        });
+        const video = document.getElementById('selfie-ponto-video');
+        if (!video) throw new Error('Vídeo não encontrado');
+        video.style.display = 'block';
+        video.srcObject = _selfiePontoStream;
+        await video.play();
+        setSelfiePontoStatus('Posicione o <strong>rosto</strong> e toque em <strong>Tirar selfie</strong>.');
+      } catch (e) {
+        toast('Não foi possível reabrir a câmera', 'error');
+      }
+    }
+
+    function confirmarSelfieERegistrarPonto() {
+      if (!_selfiePontoDataUrl) {
+        toast('Tire a selfie antes de registrar o ponto', 'error');
+        return;
+      }
+      registrarEntradaBatePonto(_selfiePontoDataUrl);
+    }
+
+    function verSelfiePonto(src) {
+      if (!src) return;
+      const w = window.open('');
+      if (w) {
+        w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Selfie do ponto</title></head><body style="margin:0;background:#0f1424;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="' + src + '" style="max-width:100%;max-height:100vh;object-fit:contain;" alt="Selfie" /></body></html>');
+      }
+    }
+
+    function registrarEntradaBatePonto(fotoEntrada) {
+      if (!temPermissao('bate-ponto') && !isAdmin()) {
+        toast('Sem permissão de bate-ponto', 'error');
+        return;
+      }
+      if (!usuarioAtual) { toast('Faça login para bater o ponto', 'error'); return; }
+      if (!fotoEntrada) {
+        // Selfie obrigatória: abre o modal em vez de registrar direto
+        abrirModalSelfiePonto();
+        return;
+      }
       garantirBatePonto();
       const userId = idUsuarioBatePonto();
       if (pontoAbertoDoUsuario(userId)) {
@@ -14793,6 +15012,7 @@ function cancelarVendaPendente(id) {
         status: 'aberto',
         pontualidade: pont.pontualidade,
         minutosAtraso: pont.minutosAtraso || 0,
+        fotoEntrada: fotoEntrada,
         registradoPor: nome,
         criadoEm: agora.toISOString()
       });
@@ -14807,10 +15027,12 @@ function cancelarVendaPendente(id) {
           return false;
         });
       }
-      registrarLog('Bate-ponto entrada', nome + ' · ' + formatarData(data) + ' ' + hora + tagAtraso, 'rh');
+      registrarLog('Bate-ponto entrada', nome + ' · ' + formatarData(data) + ' ' + hora + tagAtraso + ' · com selfie', 'rh');
       salvar();
+      fecharModalSelfiePonto();
       atualizarPainelBatePonto();
       try { renderRhResumo(); } catch (e) {}
+      try { renderRhLogPontos(); } catch (e) {}
       if (pont.pontualidade === 'atrasado') {
         toast('Entrada registrada às ' + hora + ' — atrasado em ' + pont.minutosAtraso + ' min', 'warning');
       } else {
@@ -14906,9 +15128,13 @@ function cancelarVendaPendente(id) {
         const pontHtml = p.pontualidade === 'atrasado'
           ? '<br><span class="status aberto">Atrasado' + (p.minutosAtraso ? ' · ' + p.minutosAtraso + ' min' : '') + '</span>'
           : (p.horaEntrada ? '<br><span class="status ok">No horário</span>' : '');
+        const fotoHtml = p.fotoEntrada
+          ? '<br><img src="' + p.fotoEntrada + '" alt="Selfie" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-top:0.25rem;border:1px solid var(--border);cursor:pointer;" onclick="verSelfiePonto(this.src)" title="Ver selfie" />'
+          : '';
         return '<tr>' +
           '<td><strong>' + escaparHtmlSimples(nome) + '</strong>' +
             (p.usuarioLogin ? '<br><small style="color:var(--text-muted)">@' + escaparHtmlSimples(p.usuarioLogin) + '</small>' : '') +
+            fotoHtml +
           '</td>' +
           '<td>' + formatarDataHoraPonto(p.dataEntrada, p.horaEntrada) + pontHtml + '</td>' +
           '<td>' + (p.status === 'fechado' ? formatarDataHoraPonto(p.dataSaida, p.horaSaida) : '—') + '</td>' +
